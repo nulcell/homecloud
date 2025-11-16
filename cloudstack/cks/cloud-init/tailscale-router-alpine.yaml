@@ -1,0 +1,19 @@
+## template: jinja
+#cloud-config
+# prettier-ignore
+runcmd:
+  - echo "Configuring Tailscale router..."
+  - curl -fsSL https://tailscale.com/install.sh | sh
+  - echo 'net.ipv4.ip_forward = 1' | tee -a /etc/sysctl.d/99-tailscale.conf
+  - echo 'net.ipv6.conf.all.forwarding = 1' | tee -a /etc/sysctl.d/99-tailscale.conf
+  - sysctl -p /etc/sysctl.d/99-tailscale.conf
+  - rc-service tailscale start
+  - for i in $(seq 1 5); do tailscale up --auth-key={{ ds.meta_data.tailscale_auth_key }} --advertise-routes= {{ ds.meta_data.network_router_cidr }} --advertise-exit-node && break || echo "tailscale bootstrap failed, retrying after 5s..."; sleep 5; done
+  - rc-update add tailscale default
+  - echo "Tailscale router setup finished."
+  - echo "Rebooting the system to apply changes..."
+  - reboot
+bootcmd:
+  - echo "Configuring Tailscale and linux performance improvements for subnet routers and exit nodes..."
+  - ethtool -K $(ip -o route get 8.8.8.8 | cut -f 5 -d " ") rx-udp-gro-forwarding on rx-gro-list off
+  - rc-service tailscale start

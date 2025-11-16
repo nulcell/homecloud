@@ -1,0 +1,24 @@
+## template: jinja
+#cloud-config
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+packages:
+  - qemu-guest-agent
+  - curl
+  - ethtool
+  - neofetch
+# prettier-ignore
+users:
+  - name: cloud
+    doas: [permit nopass newsuper, deny newsuper as root]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - {{ ds.meta_data.public_keys }}
+resize_rootfs: noblock
+growpart:
+  devices: [/]
+  ignore_growroot_disabled: false
+  mode: auto
+final_message: The system is up and ready for use.

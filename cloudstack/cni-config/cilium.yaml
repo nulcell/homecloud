@@ -1,0 +1,34 @@
+# Status: working
+# Description: Cilium CNI installation script for CloudStack K8s cluster
+runcmd: # don't add this line
+  # Copy from below and add to CNI configruration in Cloudstack to install Cilium CNI
+  - |
+    cat >/home/cloud/cilium-install.sh <<'EOF'
+    #!/bin/bash
+    set -ex
+    export KUBECONFIG=/etc/kubernetes/admin.conf
+    export PATH=$PATH:/opt/bin:/usr/local/bin
+    export HOME=/root   # fix for cilium cache issue
+
+    # Wait until kube-apiserver is ready
+    until kubectl get nodes >/dev/null 2>&1; do
+      echo "Waiting for kube-apiserver..."
+      sleep 5
+    done
+
+    # Install cilium-cli
+    curl -L --remote-name-all https://github.com/cilium/cilium-cli/releases/latest/download/cilium-linux-amd64.tar.gz
+    tar xzf cilium-linux-amd64.tar.gz
+    mv cilium /usr/local/bin/cilium
+
+    # Deploy Cilium
+    kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+    cilium install --version {{ ds.meta_data.cilium_version }} --wait \
+      --set kubeProxyReplacement=true \
+      --set hubble.relay.enabled=true \
+      --set hubble.ui.enabled=true
+    cilium status --wait
+    EOF
+  - chmod +x /home/cloud/cilium-install.sh
+  - /home/cloud/cilium-install.sh || true
+  - /usr/bin/echo "Cilium CNI installation complete."
