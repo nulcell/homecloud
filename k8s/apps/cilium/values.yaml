@@ -1,0 +1,52 @@
+# Inspired by https://github.com/siderolabs/contrib/blob/main/examples/omni/apps/kube-system/cilium/values.yaml
+cilium:
+  kubeProxyReplacement: true
+  policyEnforcementMode: "default"
+  ipam:
+    mode: cluster-pool # kubernetes or cluster-pool (default is cluster-pool)
+    # operator:
+    #   clusterPoolIPv4PodCIDRList: ["10.147.0.0/16"]
+  securityContext:
+    capabilities:
+      ciliumAgent:
+        - CHOWN
+        - KILL
+        - NET_ADMIN
+        - NET_RAW
+        - IPC_LOCK
+        - SYS_ADMIN
+        - SYS_RESOURCE
+        - DAC_OVERRIDE
+        - FOWNER
+        - SETUID
+        - SETGID
+      cleanCiliumState:
+        - NET_ADMIN
+        - SYS_ADMIN
+        - SYS_RESOURCE
+  cgroup:
+    hostRoot: /sys/fs/cgroup
+    autoMount:
+      enabled: false
+  bgpControlPlane:
+    # -- Enables the BGP control plane.
+    enabled: false
+  # Configure Cilium Ingress Controller
+  ingressController:
+    enabled: false
+    default: false
+    loadbalancerMode: dedicated # dedicated or shared
+  # Configure Cilium Gateway API
+  gatewayAPI:
+    enabled: false
+    enableAlpn: false
+    enableAppProtocol: false
+  # Configure Hubble
+  hubble:
+    enabled: true
+    relay:
+      enabled: true
+    ui:
+      enabled: true
+  l2announcements:
+    enabled: true
