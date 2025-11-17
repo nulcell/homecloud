@@ -26,6 +26,8 @@ CLOUDSTACK_DB_PASSWORD="cloud"
 MYSQL_DATABASE_HOSTNAME="localhost"
 MYSQL_ROOT_PASSWORD=""
 CLOUDBR0_IP=$(ip a show cloudbr0 | grep -i "inet " | awk '{print $2}' | cut -d'/' -f1)
+MINIO_ROOT_USER="admin"
+MINIO_ROOT_PASSWORD="password"
 
 
 
@@ -157,6 +159,48 @@ sed '1s/.*exit 142" //' /root/.ssh/authorized_keys > /root/.ssh/authorized_keys.
 mv /root/.ssh/authorized_keys.tmp /root/.ssh/authorized_keys
 cat /var/lib/cloudstack/management/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 echo "-> Root User configured."
+
+
+
+echo "-> Installing MinIO for Object Storage..."
+wget https://dl.min.io/server/minio/release/linux-amd64/minio -O /usr/local/bin/minio
+groupadd -r minio-user
+useradd -M -r -g minio-user minio-user
+mkdir -p /minio/data
+chown minio-user:minio-user /minio/data
+chmod u+rxw /minio/ /usr/local/bin/minio
+chown -R minio-user /minio/ /usr/local/bin/minio
+cat > /etc/systemd/system/minio.service << EOF
+[Unit]
+Description=MinIO High Performance Object Storage
+Documentation=https://docs.min.io
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=minio-user
+Group=minio-user
+WorkingDirectory=/minio/data
+ExecStart=/usr/local/bin/minio server /minio/data --console-address ":9001"
+Restart=always
+RestartSec=5
+
+# Set environment variables
+Environment="MINIO_ROOT_USER=${MINIO_ROOT_USER}"
+Environment="MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}"
+
+# Allow MinIO to bind to low ports if needed
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl start minio
+systemctl enable minio
+systemctl status minio --no-pager
 
 
 
