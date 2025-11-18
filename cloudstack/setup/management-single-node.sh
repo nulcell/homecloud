@@ -201,6 +201,7 @@ systemctl daemon-reload
 systemctl start minio
 systemctl enable minio
 systemctl status minio --no-pager
+echo "-> MinIO installed and running."
 
 
 
@@ -218,10 +219,8 @@ echo "5. Configure Primary and Secondary Storage using the NFS paths provided ab
 echo "6. Use simple VLAN config with vlan://untagged for network setup."
 echo "7. Restart the CloudStack Management service if needed: sudo systemctl restart cloudstack-management"
 echo "8. Run the following after onboarding any host to support UEFI VMs:"
-echo "   systemctl unmask libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tls.socket libvirtd-tcp.socket"
-echo "   systemctl stop libvirtd"
-echo "   systemctl start libvirtd-tls.socket"
-echo "   systemctl enable libvirtd-tls.socket"
-echo "   systemctl restart cloudstack-agent"
+echo "   $ systemctl unmask libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tls.socket libvirtd-tcp.socket"
+echo "   $ systemctl stop libvirtd; systemctl start libvirtd-tls.socket; systemctl enable libvirtd-tls.socket"
+echo "   $ reboot now"
 echo "9. Enjoy your CloudStack environment!"
 echo ""
