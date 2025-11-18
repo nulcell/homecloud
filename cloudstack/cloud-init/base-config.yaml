@@ -22,3 +22,17 @@ growpart:
   ignore_growroot_disabled: false
   mode: auto
 final_message: The system is up and ready for use.
+runcmd:
+  - |
+    cat << 'EOF' >> /etc/netplan/90-all-interfaces-dhcp.yaml
+    network:
+      version: 2
+      enderer: networkd
+      ethernets:
+        all-eths:
+          match:
+            name: "en*"
+          dhcp4: true
+          optional: true
+    EOF
+  - netplan apply

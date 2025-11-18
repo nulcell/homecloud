@@ -1,0 +1,15 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+# prettier-ignore
+users:
+  - name: cloud-admin
+    gecos: Cloud Admin User
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF8iDPzm5kv2po0xRd1BGSi6I99uiGH3qDAGX40aVm2q  # this is a random key generated online for example purposes only
+final_message: Single-node CloudStack Server is ready.
+# prettier-ignore
+runcmd:
+  - curl -sSL https://raw.githubusercontent.com/nulcell/homecloud/refs/heads/main/cloudstack/setup/management-single-node.sh | bash
