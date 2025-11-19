@@ -31,7 +31,7 @@ runcmd:
       ethernets:
         all-eths:
           match:
-            name: "en*"
+            name: "e*"
           dhcp4: true
           optional: true
     EOF
