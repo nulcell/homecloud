@@ -25,10 +25,10 @@
   - Value: KVM
 - **vm.allocation.algorithm**:
   - Description: Order in which hosts within a cluster will be considered for VM allocation. The value can be 'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', or 'firstfitleastconsumed'.
-  - Value: `firstfit`
+  - Value: `userdispersing`
 - **vm.deployment.planner**:
   - Description: ['FirstFitPlanner', 'UserDispersingPlanner', 'UserConcentratedPodPlanner']: DeploymentPlanner heuristic that will be used for VM deployment.
-  - Value: `FirstFit`
+  - Value: `UserDispersingPlanner`
 - **vm.destroy.forcestop**:
   - Description: On destroy, force-stop takes this value.
   - Value: true
