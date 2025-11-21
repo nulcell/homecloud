@@ -13,7 +13,7 @@ You should be creating these in a project under a dedicated domain (or root doma
   - VPC CIDR: `10.0.0.0/24` (i.e., 256 IP addresses)
     - Network 1:
       - name: `net-1` (the vpc name will be prefixed automatically when **vpc.tier.name.prepend** is set to true in global settings)
-      - network offering: `acs.net.vpc.core-public-lb` (C Network with VpcVirtualRouter and Public LB)
+      - network offering: `acs.net.vpc.core-public-lb` (VPC Network with VpcVirtualRouter and Public LB)
       - gateway: `10.0.0.1`
       - netmask: `255.255.255.192` (i.e., /26)
       - acl: default-allow
