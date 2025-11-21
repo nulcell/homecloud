@@ -1,5 +1,20 @@
 ## template: jinja
 #cloud-config
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+packages:
+  - curl
+  - ethtool
+  - neofetch
+# prettier-ignore
+users:
+  - name: cloud
+    doas: [permit nopass newsuper, deny newsuper as root]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - {{ ds.meta_data.public_keys }}
 # prettier-ignore
 runcmd:
   - echo "Configuring Tailscale router..."
@@ -7,12 +22,11 @@ runcmd:
   - echo 'net.ipv4.ip_forward = 1' | tee -a /etc/sysctl.d/99-tailscale.conf
   - echo 'net.ipv6.conf.all.forwarding = 1' | tee -a /etc/sysctl.d/99-tailscale.conf
   - sysctl -p /etc/sysctl.d/99-tailscale.conf
+  - ethtool -K $(ip -o route get 8.8.8.8 | cut -f 5 -d " ") rx-udp-gro-forwarding on rx-gro-list off
   - systemctl start tailscaled
   - for i in $(seq 1 5); do tailscale up --auth-key={{ ds.meta_data.tailscale_auth_key }} --advertise-routes={{ ds.meta_data.network_router_cidr }}  --advertise-exit-node && break || echo "tailscale bootstrap failed, retrying after 5s..."; sleep 5; done
   - systemctl enable tailscaled
   - echo "Tailscale router config complete."
-  - echo "Rebooting the system to apply changes..."
-  - reboot now
 bootcmd:
   - echo "Configuring Tailscale and linux performance improvements for subnet routers and exit nodes..."
   - ethtool -K $(ip -o route get 8.8.8.8 | cut -f 5 -d " ") rx-udp-gro-forwarding on rx-gro-list off
