@@ -10,7 +10,6 @@ packages:
 # prettier-ignore
 users:
   - name: cloud
-    doas: [permit nopass newsuper, deny newsuper as root]
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
     ssh_authorized_keys:
