@@ -26,6 +26,21 @@ runcmd:
   - for i in $(seq 1 5); do tailscale up --auth-key={{ ds.meta_data.tailscale_auth_key }} --advertise-routes={{ ds.meta_data.network_router_cidr }}  --advertise-exit-node && break || echo "tailscale bootstrap failed, retrying after 5s..."; sleep 5; done
   - systemctl enable tailscaled
   - echo "Tailscale router config complete."
+  - echo "Configuring all interfaces..."
+  - |
+    cat << 'EOF' >> /etc/netplan/90-all-interfaces-dhcp.yaml
+    network:
+      version: 2
+      renderer: networkd
+      ethernets:
+        all-eths:
+          match:
+            name: "e*"
+          dhcp4: true
+          optional: true
+    EOF
+  - chmod 600 /etc/netplan/90-all-interfaces-dhcp.yaml
+  - netplan apply
 bootcmd:
   - echo "Configuring Tailscale and linux performance improvements for subnet routers and exit nodes..."
   - ethtool -K $(ip -o route get 8.8.8.8 | cut -f 5 -d " ") rx-udp-gro-forwarding on rx-gro-list off
