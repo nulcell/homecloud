@@ -1,5 +1,33 @@
 # HomeCloud Environment Setup
 
+## Project Structure
+
+### Domains
+
+Generally avoid using the root domain for activities other than creating images, ISOs, roles, offerings, accounts, and projects.
+
+| Name | Network Domain |
+|------|----------------|
+| `homecloud` | homecloud.internal |
+
+### Accounts & Users
+
+Create the homecloud account that will own the resources for each environment. You can also create additional users under this account as needed.
+
+| Role | Username | Domain | Account | Timezone |
+|------|----------|--------|---------|----------|
+| Domain Admin | `homecloud-admin` | homecloud | `homecloud` | Europe/Amsterdam |
+
+### Projects
+
+Sign in as the `homecloud-admin` user to create the following projects under the `homecloud` domain. These projects will own the resources for each environment.
+
+| Name | Description |
+|------|-------------|
+| `homecloud-prod` | Homecloud Production Environment |
+| `homecloud-sand` | Homecloud Sandbox Environment |
+| `homecloud-dev` | Homecloud Development Environment |
+
 ## Networking Configuration
 
 ### VPC Networks
@@ -12,25 +40,25 @@ You should be creating these in a project under a dedicated domain (or root doma
 - Use the following CIDR with the following subnets (use custom ACLs depending on the services being deployed in each network):
   - VPC CIDR: `10.0.0.0/24` (i.e., 256 IP addresses)
     - Network 1:
-      - name: `net-1` (the vpc name will be prefixed automatically when **vpc.tier.name.prepend** is set to true in global settings)
+      - name: `pub-net-1` (the vpc name will be prefixed automatically when **vpc.tier.name.prepend** is set to true in global settings)
       - network offering: `acs.net.vpc.core-public-lb` (VPC Network with VpcVirtualRouter and Public LB)
       - gateway: `10.0.0.1`
       - netmask: `255.255.255.192` (i.e., /26)
       - acl: default-allow
     - Network 2:
-      - name: `net-2` (the vpc name will be prefixed automatically when **vpc.tier.name.prepend** is set to true in global settings)
+      - name: `priv-net-1` (the vpc name will be prefixed automatically when **vpc.tier.name.prepend** is set to true in global settings)
       - network offering: `acs.net.vpc.core-internal-lb-vm` (VPC Network with VpcVirtualRouter and Internal LB VM)
       - gateway: `10.0.0.65`
       - netmask: `255.255.255.192` (i.e., /26)
       - acl: default-allow
     - Network 3:
-      - name: `net-3` (the vpc name will be prefixed automatically when **vpc.tier.name.prepend** is set to true in global settings)
+      - name: `priv-net-2` (the vpc name will be prefixed automatically when **vpc.tier.name.prepend** is set to true in global settings)
       - network offering: `acs.net.vpc.core-internal-lb-vm` (VPC Network with VpcVirtualRouter and Internal LB VM)
       - gateway: `10.0.0.129`
       - netmask: `255.255.255.192` (i.e., /26)
       - acl: default-allow
     - Network 4:
-      - name: `net-4` (the vpc name will be prefixed automatically when **vpc.tier.name.prepend** is set to true in global settings)
+      - name: `priv-net-3` (the vpc name will be prefixed automatically when **vpc.tier.name.prepend** is set to true in global settings)
       - network offering: `acs.net.vpc.core-internal-lb-vm` (VPC Network with VpcVirtualRouter and Internal LB VM)
       - gateway: `10.0.0.193`
       - netmask: `255.255.255.192` (i.e., /26)
@@ -38,9 +66,9 @@ You should be creating these in a project under a dedicated domain (or root doma
 
 | Name | Description | Network Domain | VPC Offering | IPv4 address for the VR in this Network | Networks |
 |------|-------------|----------------|--------------|-----------------------------------------|----------|
-| `homecloud-vpc-prod` | HomeCloud VPC Production Network | homecloud-prod.internal | `acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2, Network 3, Network 4 |
-| `homecloud-vpc-sand` | HomeCloud VPC Sandbox Network | homecloud.internal | `acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2, Network 3, Network 4 |
-| `homecloud-vpc-dev` | HomeCloud VPC Development Network | homecloud-dev.internal | `acs.vpc.natted.core`/`acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2 |
+| `homecloud-vpc-prod` | Homecloud VPC Production Network | homecloud-prod.internal | `acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2, Network 3, Network 4 |
+| `homecloud-vpc-sand` (optional) | Homecloud VPC Sandbox Network | homecloud-sand.internal | `acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2, Network 3, Network 4 |
+| `homecloud-vpc-dev` | Homecloud VPC Development Network | homecloud-dev.internal | `acs.vpc.natted.core`/`acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2 |
 
 ### Kubernetes Cluster
 

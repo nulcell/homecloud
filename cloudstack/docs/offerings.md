@@ -18,18 +18,18 @@ Once all offerings have been created, disable the default offerings in CloudStac
 
 | Offering Name | Description | vCPU | CPU Speed (MHz) | RAM (MB) | Network Bandwidth (Mbps) | GPU (vGPU) | Compute only disk offering | Storage type | Provisioning type | Write-cache type | QoS type | Root disk size (GB) | Encrypt |
 |---------------|-------------|------|-----------------|----------|--------------------------|------------|---------------------------|--------------|-------------------|------------------|----------|--------------------|---------|
-| `acs.comp.gen.small` | General Purpose Small | 1 | 4000 | 1024 | 200 | none | true | Shared | Thin | No disk cache | None | 10 | true |
-| `acs.comp.gen.medium` | General Purpose Medium | 2 | 4000 | 2048 | 300 | none | true | Shared | Thin | No disk cache | None | 10 | true |
-| `acs.comp.gen.large` | General Purpose Large | 4 | 4000 | 4096 | 500 | none | true | Shared | Thin | No disk cache | None | 10 | true |
-| `acs.comp.gen.xlarge` | General Purpose xLarge | 8 | 4000 | 8192 | 500 | none | true | Shared | Thin | No disk cache | None | 10 | true |
-| `acs.comp.mem.small` | Memory Optimized Small | 1 | 4000 | 2048 | 200 | none | true | Shared | Thin | No disk cache | None | 10 | true |
-| `acs.comp.mem.medium` | Memory Optimized Medium | 2 | 4000 | 4096 | 300 | none | true | Shared | Thin | No disk cache | None | 10 | true |
-| `acs.comp.mem.large` | Memory Optimized Large | 4 | 4000 | 8192 | 500 | none | true | Shared | Thin | No disk cache | None | 10 | true |
-| `acs.comp.mem.xlarge` | Memory Optimized xLarge | 8 | 4000 | 16384 | 500 | none | true | Shared | Thin | No disk cache | None | 10 | true |
-| `acs.comp.ssd.small` | Storage Optimized Small | 1 | 4000 | 1024 | 200 | none | false | Local | Thin | No disk cache | None | 50 | true |
-| `acs.comp.ssd.medium` | Storage Optimized Medium | 2 | 4000 | 2048 | 300 | none | false | Local | Thin | No disk cache | None | 100 | true |
-| `acs.comp.ssd.large` | Storage Optimized Large | 4 | 4000 | 4096 | 500 | none | false | Local | Thin | No disk cache | None | 200 | true |
-| `acs.comp.ssd.xlarge` | Storage Optimized xLarge | 8 | 4000 | 8192 | 500 | none | false | Local | Thin | No disk cache | None | 400 | true |
+| `acs.comp.gen.small` | General Purpose Small | 1 | 4000 | 1024 | 200 | none | true | Shared | Thin | No disk cache | None | 30 | false |
+| `acs.comp.gen.medium` | General Purpose Medium | 2 | 4000 | 2048 | 300 | none | true | Shared | Thin | No disk cache | None | 50 | false |
+| `acs.comp.gen.large` | General Purpose Large | 4 | 4000 | 4096 | 500 | none | true | Shared | Thin | No disk cache | None | 100 | false |
+| `acs.comp.gen.xlarge` | General Purpose xLarge | 8 | 4000 | 8192 | 500 | none | true | Shared | Thin | No disk cache | None | 100 | false |
+| `acs.comp.mem.small` | Memory Optimized Small | 1 | 4000 | 2048 | 200 | none | true | Shared | Thin | No disk cache | None | 30 | false |
+| `acs.comp.mem.medium` | Memory Optimized Medium | 2 | 4000 | 4096 | 300 | none | true | Shared | Thin | No disk cache | None | 50 | false |
+| `acs.comp.mem.large` | Memory Optimized Large | 4 | 4000 | 8192 | 500 | none | true | Shared | Thin | No disk cache | None | 100 | false |
+| `acs.comp.mem.xlarge` | Memory Optimized xLarge | 8 | 4000 | 16384 | 500 | none | true | Shared | Thin | No disk cache | None | 100 | false |
+| `acs.comp.ssd.small` | Storage Optimized Small | 1 | 4000 | 1024 | 200 | none | false | Local | Thin | No disk cache | None | 30 | false |
+| `acs.comp.ssd.medium` | Storage Optimized Medium | 2 | 4000 | 2048 | 300 | none | false | Local | Thin | No disk cache | None | 50 | false |
+| `acs.comp.ssd.large` | Storage Optimized Large | 4 | 4000 | 4096 | 500 | none | false | Local | Thin | No disk cache | None | 100 | false |
+| `acs.comp.ssd.xlarge` | Storage Optimized xLarge | 8 | 4000 | 8192 | 500 | none | false | Local | Thin | No disk cache | None | 100 | false |
 
 - **General options across all offerings**:
   - **Offer HA**: true
@@ -45,18 +45,18 @@ Once all offerings have been created, disable the default offerings in CloudStac
 
 ```sh
 cmk
-create serviceoffering name="acs.comp.gen.small" displaytext="General Purpose Small" cpunumber=1 cpuspeed=4000 memory=1024 networkrate=200 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.gen.medium" displaytext="General Purpose Medium" cpunumber=2 cpuspeed=4000 memory=2048 networkrate=300 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.gen.large" displaytext="General Purpose Large" cpunumber=4 cpuspeed=4000 memory=4096 networkrate=500 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.gen.xlarge" displaytext="General Purpose xLarge" cpunumber=8 cpuspeed=4000 memory=8192 networkrate=500 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.mem.small" displaytext="Memory Optimized Small" cpunumber=1 cpuspeed=4000 memory=2048 networkrate=200 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.mem.medium" displaytext="Memory Optimized Medium" cpunumber=2 cpuspeed=4000 memory=4096 networkrate=300 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.mem.large" displaytext="Memory Optimized Large" cpunumber=4 cpuspeed=4000 memory=8192 networkrate=500 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.mem.xlarge" displaytext="Memory Optimized xLarge" cpunumber=8 cpuspeed=4000 memory=16384 networkrate=500 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.ssd.small" displaytext="Storage Optimized Small" cpunumber=1 cpuspeed=4000 memory=1024 networkrate=200 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.ssd.medium" displaytext="Storage Optimized Medium" cpunumber=2 cpuspeed=4000 memory=2048 networkrate=300 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.ssd.large" displaytext="Storage Optimized Large" cpunumber=4 cpuspeed=4000 memory=4096 networkrate=500 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local" provisioningtype="thin" diskofferingstrictness=false rootdisksize=200 encryptroot=true purgeresources=true
-create serviceoffering name="acs.comp.ssd.xlarge" displaytext="Storage Optimized xLarge" cpunumber=8 cpuspeed=4000 memory=8192 networkrate=500 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local" provisioningtype="thin" diskofferingstrictness=false rootdisksize=400 encryptroot=true purgeresources=true
+create serviceoffering name="acs.comp.gen.small" displaytext="General Purpose Small" cpunumber=1 cpuspeed=4000 memory=1024 networkrate=200 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.gen.medium" displaytext="General Purpose Medium" cpunumber=2 cpuspeed=4000 memory=2048 networkrate=300 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.gen.large" displaytext="General Purpose Large" cpunumber=4 cpuspeed=4000 memory=4096 networkrate=500 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.gen.xlarge" displaytext="General Purpose xLarge" cpunumber=8 cpuspeed=4000 memory=8192 networkrate=500 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.mem.small" displaytext="Memory Optimized Small" cpunumber=1 cpuspeed=4000 memory=2048 networkrate=200 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.mem.medium" displaytext="Memory Optimized Medium" cpunumber=2 cpuspeed=4000 memory=4096 networkrate=300 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.mem.large" displaytext="Memory Optimized Large" cpunumber=4 cpuspeed=4000 memory=8192 networkrate=500 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.mem.xlarge" displaytext="Memory Optimized xLarge" cpunumber=8 cpuspeed=4000 memory=16384 networkrate=500 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.ssd.small" displaytext="Storage Optimized Small" cpunumber=1 cpuspeed=4000 memory=1024 networkrate=200 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.ssd.medium" displaytext="Storage Optimized Medium" cpunumber=2 cpuspeed=4000 memory=2048 networkrate=300 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.ssd.large" displaytext="Storage Optimized Large" cpunumber=4 cpuspeed=4000 memory=4096 networkrate=500 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+create serviceoffering name="acs.comp.ssd.xlarge" displaytext="Storage Optimized xLarge" cpunumber=8 cpuspeed=4000 memory=8192 networkrate=500 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
 ```
   
 ## Disk Offerings
@@ -75,31 +75,31 @@ create serviceoffering name="acs.comp.ssd.xlarge" displaytext="Storage Optimized
 
 | Offering Name | Description | Storage type | Provisioning type | Encrypt | Disk size strictness | Custom disk size | Size (GB) | QoS type | Write-cache Type | Public | Zone |
 |---------------|-------------|--------------|-------------------|---------|----------------------|------------------|-----------|----------|------------------|--------|------|
-| `acs.disk.shared.custom` | Shared Storage Custom Size Disk | Shared | Thin | true | false | true | null | None | No Disk Cache | true | null |
-| `acs.disk.local.custom` | Local Storage Custom Size Disk | Local | Thin | true | false | true | null | None | No Disk Cache | true | null |
-| `acs.disk.shared.small` | Shared Storage Small Disk | Shared | Thin | true | false | false | 10 | None | No Disk Cache | true | null |
-| `acs.disk.shared.medium` | Shared Storage Medium Disk | Shared | Thin | true | false | false | 50 | None | No Disk Cache | true | null |
-| `acs.disk.shared.large` | Shared Storage Large Disk | Shared | Thin | true |false | false | 100 | None | No Disk Cache | true | null |
-| `acs.disk.shared.xlarge` | Shared Storage XLarge Disk | Shared | Thin | true | false | false | 200 | None | No Disk Cache | true | null |
-| `acs.disk.local.small` | Local Storage Small Disk | Local | Thin | true | false | false | 10 | None | No Disk Cache | true | null |
-| `acs.disk.local.medium` | Local Storage Medium Disk | Local | Thin | true | false | false | 50 | None | No Disk Cache | true | null |
-| `acs.disk.local.large` | Local Storage Large Disk | Local | Thin | true | false | false | 100 | None | No Disk Cache | true | null |
-| `acs.disk.local.xlarge` | Local Storage xLarge Disk | Local | Thin | true | false | false | 200 | None | No Disk Cache | true | null |
+| `acs.disk.shared.custom` | Shared Storage Custom Size Disk | Shared | Thin | false | false | true | null | None | No Disk Cache | true | null |
+| `acs.disk.local.custom` | Local Storage Custom Size Disk | Local | Thin | false | false | true | null | None | No Disk Cache | true | null |
+| `acs.disk.shared.small` | Shared Storage Small Disk | Shared | Thin | false | false | false | 30 | None | No Disk Cache | true | null |
+| `acs.disk.shared.medium` | Shared Storage Medium Disk | Shared | Thin | false | false | false | 50 | None | No Disk Cache | true | null |
+| `acs.disk.shared.large` | Shared Storage Large Disk | Shared | Thin | false |false | false | 100 | None | No Disk Cache | true | null |
+| `acs.disk.shared.xlarge` | Shared Storage XLarge Disk | Shared | Thin | false | false | false | 200 | None | No Disk Cache | true | null |
+| `acs.disk.local.small` | Local Storage Small Disk | Local | Thin | false | false | false | 30 | None | No Disk Cache | true | null |
+| `acs.disk.local.medium` | Local Storage Medium Disk | Local | Thin | false | false | false | 50 | None | No Disk Cache | true | null |
+| `acs.disk.local.large` | Local Storage Large Disk | Local | Thin | false | false | false | 100 | None | No Disk Cache | true | null |
+| `acs.disk.local.xlarge` | Local Storage xLarge Disk | Local | Thin | false | false | false | 200 | None | No Disk Cache | true | null |
 
 ### Create Disk Offerings via CLI
 
 ```sh
 cmk
-create diskoffering name="acs.disk.shared.custom" displaytext="Shared Storage Custom Size Disk" storagetype="shared" customdisksize=true disksizeStrictness=false encrypt=true ispublic=true qostype="None" cachemode="none" customized=true
-create diskoffering name="acs.disk.local.custom" displaytext="Local Storage Custom Size Disk" storagetype="local" customdisksize=true disksizeStrictness=false encrypt=true ispublic=true qostype="None" cachemode="none" customized=true
-create diskoffering name="acs.disk.shared.small" displaytext="Shared Storage Small Disk" storagetype="shared" disksize=10 customdisksize=false disksizeStrictness=false encrypt=true ispublic=true qostype="None" cachemode="none"
-create diskoffering name="acs.disk.shared.medium" displaytext="Shared Storage Medium Disk" storagetype="shared" disksize=50 customdisksize=false disksizeStrictness=false encrypt=true ispublic=true qostype="None" cachemode="none"
-create diskoffering name="acs.disk.shared.large" displaytext="Shared Storage Large Disk" storagetype="shared" disksize=100 customdisksize=false disksizeStrictness=false encrypt=true ispublic=true qostype="None" cachemode="none"
-create diskoffering name="acs.disk.shared.xlarge" displaytext="Shared Storage XLarge Disk" storagetype="shared" disksize=200 customdisksize=false disksizeStrictness=false encrypt=true ispublic=true qostype="None" cachemode="none"
-create diskoffering name="acs.disk.local.small" displaytext="Local Storage Small Disk" storagetype="local" disksize=10 customdisksize=false disksizeStrictness=false encrypt=true ispublic=true qostype="None" cachemode="none"
-create diskoffering name="acs.disk.local.medium" displaytext="Local Storage Medium Disk" storagetype="local" disksize=50 customdisksize=false disksizeStrictness=false encrypt=true ispublic=true qostype="None" cachemode="none"
-create diskoffering name="acs.disk.local.large" displaytext="Local Storage Large Disk" storagetype="local" disksize=100 customdisksize=false disksizeStrictness=false encrypt=true ispublic=true qostype="None" cachemode="none"
-create diskoffering name="acs.disk.local.xlarge" displaytext="Local Storage xLarge Disk" storagetype="local" disksize=200 customdisksize=false disksizeStrictness=false encrypt=true ispublic=true qostype="None" cachemode="none"
+create diskoffering name="acs.disk.shared.custom" displaytext="Shared Storage Custom Size Disk" storagetype="shared" customdisksize=true disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none" customized=true
+create diskoffering name="acs.disk.local.custom" displaytext="Local Storage Custom Size Disk" storagetype="local" customdisksize=true disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none" customized=true
+create diskoffering name="acs.disk.shared.small" displaytext="Shared Storage Small Disk" storagetype="shared" disksize=30 customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
+create diskoffering name="acs.disk.shared.medium" displaytext="Shared Storage Medium Disk" storagetype="shared" disksize=50 customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
+create diskoffering name="acs.disk.shared.large" displaytext="Shared Storage Large Disk" storagetype="shared" disksize=100 customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
+create diskoffering name="acs.disk.shared.xlarge" displaytext="Shared Storage XLarge Disk" storagetype="shared" disksize=200 customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
+create diskoffering name="acs.disk.local.small" displaytext="Local Storage Small Disk" storagetype="local" disksize=30 customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
+create diskoffering name="acs.disk.local.medium" displaytext="Local Storage Medium Disk" storagetype="local" disksize=50 customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
+create diskoffering name="acs.disk.local.large" displaytext="Local Storage Large Disk" storagetype="local" disksize=100 customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
+create diskoffering name="acs.disk.local.xlarge" displaytext="Local Storage xLarge Disk" storagetype="local" disksize=200 customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
 ```  
 
 ## Network Offerings

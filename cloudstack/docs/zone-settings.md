@@ -41,7 +41,7 @@
   - **Pod**:
     - Description: Each Zone must contain one or more Pods. We will add the first pod now. A pod contains hosts and primary storage servers, which you will add in a later step. First, configure a range of reserved IP addresses for CloudStack's internal management traffic. The reserved IP range must be unique for each zone in the cloud.
     - Values:
-      - Name: `pod-homecloud-0`
+      - Name: `pod-homecloud`
       - Reserved system gateway: `10.10.31.254` (Replace with your network gateway)
       - Reserved system netmask: `255.255.240.0` (Replace with your network netmask, this is an example for a /20 subnet)
       - Start reserved system IP: `10.10.21.1`
@@ -138,7 +138,7 @@
   - **Pod**:
     - Description: Each Zone must contain one or more Pods. We will add the first pod now. A pod contains hosts and primary storage servers, which you will add in a later step. First, configure a range of reserved IP addresses for CloudStack's internal management traffic. The reserved IP range must be unique for each zone in the cloud.
     - Values:
-      - Name: `pod-homecloud-0`
+      - Name: `pod-homecloud`
       - Reserved system gateway: `10.10.31.254` (Replace with your network gateway)
       - Reserved system netmask: `255.255.240.0` (Replace with your network netmask, this is an example for a /20 subnet)
       - Start reserved system IP: `10.10.21.1`
@@ -162,7 +162,7 @@
   - **Clusters**:
     - Description: Each Pod must contain one or more Clusters. We will add the first cluster now. A cluster provides a way to group hosts. The hosts in a cluster all have identical hardware, run the same hypervisor, are on the same subnet, and access the same shared storage. Each cluster consists of one or more hosts and one or more primary storage servers.
     - Values:
-      - Name: `cluster-homecloud-0`
+      - Name: `cluster-homecloud`
       - Arch: AMD 64 bit (x86_64)
   - **IP Address (Host)**:
     - Description: Each Cluster must contain at least one host (computer) for guest Instances to run on. We will add the first host now. For a host to function in CloudStack, you must install hypervisor software on the host, assign an IP address to the host, and ensure the host is connected to the CloudStack management server. Give the host's DNS or IP address, the user name (usually root) and password, and any labels you use to categorize hosts.
@@ -173,7 +173,7 @@
   - **Primary Storage**:
     - Description: Each Cluster must contain one or more primary storage servers. We will add the first one now. Primary storage contains the disk volumes for all the Instances running on hosts in the cluster. Use any standards-compliant protocol that is supported by the underlying hypervisor.
     - Values:
-      - Name: `primary-nfs-storage-zone-homecloud-0`
+      - Name: `primary-nfs-zone-homecloud`
       - Scope: `Zone`
       - Protocol: `nfs`
       - Server: `acs-node-0` (Replace with the actual NFS server hostname or IP)
@@ -183,7 +183,7 @@
     - Description: Each Zone must have at least one NFS or secondary storage server. We will add the first one now. Secondary storage stores Instance Templates, ISO images, and Instance disk volume Snapshots. This server must be available to all hosts in the zone.
     - Values:
       - Provider: `nfs`
-      - Name: `secondary-nfs-storage-zone-homecloud-0`
+      - Name: `secondary-nfs-zone-homecloud`
       - Server: `acs-node-0` (Replace with the actual NFS server hostname or IP)
       - Path: `/export/secondary` (Replace with the actual export path on the NFS server)
 - **Launch and Enable Zone**
@@ -200,7 +200,7 @@
       - Access the CloudStack UI as an administrator.
       - Navigate to "Infrastructure > Object Storage".
       - Add your MinIO server details, including the endpoint URL, access key, secret key, and bucket name. For example:
-        - Name: `minio-object-storage`
+        - Name: `minio-local`
         - Endpoint URL: `http://<your-minio-server-ip>:9000` (replace with your MinIO server address)
         - Access Key: `your-admin-username`
         - Secret Key: `your-admin-password`

@@ -78,3 +78,6 @@ terraform.rc
 
 # Helm
 Chart.lock
+
+# drawio
+*.bkp
