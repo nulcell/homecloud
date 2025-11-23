@@ -1,0 +1,57 @@
+jellyfin:
+  image:
+    repository: docker.io/jellyfin/jellyfin
+    pullPolicy: IfNotPresent
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #     - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+  # -- Ingress configuration. See: https://kubernetes.io/docs/concepts/services-networking/ingress/
+  ingress:
+    enabled: false
+    className: ""
+    annotations:
+      kubernetes.io/ingress.class: cilium
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: media-server.local
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+  # -- Resource requests and limits for the Jellyfin container.
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  persistence:
+    config:
+      # -- set to false to use emptyDir
+      enabled: true
+      accessMode: ReadWriteOnce
+      size: 5Gi
+      # -- Custom annotations to be added to the PVC
+      annotations: {}
+      # -- If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner.
+      storageClass: ""
+      ## -- Use an existing PVC for this mount
+      # existingClaim: ''
+    media:
+      # -- set to false to use emptyDir
+      enabled: true
+      # -- Type of volume for media storage (pvc, hostPath, emptyDir). If 'enabled' is false, 'emptyDir' is used regardless of this setting.
+      type: pvc
+      # -- Path on the host node for media storage, only used if type is 'hostPath'.
+      hostPath: ""
+      # -- PVC specific settings, only used if type is 'pvc'.
+      accessMode: ReadWriteOnce
+      size: 50Gi

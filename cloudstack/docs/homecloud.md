@@ -174,7 +174,7 @@ Post-deployment steps:
 
   ```sh
   helm dependency update ./k8s/apps/traefik
-  helm install traefik ./k8s/apps/traefik --namespace traefik --create-namespace
+  helm upgrade --install traefik ./k8s/apps/traefik --namespace traefik --create-namespace
   ```
 
   OR
@@ -204,3 +204,10 @@ Post-deployment steps:
   ```
 
   - You can view the `longhorn` dashboard with `kubectl proxy` at `http://localhost:8001/api/v1/namespaces/longhorn-system/services/http:longhorn-frontend:http/proxy/#/dashboard`
+
+- Install `media-server` app via Helm. Access the `media-server` app at `http://<LOAD_BALANCER_IP>/` (you can get the Load Balancer IP from CloudStack UI or via `kubectl get svc -n media-server`)
+
+  ```sh
+  helm dependency update ./k8s/apps/media-server
+  helm upgrade --install media-server ./k8s/apps/media-server --namespace media-server --create-namespace
+  ```

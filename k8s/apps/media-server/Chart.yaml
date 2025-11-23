@@ -1,0 +1,7 @@
+apiVersion: v2
+name: media-server
+version: 1.0.0
+dependencies:
+  - name: jellyfin
+    version: 2.5.0
+    repository: https://jellyfin.github.io/jellyfin-helm
