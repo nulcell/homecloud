@@ -4,8 +4,13 @@ cilium:
   policyEnforcementMode: "default"
   ipam:
     mode: cluster-pool # kubernetes or cluster-pool (default is cluster-pool)
-    # operator:
-    #   clusterPoolIPv4PodCIDRList: ["10.147.0.0/16"]
+    operator:
+      clusterPoolIPv4PodCIDRList: ["10.128.0.0/16"]
+      clusterPoolIPv4MaskSize: 24
+  ipv4:
+    enabled: true
+  ipv6:
+    enabled: false
   securityContext:
     capabilities:
       ciliumAgent:
@@ -24,24 +29,27 @@ cilium:
         - NET_ADMIN
         - SYS_ADMIN
         - SYS_RESOURCE
-  cgroup:
-    hostRoot: /sys/fs/cgroup
-    autoMount:
-      enabled: false
   bgpControlPlane:
-    # -- Enables the BGP control plane.
-    enabled: false
-  # Configure Cilium Ingress Controller
+    enabled: true
+  encryption:
+    # -- Enable transparent network encryption.
+    enabled: true
+    # -- Encryption method. Can be either ipsec or wireguard.
+    type: wireguard
+    # -- Enable encryption for pure node to node traffic.
+    # This option is only effective when encryption.type is set to "wireguard".
+    nodeEncryption: true
+  k8sNetworkPolicy:
+    # -- Enable support for K8s NetworkPolicy
+    enabled: true
   ingressController:
-    enabled: false
+    enabled: true
     default: false
     loadbalancerMode: dedicated # dedicated or shared
-  # Configure Cilium Gateway API
   gatewayAPI:
     enabled: false
     enableAlpn: false
     enableAppProtocol: false
-  # Configure Hubble
   hubble:
     enabled: true
     relay:
@@ -49,4 +57,13 @@ cilium:
     ui:
       enabled: true
   l2announcements:
+    enabled: true
+  l2podAnnouncements:
+    enabled: true
+    interface: eth0
+  l7Proxy: true
+  egressGateway:
+    # -- Enables egress gateway to redirect and SNAT the traffic that leaves the cluster.
+    enabled: false
+  envoy:
     enabled: true
