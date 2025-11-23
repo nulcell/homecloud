@@ -119,7 +119,7 @@
 
 - **endpoint.url**:
   - Description: The endpoint URL for the management server.
-  - Value: `http://acs-node-0:8080/client/api`  # Set to the management server or load balancer URL
+  - Value: `http://10.10.16.60:8080/client/api`  # Set to the management server or load balancer URL (it should be publicly resolvable if it a hostname and not an IP)
 - **store.download.follow.redirects**:
   - Description: Whether HTTP redirect is followed during store downloads for objects such as template, volume etc.
   - Value: true

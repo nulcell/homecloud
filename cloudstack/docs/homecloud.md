@@ -171,7 +171,7 @@ Post-deployment steps:
   helm install traefik traefik/traefik --namespace traefik --create-namespace --version 37.3.0
   ```
 
-- Install `knative` via Helm:
+- (Optional) Install `knative` via Helm if you need serverless capabilities:
 
   ```sh
   helm repo add knative-operator https://knative.github.io/operator 
@@ -181,7 +181,7 @@ Post-deployment steps:
   kubectl apply -f https://raw.githubusercontent.com/nulcell/homecloud/refs/heads/main/k8s/apps/knative/templates/knative-eventing.yaml
   ```
 
-- If not using CloudStack CSI (not recommended), install `longhorn` via Helm (note that the kubernetes hosts need to have certain packages installed as defined in the [docs](https://longhorn.io/docs/1.10.1/deploy/install/#installation-requirements), so ideally use a template with the packages already installed if you are to use `longhorn`):
+- (Optional & not recommended) If not using CloudStack CSI, install `longhorn` via Helm (note that the kubernetes hosts need to have certain packages installed as defined in the [docs](https://longhorn.io/docs/1.10.1/deploy/install/#installation-requirements), so ideally use a template with the packages already installed if you are to use `longhorn`):
 
   ```sh
   helm repo add longhorn https://charts.longhorn.io
