@@ -146,7 +146,12 @@ Here's a list of useful user data scripts that can be used to bootstrap instance
       cilium install --version {{ ds.meta_data.cilium_version }} --wait \
         --set kubeProxyReplacement=true \
         --set hubble.relay.enabled=true \
-        --set hubble.ui.enabled=true
+        --set hubble.ui.enabled=true \
+        --set gatewayAPI.enabled=true \
+        --set envoy.securityContext.capabilities.keepCapNetBindService=true \
+        --set l7Proxy=true \
+        --set ipam.mode=cluster-pool \
+        --set clusterPoolIPv4PodCIDR=10.128.0.0/16
       cilium status --wait
       EOF
     - chmod +x /home/cloud/cilium-install.sh
