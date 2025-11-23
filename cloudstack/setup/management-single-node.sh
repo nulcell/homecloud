@@ -82,7 +82,7 @@ echo "-> CloudStack Management Server installation completed."
 echo "-> Configure NFS Server..."
 apt-get install -y nfs-kernel-server quota
 echo "/export  *(rw,async,no_root_squash,no_subtree_check)" > /etc/exports
-mkdir -p /export/primary /export/secondary
+mkdir -p /export/primary /export/secondary /export/cks
 exportfs -a
 sed -i -e 's/^RPCMOUNTDOPTS="--manage-gids"$/RPCMOUNTDOPTS="-p 892 --manage-gids"/g' /etc/default/nfs-kernel-server
 sed -i -e 's/^STATDOPTS=$/STATDOPTS="--port 662 --outgoing-port 2020"/g' /etc/default/nfs-common
@@ -220,7 +220,7 @@ echo "6. Use simple VLAN config with vlan://untagged for network setup."
 echo "7. Restart the CloudStack Management service if needed: sudo systemctl restart cloudstack-management"
 echo "8. Run the following after onboarding any host to support UEFI VMs:"
 echo "   $ systemctl unmask libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tls.socket libvirtd-tcp.socket"
-echo "   $ systemctl stop libvirtd; systemctl start libvirtd-tls.socket; systemctl enable libvirtd-tls.socket"
+echo "   $ systemctl stop libvirtd; systemctl start libvirtd-tls.socket; systemctl restart cloudstack-agent; systemctl enable libvirtd-tls.socket"
 echo "   $ reboot now"
 echo "9. Enjoy your CloudStack environment!"
 echo ""
