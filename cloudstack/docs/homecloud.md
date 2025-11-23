@@ -134,18 +134,39 @@ Post-deployment steps:
     kubectl proxy
     ```
 
+- Configure the CloudStack CSI StorageClass as the default StorageClass (optional):
+
+  ```sh
+  kubectl apply -f - <<EOF
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: cloudstack-custom-disk-offering
+    annotations:
+      storageclass.kubernetes.io/is-default-class: "true"
+  provisioner: csi.cloudstack.apache.org
+  reclaimPolicy: Delete
+  volumeBindingMode: WaitForFirstConsumer
+  allowVolumeExpansion: false
+  parameters:
+    csi.cloudstack.apache.org/disk-offering-id: $(cmk list diskofferings state=active name=acs.disk.shared.custom | jq -r ".diskoffering[0].id")
+  EOF
+  ```
+
 - Verify Cilium is installed and running correctly:
 
   ```sh
   kubectl get pods -n kube-system | grep cilium
   kubectl get csidrivers.storage.k8s.io
+  kubectl get csinodes.storage.k8s.io
+  kubectl get storageclasses.storage.k8s.io
   cilium status
   ```
 
 - Install `traefik` via Helm:
 
   ```sh
-  helm repo add traefik traefik https://traefik.github.io/charts # or https://helm.traefik.io/traefik
+  helm repo add traefik https://traefik.github.io/charts # or https://helm.traefik.io/traefik
   helm repo update
   helm install traefik traefik/traefik --namespace traefik --create-namespace --version 37.3.0
   ```
@@ -160,7 +181,7 @@ Post-deployment steps:
   kubectl apply -f https://raw.githubusercontent.com/nulcell/homecloud/refs/heads/main/k8s/apps/knative/templates/knative-eventing.yaml
   ```
 
-- If not using CloudStack CNI, install `longhorn` via Helm (note that the kubernetes hosts need to have certain packages installed as defined in the [docs](https://longhorn.io/docs/1.10.1/deploy/install/#installation-requirements), so ideally use a template with the packages already installed if you are to use `longhorn`):
+- If not using CloudStack CSI (not recommended), install `longhorn` via Helm (note that the kubernetes hosts need to have certain packages installed as defined in the [docs](https://longhorn.io/docs/1.10.1/deploy/install/#installation-requirements), so ideally use a template with the packages already installed if you are to use `longhorn`):
 
   ```sh
   helm repo add longhorn https://charts.longhorn.io
