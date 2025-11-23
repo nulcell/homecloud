@@ -166,6 +166,13 @@ Post-deployment steps:
 - Install `traefik` via Helm:
 
   ```sh
+  helm dependency update ./k8s/apps/traefik
+  helm install traefik ./k8s/apps/traefik --namespace traefik --create-namespace
+  ```
+
+  OR
+
+  ```sh
   helm repo add traefik https://traefik.github.io/charts # or https://helm.traefik.io/traefik
   helm repo update
   helm install traefik traefik/traefik --namespace traefik --create-namespace --version 37.3.0
