@@ -9,6 +9,6 @@ metadata:
 provisioner: csi.cloudstack.apache.org
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
-allowVolumeExpansion: false
+allowVolumeExpansion: true
 parameters:
   csi.cloudstack.apache.org/disk-offering-id: b26fdc5f-1ca4-47b9-aaa4-80b610e5b652 # ID of `acs.disk.shared.custom` disk offering
