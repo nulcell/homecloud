@@ -163,7 +163,14 @@ Post-deployment steps:
   cilium status
   ```
 
-- Install `traefik` via Helm:
+- Update the Cilium configuration:
+
+  ```sh
+  helm dependency update ./k8s/apps/cilium
+  helm upgrade --install cilium ./k8s/apps/cilium --namespace kube-system
+  ```
+
+- (Optional) Install `traefik` via Helm (you can use cilium for most things):
 
   ```sh
   helm dependency update ./k8s/apps/traefik
