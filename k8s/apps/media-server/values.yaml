@@ -1,3 +1,4 @@
+ingress-class-name: cilium
 jellyfin:
   image:
     repository: docker.io/jellyfin/jellyfin
