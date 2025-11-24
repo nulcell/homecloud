@@ -24,8 +24,7 @@ runcmd: # don't add this line
     # Deploy Cilium
     kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
     cilium install --version {{ ds.meta_data.cilium_version }} --wait \
-      --set kubeProxyReplacement=true \
-      --set ipam.operator.clusterPoolIPv4PodCIDRList=["10.128.0.0/16"]
+      --set kubeProxyReplacement=true
     cilium status --wait
     EOF
   - chmod +x /home/cloud/cilium-install.sh
