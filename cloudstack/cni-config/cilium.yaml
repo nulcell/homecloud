@@ -24,7 +24,19 @@ runcmd: # don't add this line
     # Deploy Cilium
     kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
     cilium install --version {{ ds.meta_data.cilium_version }} --wait \
-      --set kubeProxyReplacement=true
+      --set kubeProxyReplacement=true \
+      --set bgpControlPlane.enabled=true \
+      --set encryption.enabled=true \
+      --set encryption.type=wireguard \
+      --set encryption.nodeEncryption=true \
+      --set gatewayAPI.enabled=true \
+      --set ingressController.enabled=true \
+      --set l2announcements.enabled=true \
+      --set l2podAnnouncements.enabled=true \
+      --set l7Proxy=true \
+      --set ipam.mode=cluster-pool \
+      --set ipam.operator.clusterPoolIPv4PodCIDRList={10.168.0.0/16} \
+      --set ipam.operator.clusterPoolIPv4MaskSize=24
     cilium status --wait
     EOF
   - chmod +x /home/cloud/cilium-install.sh
