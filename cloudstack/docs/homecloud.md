@@ -147,7 +147,7 @@ Post-deployment steps:
   provisioner: csi.cloudstack.apache.org
   reclaimPolicy: Delete
   volumeBindingMode: WaitForFirstConsumer
-  allowVolumeExpansion: false
+  allowVolumeExpansion: true
   parameters:
     csi.cloudstack.apache.org/disk-offering-id: $(cmk list diskofferings state=active name=acs.disk.shared.custom | jq -r ".diskoffering[0].id")
   EOF
