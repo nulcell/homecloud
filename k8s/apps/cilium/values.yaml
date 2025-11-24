@@ -4,9 +4,9 @@ cilium:
   policyEnforcementMode: "default"
   ipam:
     mode: cluster-pool # kubernetes or cluster-pool (default is cluster-pool)
-    operator:
-      clusterPoolIPv4PodCIDRList: ["10.128.0.0/16"]
-      clusterPoolIPv4MaskSize: 24
+    # operator:
+    #   clusterPoolIPv4PodCIDRList: ["10.128.0.0/16"]
+    #   clusterPoolIPv4MaskSize: 24
   ipv4:
     enabled: true
   ipv6:
@@ -51,11 +51,11 @@ cilium:
     enableAlpn: false
     enableAppProtocol: false
   hubble:
-    enabled: true
+    enabled: false
     relay:
-      enabled: true
+      enabled: false
     ui:
-      enabled: true
+      enabled: false
   l2announcements:
     enabled: true
   l2podAnnouncements:
