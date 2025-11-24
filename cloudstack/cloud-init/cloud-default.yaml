@@ -13,18 +13,20 @@ users:
     shell: /bin/bash
     ssh_authorized_keys:
       - {{ ds.meta_data.public_keys }}
-# runcmd:
-#   - |
-#     cat << 'EOF' >> /etc/netplan/90-all-interfaces-dhcp.yaml
-#     network:
-#       version: 2
-#       renderer: networkd
-#       ethernets:
-#         all-eths:
-#           match:
-#             name: "e*"
-#           dhcp4: true
-#           optional: true
-#     EOF
-#   - chmod 600 /etc/netplan/90-all-interfaces-dhcp.yaml
-#   - netplan apply
+runcmd:
+  - |
+    cat << 'EOF' >> /etc/netplan/90-all-interfaces-dhcp.yaml
+    network:
+      version: 2
+      renderer: networkd
+      ethernets:
+        all-eths:
+          match:
+            name: "e*"
+          dhcp4: true
+          optional: true
+    EOF
+  - chmod 600 /etc/netplan/90-all-interfaces-dhcp.yaml
+  - netplan apply
+---
+
