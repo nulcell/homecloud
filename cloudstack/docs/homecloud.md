@@ -20,6 +20,8 @@ Create the homecloud account that will own the resources for each environment. Y
 
 ### Projects
 
+**Note**: Due to a bug in the kubernetes `cloudstack-csi-driver:3.0.0` where project-scoped resources are not returned correctly, it is recommended not to use projects for now. Instead, use accounts directly. Just ensure that the resources are organized properly using tags and/or naming conventions.
+
 Sign in as the `homecloud-admin` user to create the following projects under the `homecloud` domain. These projects will own the resources for each environment.
 
 | Name | Description |
@@ -103,9 +105,9 @@ Create a Kubernetes cluster in the environment VPC using whatever version. Pass 
 
 | Name | Description | Zone | Hypervisor | Kubernetes version | Compute Offering | Node root disk size (in GB) | Network | HA enabled | Cluster size (Worker nodes) | SSH key pair | Show advanced settings | Enable CloudStack CSI Driver | Service Offering for Control Nodes | Template for Control Nodes | Service Offering for Worker Nodes | Template for Worker Nodes | Etcd Nodes | Service Offering for etcd Nodes | Template for etcd Nodes | CNI Configuration | CNI Configuration Parameters | Auto Scaling  | Min Nodes | Max Nodes |
 |------|-------------|------|------------|--------------------|------------------|-----------------------------|---------|------------|------------|---------------------------|--------------|------------------------|-------------------------------|----------------------------|-----------------------------|----------------------------|-------------------------|------------|------------------------------|-------------------------|-------------------|--------------|----------|----------|
-| `homecloud-cks-cluster-prod` | Homecloud Production Kubernetes Cluster | `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 200 | homecloud-vpc-prod_net-1 | true | 5 | _your-ssh-key_ | true | true | acs.comp.mem.medium | None | acs.comp.mem.medium | None | 3 | acs.comp.mem.medium | None | cilium | cilium_version: `1.18.2` | true | 3 | 10 |
-| `homecloud-cks-cluster-sand` | Homecloud Sandbox Kubernetes Cluster | `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 100 | homecloud-vpc-sand_net-1 | true | 3 | _your-ssh-key_ | true | true | acs.comp.mem.medium | None | acs.comp.mem.medium | None | 1 | acs.comp.mem.medium | None | cilium | cilium_version: `1.18.2` | true | 1 | 3 |
-| `homecloud-cks-cluster-dev` | Homecloud Development Kubernetes Cluster |  `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.small | 75 | homecloud-vpc-dev_net-1 | false | 2 | _your-ssh-key_ | true | true | acs.comp.gen.small | None | acs.comp.gen.small | None | 0 | N/A | N/A | cilium | cilium_version: `1.18.2` | false | N/A | N/A |
+| `homecloud-cks-cluster-prod` | Homecloud Production Kubernetes Cluster | `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 200 | homecloud-vpc-prod_net-1 | true | 5 | _your-ssh-key_ | true | true | acs.comp.mem.medium | None | acs.comp.mem.medium | None | 3 | acs.comp.mem.medium | None | cilium | cilium_version: `1.18.4` | true | 3 | 10 |
+| `homecloud-cks-cluster-sand` | Homecloud Sandbox Kubernetes Cluster | `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 100 | homecloud-vpc-sand_net-1 | true | 3 | _your-ssh-key_ | true | true | acs.comp.mem.medium | None | acs.comp.mem.medium | None | 1 | acs.comp.mem.medium | None | cilium | cilium_version: `1.18.4` | true | 1 | 3 |
+| `homecloud-cks-cluster-dev` | Homecloud Development Kubernetes Cluster |  `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 75 | homecloud-vpc-dev_net-1 | false | 2 | _your-ssh-key_ | true | true | acs.comp.gen.medium | None | acs.comp.gen.medium | None | 0 | N/A | N/A | cilium | cilium_version: `1.18.4` | false | N/A | N/A |
 
 Note:
 
@@ -190,14 +192,14 @@ Post-deployment steps:
   cilium status
   ```
 
-- Update the Cilium configuration:
+- (Optional) Update the Cilium configuration if needed:
 
   ```sh
   helm dependency update ./k8s/apps/cilium
   helm upgrade --install cilium ./k8s/apps/cilium --namespace kube-system
   ```
 
-- (Optional) Install `traefik` via Helm (you can use cilium for most things):
+- (Optional) Install `traefik` via Helm (you can also just use cilium ingress controller if you prefer):
 
   ```sh
   helm dependency update ./k8s/apps/traefik
@@ -222,7 +224,7 @@ Post-deployment steps:
   kubectl apply -f https://raw.githubusercontent.com/nulcell/homecloud/refs/heads/main/k8s/apps/knative/templates/knative-eventing.yaml
   ```
 
-- (Optional & not recommended) If not using CloudStack CSI, install `longhorn` via Helm (note that the kubernetes hosts need to have certain packages installed as defined in the [docs](https://longhorn.io/docs/1.10.1/deploy/install/#installation-requirements), so ideally use a template with the packages already installed if you are to use `longhorn`):
+- (Optional & not recommended) If not using CloudStack CSI because of the bug when using projects, install `longhorn` via Helm (note that the kubernetes hosts need to have certain packages installed as defined in the [docs](https://longhorn.io/docs/1.10.1/deploy/install/#installation-requirements), so ideally use a template with the packages already installed if you are to use `longhorn`):
 
   ```sh
   helm repo add longhorn https://charts.longhorn.io
