@@ -38,7 +38,7 @@ You should be creating these in a project under a dedicated domain (or root doma
 
 - Values for DNS1 & DNS2 can be left empty to use CloudStack's default DNS settings for the zone.
 - Use the following CIDR with the following subnets (use custom ACLs depending on the services being deployed in each network):
-  - VPC CIDR: `10.0.0.0/24` (i.e., 256 IP addresses)
+  - VPC CIDR: `/24` (i.e., 256 IP addresses)
     - Network 1:
       - name: `pub-net-1` (the vpc name will be prefixed automatically when **vpc.tier.name.prepend** is set to true in global settings)
       - network offering: `acs.net.vpc.core-public-lb` (VPC Network with VpcVirtualRouter and Public LB)
@@ -64,11 +64,38 @@ You should be creating these in a project under a dedicated domain (or root doma
       - netmask: `255.255.255.192` (i.e., /26)
       - acl: default-allow
 
-| Name | Description | Network Domain | VPC Offering | IPv4 address for the VR in this Network | Networks |
-|------|-------------|----------------|--------------|-----------------------------------------|----------|
-| `homecloud-vpc-prod` | Homecloud VPC Production Network | homecloud-prod.internal | `acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2, Network 3, Network 4 |
-| `homecloud-vpc-sand` (optional) | Homecloud VPC Sandbox Network | homecloud-sand.internal | `acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2, Network 3, Network 4 |
-| `homecloud-vpc-dev` | Homecloud VPC Development Network | homecloud-dev.internal | `acs.vpc.natted.core`/`acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2 |
+| Name | Description | CIDR | Network Domain | VPC Offering | IPv4 address for the VR in this Network | Networks |
+|------|-------------|------|----------------|--------------|-----------------------------------------|----------|
+| `homecloud-vpc-prod` | Homecloud VPC Production Network | 10.1.1.0/24 | homecloud-prod.internal | `acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2, Network 3, Network 4 |
+| `homecloud-vpc-sand` (optional) | Homecloud VPC Sandbox Network | 10.2.2.0/24 | homecloud-sand.internal | `acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2, Network 3, Network 4 |
+| `homecloud-vpc-dev` | Homecloud VPC Development Network | 10.0.0.0/24 | homecloud-dev.internal | `acs.vpc.natted.core`/`acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2 |
+
+### VPN
+
+To access the VPC networks securely, a Tailscale VPN can be set up on the VPC Virtual Router with a network interface in all the subnets. This allows secure access to the resources within the VPC networks without needing to assign public IP addresses to each resource.
+
+Create an instance in each VPC with the following configuration (generate an ephemeral single-use tailscale auth key from your Tailscale admin console for use during setup):
+
+| Name | Image Template | Compute Offering | Data Disk | Networks | SSH Key Pair | Stored User Data | network_router_cidr |
+|------|----------------|------------------|-----------|----------|--------------|------------------|
+| -------------------|
+| `homecloud-vpc-prod-vpn` | Ubuntu 24.04 - Noble | acs.comp.gen.small | None | _all_ | _your-ssh-key_ | `tailscale-router-debian` | `10.1.1.0/24` |
+| `homecloud-vpc-sand-vpn` | Ubuntu 24.04 - Noble | acs.comp.gen.small | None | _all_ | _your-ssh-key_ | `tailscale-router-debian` | `10.2.2.0/24` |
+| `homecloud-vpc-dev-vpn` | Ubuntu 24.04 - Noble | acs.comp.gen.small | None | _all_ | _your-ssh-key_ | `tailscale-router-debian` | `10.0.0.0/24` |
+
+### VPS
+
+Create a VPS instance in each environment for general use. Use the following configuration:
+
+| Name | Image Template | Compute Offering | Data Disk | Network | SSH Key Pair | Stored User Data |
+|------|----------------|------------------|-----------|---------|--------------|------------------|
+| `homecloud-vps-prod` | Ubuntu 24.04 - Noble | acs.comp.gen.medium | None | homecloud-vpc-prod_priv-net-1 | _your-ssh-key_ | `cloud-default` |
+| `homecloud-vps-sand` (optional) | Ubuntu 24.04 - Noble | acs.comp.gen.small | None | homecloud-vpc-sand_priv-net-1 | _your-ssh-key_ | `cloud-default` |
+| `homecloud-vps-dev` | Ubuntu 24.04 - Noble | acs.comp.gen.small | None | homecloud-vpc-dev_priv-net-1 | _your-ssh-key_ | `cloud-default` |
+
+### Windows Desktop VM
+
+Follow the guidelines in the [Windows Desktop VM Setup](./windows-setup.md) document to create a Windows Desktop VM in the prod or dev environment for occasional use.
 
 ### Kubernetes Cluster
 
@@ -76,9 +103,9 @@ Create a Kubernetes cluster in the environment VPC using whatever version. Pass 
 
 | Name | Description | Zone | Hypervisor | Kubernetes version | Compute Offering | Node root disk size (in GB) | Network | HA enabled | Cluster size (Worker nodes) | SSH key pair | Show advanced settings | Enable CloudStack CSI Driver | Service Offering for Control Nodes | Template for Control Nodes | Service Offering for Worker Nodes | Template for Worker Nodes | Etcd Nodes | Service Offering for etcd Nodes | Template for etcd Nodes | CNI Configuration | CNI Configuration Parameters | Auto Scaling  | Min Nodes | Max Nodes |
 |------|-------------|------|------------|--------------------|------------------|-----------------------------|---------|------------|------------|---------------------------|--------------|------------------------|-------------------------------|----------------------------|-----------------------------|----------------------------|-------------------------|------------|------------------------------|-------------------------|-------------------|--------------|----------|----------|
-| `homecloud-cks-cluster-prod` | Homecloud Production Kubernetes Cluster | `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 200 | homecloud-vpc-prod_net-1 | true | 3 | _your-ssh-key_ | true | true | acs.comp.mem.medium | None | acs.comp.mem.medium | None | 3 | acs.comp.mem.medium | None | cilium | cilium_version: `1.18.2` | true | 3 | 10 |
+| `homecloud-cks-cluster-prod` | Homecloud Production Kubernetes Cluster | `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 200 | homecloud-vpc-prod_net-1 | true | 5 | _your-ssh-key_ | true | true | acs.comp.mem.medium | None | acs.comp.mem.medium | None | 3 | acs.comp.mem.medium | None | cilium | cilium_version: `1.18.2` | true | 3 | 10 |
 | `homecloud-cks-cluster-sand` | Homecloud Sandbox Kubernetes Cluster | `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 100 | homecloud-vpc-sand_net-1 | true | 3 | _your-ssh-key_ | true | true | acs.comp.mem.medium | None | acs.comp.mem.medium | None | 1 | acs.comp.mem.medium | None | cilium | cilium_version: `1.18.2` | true | 1 | 3 |
-| `homecloud-cks-cluster-dev` | Homecloud Development Kubernetes Cluster |  `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.small | 75 | homecloud-vpc-dev_net-1 | false | 3 | _your-ssh-key_ | true | true | acs.comp.gen.small | None | acs.comp.gen.small | None | 0 | N/A | N/A | cilium | cilium_version: `1.18.2` | false | N/A | N/A |
+| `homecloud-cks-cluster-dev` | Homecloud Development Kubernetes Cluster |  `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.small | 75 | homecloud-vpc-dev_net-1 | false | 2 | _your-ssh-key_ | true | true | acs.comp.gen.small | None | acs.comp.gen.small | None | 0 | N/A | N/A | cilium | cilium_version: `1.18.2` | false | N/A | N/A |
 
 Note:
 
