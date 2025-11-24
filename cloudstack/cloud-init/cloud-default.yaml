@@ -28,5 +28,3 @@ runcmd:
     EOF
   - chmod 600 /etc/netplan/90-all-interfaces-dhcp.yaml
   - netplan apply
----
-
