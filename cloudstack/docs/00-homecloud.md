@@ -97,7 +97,7 @@ Create a VPS instance in each environment for general use. Use the following con
 
 ### Windows Desktop VM
 
-Follow the guidelines in the [Windows Desktop VM Setup](./windows-setup.md) document to create a Windows Desktop VM in the prod or dev environment for occasional use.
+Follow the guidelines in the [Windows Desktop VM Setup](./06-windows-setup.md) document to create a Windows Desktop VM in the prod or dev environment for occasional use.
 
 ### Kubernetes Cluster
 

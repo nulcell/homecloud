@@ -61,6 +61,6 @@ Before you begin, ensure you have the following prerequisites in place:
 6. **Post-Installation Configuration**:
     - Configure Windows RDP settings to allow remote access.
     - Follow the steps on [StackOverflow](https://superuser.com/questions/1715525/how-to-login-windows-remote-desktop-rdp-in-windows-11-when-microsoft-account-a) to set up RDP with a Microsoft account.
-        - Run the following command in PowerShell, `irm https://get.activated.win | iex` and select option 1.
     - Activate Windows using [Microsoft Activation Scripts](https://massgrave.dev/)
+        - Run the following command in PowerShell, `irm https://get.activated.win | iex` and select option 1.
     - Install any additional software or updates as needed.
