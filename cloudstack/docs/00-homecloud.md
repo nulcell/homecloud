@@ -166,6 +166,12 @@ Post-deployment steps:
     kubectl proxy
     ```
 
+#### Cluster API (CAPI) Clusters with CKS
+
+Create Kubernetes clusters using Cluster API (CAPI) with CloudStack as the infrastructure provider. Follow the instructions in the [Cluster API README](../compute/clusterapi/README.md) to set up the management cluster and deploy workload clusters as needed.
+
+#### Post-deployment Processes
+
 - Configure the CloudStack CSI StorageClass as the default StorageClass (optional):
 
   ```sh
@@ -184,12 +190,6 @@ Post-deployment steps:
     csi.cloudstack.apache.org/disk-offering-id: $(cmk list diskofferings state=active name=acs.disk.shared.custom | jq -r ".diskoffering[0].id")
   EOF
   ```
-
-#### Cluster API (CAPI) Clusters with CKS
-
-Create Kubernetes clusters using Cluster API (CAPI) with CloudStack as the infrastructure provider. Follow the instructions in the [Cluster API README](../compute/clusterapi/README.md) to set up the management cluster and deploy workload clusters as needed.
-
-#### Post-deployment Processes
 
 - Verify Cilium is installed and running correctly:
 
