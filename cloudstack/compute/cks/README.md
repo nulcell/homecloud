@@ -72,3 +72,7 @@ __Note__:
 - If using the Cilium CNI image generator, ensure that `helm` sources are configured properly by following the instructions on [Helm](http://helm.sh/docs/intro/install/#from-apt-debianubuntu).
 
 The ISO can then be uploaded to CloudStack as a Kubernetes ISO image.
+
+## Creating a CKS Template
+
+WIP

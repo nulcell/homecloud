@@ -1,0 +1,83 @@
+## template: jinja
+#cloud-config
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+packages:
+  - neofetch
+# prettier-ignore
+users:
+  - name: cloud
+    doas: [permit nopass newsuper, deny newsuper as root]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - {{ ds.meta_data.public_keys }}
+# prettier-ignore
+runcmd:
+  - |
+    cat << 'EOF' >> /etc/netplan/90-all-interfaces-dhcp.yaml
+    network:
+      version: 2
+      renderer: networkd
+      ethernets:
+        all-eths:
+          match:
+            name: "e*"
+          dhcp4: true
+          optional: true
+    EOF
+  - chmod 600 /etc/netplan/90-all-interfaces-dhcp.yaml
+  - netplan apply
+  - echo "Installing docker..."
+  - curl -fsSL https://get.docker.com -o get-docker.sh
+  - sh get-docker.sh
+  - usermod -aG docker cloud
+  - systemctl enable docker
+  - systemctl start docker
+  - docker --version
+  - echo "Docker installed successfully"
+  - echo "Installing Go..."
+  - add-apt-repository -y ppa:longsleep/golang-backports
+  - apt-get update
+  - apt-get install -y golang-go
+  - go version
+  - echo "Go installed successfully"
+  - echo "Installing Kind..."
+  - |
+    # For AMD64 / x86_64
+    [ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.30.0/kind-linux-amd64
+    # For ARM64
+    [ $(uname -m) = aarch64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.30.0/kind-linux-arm64
+  - chmod +x ./kind
+  - mv ./kind /usr/local/bin/kind
+  - go install sigs.k8s.io/cloud-provider-kind@latest
+  - kind version
+  - echo "Kind installed successfully"
+  - echo "Creating kind cluster for ClusterAPI..."
+  - KUBECONFIG=/home/cloud/.kube/config kind create cluster --name cloudstack-clusterapi
+  - chmod 644 /home/cloud/.kube/config
+  - echo "Kind cluster created successfully"
+  - echo "Installing kubectl..."
+  - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+  - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+  - echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+  - install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+  - kubectl version --client
+  - echo "kubectl installed successfully"
+  - echo "Installing clusterctl..."
+  - curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.11.3/clusterctl-linux-amd64 -o clusterctl
+  - install -o root -g root -m 0755 clusterctl /usr/local/bin/clusterctl
+  - clusterctl version
+  - echo "clusterctl installed successfully"
+
+  - echo "Configure the kind cluster for CloudStack ClusterAPI..."
+  - echo "Creating CloudStack config file..."
+  - |
+    cat << EOF > /home/cloud/cloudstack-cloud-config
+    [Global]
+    api-url = {{ ds.meta_data.cloudstack.api_url }}
+    api-key = {{ ds.meta_data.cloudstack.api_key }}
+    secret-key = {{ ds.meta_data.cloudstack.secret_key }}
+    EOF
+  - echo "CloudStack config file created successfully"
