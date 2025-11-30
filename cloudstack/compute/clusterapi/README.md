@@ -190,6 +190,14 @@ clusterctl describe cluster homecloud-cks-dev
 kubectl config use-context homecloud-cks-dev-admin@homecloud-cks-dev
 ```
 
+## Updating a Workload Cluster
+
+WIP
+
+## Updating Workload Cluster Image Templates
+
+WIP
+
 ## Deleting a Workload Cluster
 
 To delete a workload cluster created using the management cluster ensure the management cluster context is set and the yaml file used to create the workload cluster is available, run the following command:
