@@ -80,5 +80,8 @@ terraform.rc
 Chart.lock
 kubernetes/charts/*/charts/
 
+# Kubernetes
+*.kubeconfig
+
 # drawio
 *.bkp
