@@ -30,7 +30,14 @@ Download the kubeconfig file for the management cluster after deployment and upd
 - cluster: `homecloud-cluster-api-management`
 - user: `capi-admin`
 
-Then import it to the existing kubeconfig using `kubectl konfig import -s ~/Downloads/kube.conf`.
+Then import it to the existing kubeconfig using:
+
+```sh
+kubectl config delete-context capi-admin@homecloud-cluster-api-management || true
+kubectl config delete-user capi-admin || true
+kubectl config delete-cluster homecloud-cluster-api-management || true
+kubectl konfig import -s ~/Downloads/kube.conf
+```
 
 ### Setup CloudStack Credentials Secret
 
@@ -110,6 +117,9 @@ clusterctl generate cluster homecloud-cks-dev \
     > cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
 kubectl apply -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
 clusterctl get kubeconfig homecloud-cks-dev > cloudstack/compute/clusterapi/homecloud-cks-dev.kubeconfig
+kubectl config delete-context homecloud-cks-dev-admin@homecloud-cks-dev || true
+kubectl config delete-user homecloud-cks-dev-admin || true
+kubectl config delete-cluster homecloud-cks-dev || true
 kubectl konfig import -s cloudstack/compute/clusterapi/homecloud-cks-dev.kubeconfig
 kubectl config use-context homecloud-cks-dev-admin@homecloud-cks-dev
 ```
@@ -127,6 +137,9 @@ clusterctl generate cluster homecloud-cks-prod \
     > cloudstack/compute/clusterapi/homecloud-cks-prod-cluster-spec.yaml
 kubectl apply -f cloudstack/compute/clusterapi/homecloud-cks-prod-cluster-spec.yaml
 clusterctl get kubeconfig homecloud-cks-prod > cloudstack/compute/clusterapi/homecloud-cks-prod.kubeconfig
+kubectl config delete-context homecloud-cks-prod-admin@homecloud-cks-prod || true
+kubectl config delete-user homecloud-cks-prod-admin || true
+kubectl config delete-cluster homecloud-cks-prod || true
 kubectl konfig import -s cloudstack/compute/clusterapi/homecloud-cks-prod.kubeconfig
 kubectl config use-context homecloud-cks-prod-admin@homecloud-cks-prod
 ```
@@ -156,7 +169,7 @@ kubectl apply -f cloudstack/compute/clusterapi/cloudstack-csi-driver.yaml
 rm cloudstack/compute/clusterapi/cloudstack-csi-driver.yaml
 
 # Install Cilium CNI with advanced features
-cilium install --version 1.18.4 --wait \
+cilium install --version 1.18.4 \
     --set kubeProxyReplacement=true \
     --set bgpControlPlane.enabled=true \
     --set encryption.enabled=true \
@@ -174,7 +187,6 @@ cilium status --wait
 
 kubectl config use-context capi-admin@homecloud-cluster-api-management
 clusterctl describe cluster homecloud-cks-dev
-
 kubectl config use-context homecloud-cks-dev-admin@homecloud-cks-dev
 ```
 
