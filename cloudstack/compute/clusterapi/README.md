@@ -196,7 +196,41 @@ WIP
 
 ## Updating Workload Cluster Image Templates
 
-WIP
+### Worker Nodes
+
+Follow the steps below to update a workload cluster created using the management cluster:
+
+1. Edit the yaml file used to create the workload cluster (e.g., `cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml`) and make a copy of the existing `CloudStackMachineTemplate` for the worker nodes with the new template, offering, and/or ssh key pair.
+2. Update the `CloudStackMachineTemplate` reference in the `MachineDeployment` resource section of the yaml file to point to the new template created in step 1.
+3. Apply the updated yaml file to the management cluster:
+
+    ```sh
+    kubectl --context capi-admin@homecloud-cluster-api-management apply -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
+    ```
+
+4. You can use `k9s` to monitor the rollout of the new worker nodes. Once the new nodes are ready, the cloudstack cloud controller will automatically drain and delete the old nodes.
+
+  ```sh
+  k9s --context homecloud-cks-dev-admin@homecloud-cks-dev
+  ```
+
+### Control Plane Nodes
+
+Follow the steps below to update the control plane nodes of a workload cluster created using the management cluster:
+
+1. Edit the yaml file used to create the workload cluster (e.g., `cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml`) and make a copy of the existing `CloudStackMachineTemplate` for the control plane nodes with the new template, offering, and/or ssh key pair.
+2. Update the `CloudStackMachineTemplate` reference in the `KubeadmControlPlane` resource section of the yaml file to point to the new template created in step 1.
+3. Apply the updated yaml file to the management cluster:
+
+    ```sh
+    kubectl --context capi-admin@homecloud-cluster-api-management apply -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
+    ```
+
+4. You can use `k9s` to monitor the rollout of the new control plane nodes. It is very likely that the old control plane will not be automatically drained and deleted, so you may need to manually drain and delete the old control plane nodes once the new nodes are ready. When looking at the `nodes` in `k9s`, the control plane nodes to be drained and deleted can be identified by their red color. Make sure to set the following parameters when draining the nodes to avoid issues, `force=true`, `ignore-daemonsets=true`, and `delete-emptydir-data=true` (the node would have already been drained during the deployment).
+
+  ```sh
+  k9s --context homecloud-cks-dev-admin@homecloud-cks-dev
+  ```
 
 ## Deleting a Workload Cluster
 
