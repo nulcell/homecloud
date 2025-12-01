@@ -1,4 +1,4 @@
-# CloudStack Cluster API
+# CloudStack Cluster API (CKS + Kubeadm)
 
 This directory contains the procedures and configurations necessary to set up a number of CloudStack kubernetes clusters using the Cluster API (CAPI) framework. Ensure that [clusterctl](https://cluster-api.sigs.k8s.io/user/quick-start.html#install-clusterctl) is installed on your local machine.
 

@@ -166,9 +166,11 @@ Post-deployment steps:
     kubectl proxy
     ```
 
-#### Cluster API (CAPI) Clusters with CKS
+#### Cluster API Clusters
 
-Create Kubernetes clusters using Cluster API (CAPI) with CloudStack as the infrastructure provider. Follow the instructions in the [Cluster API README](../compute/clusterapi/README.md) to set up the management cluster and deploy workload clusters as needed.
+Create Kubernetes clusters using Cluster API (CAPI) with CloudStack as the infrastructure provider. Follow the instructions to set up the management cluster and deploy workload clusters as needed.
+
+- [Cluster API with CKS + Kubeadm](../compute/clusterapi/cks-kubeadm.md)
 
 #### Post-deployment Processes
 
