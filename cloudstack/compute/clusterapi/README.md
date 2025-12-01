@@ -200,7 +200,7 @@ WIP
 
 Follow the steps below to update a workload cluster created using the management cluster:
 
-1. Edit the yaml file used to create the workload cluster (e.g., `cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml`) and make a copy of the existing `CloudStackMachineTemplate` for the worker nodes with the new template, offering, and/or ssh key pair.
+1. Edit the `CloudStackMachineTemplate` resource for the worker nodes yaml file used to create the workload cluster (e.g., `cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml`) with the new name and spec values for template, offering, and/or ssh key pair.
 2. Update the `CloudStackMachineTemplate` reference in the `MachineDeployment` resource section of the yaml file to point to the new template created in step 1.
 3. Apply the updated yaml file to the management cluster:
 
@@ -218,7 +218,7 @@ Follow the steps below to update a workload cluster created using the management
 
 Follow the steps below to update the control plane nodes of a workload cluster created using the management cluster:
 
-1. Edit the yaml file used to create the workload cluster (e.g., `cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml`) and make a copy of the existing `CloudStackMachineTemplate` for the control plane nodes with the new template, offering, and/or ssh key pair.
+1. Edit the `CloudStackMachineTemplate` resource for the control plane nodes in the yaml file used to create the workload cluster (e.g., `cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml`) with the new name and spec valudes for template, offering, and/or ssh key pair.
 2. Update the `CloudStackMachineTemplate` reference in the `KubeadmControlPlane` resource section of the yaml file to point to the new template created in step 1.
 3. Apply the updated yaml file to the management cluster:
 
