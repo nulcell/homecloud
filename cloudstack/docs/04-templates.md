@@ -18,10 +18,10 @@ General Options:
 - Public: true
 - Dynamically scalable: false (I don't believe this is supported by KVM anyway)
 
-| URL | Name | Description | Format | Root Disk Controller | OS Type | Template Type |Extractable | For CKS |
-|-----|------|-------------|--------|----------------------|---------|---------------|------------|---------|
-| [Ubuntu 24.04 - Noble](https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img) | Ubuntu 24.04 - Noble | Ubuntu 24.04 LTS Cloud Image | QCOW2 | scsi | Ubuntu 24.04 | USER | false | false |
-| [Debian 12 - Bookworm](https://cdimage.debian.org/images/cloud/bookworm/latest/debian-12-nocloud-amd64.qcow2) | Debian 12 - Bookworm | Debian 12 Bookworm | QCOW2 | scsi | Debian 12 | USER | false | false |
+| URL                                                                                                           | Name                 | Description                  | Format | Root Disk Controller | OS Type      | Template Type | Extractable | For CKS |
+| ------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------- | ------ | -------------------- | ------------ | ------------- | ----------- | ------- |
+| [Ubuntu 24.04 - Noble](https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img)         | Ubuntu 24.04 - Noble | Ubuntu 24.04 LTS Cloud Image | QCOW2  | scsi                 | Ubuntu 24.04 | USER          | false       | false   |
+| [Debian 12 - Bookworm](https://cdimage.debian.org/images/cloud/bookworm/latest/debian-12-nocloud-amd64.qcow2) | Debian 12 - Bookworm | Debian 12 Bookworm           | QCOW2  | scsi                 | Debian 12    | USER          | false       | false   |
 
 ## CKS Images
 
@@ -33,12 +33,12 @@ General Options:
 - Direct download: false
 - Arch: x86_64
 
-| Semantic version | Name | URL |
-|------------------|------|-----|
-| 1.32.5 | cks-v1.32.5-calico-x86_64 | [v1.32.5-calico-x86_64](https://download.cloudstack.org/cks/setup-v1.32.5-calico-x86_64.iso) |
-| 1.33.1 | cks-v1.33.1-calico_v3.30.0-x86_64 | [v1.33.1-calico-x86_64](https://download.cloudstack.org/cks/setup-v1.33.1-calico-x86_64.iso) |
-| 1.34.2 | cks-v1.34.2-calico-x86_64 | [v1.34.2-cilium-x86_64](https://nulcell-apache-cks-images.s3.eu-central-1.amazonaws.com/cks-v1.34.2-calico-x86_64.iso) |
-| 1.34.2 | cks-v1.34.2-cilium_v1.18.2-x86_64 | [v1.34.2-cilium-x86_64](https://nulcell-apache-cks-images.s3.eu-central-1.amazonaws.com/cks-v1.34.2-cilium-x86_64.iso) |
+| Semantic version | Name                              | URL                                                                                                                    |
+| ---------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 1.32.5           | cks-v1.32.5-calico-x86_64         | [v1.32.5-calico-x86_64](https://download.cloudstack.org/cks/setup-v1.32.5-calico-x86_64.iso)                           |
+| 1.33.1           | cks-v1.33.1-calico_v3.30.0-x86_64 | [v1.33.1-calico-x86_64](https://download.cloudstack.org/cks/setup-v1.33.1-calico-x86_64.iso)                           |
+| 1.34.2           | cks-v1.34.2-calico-x86_64         | [v1.34.2-cilium-x86_64](https://nulcell-apache-cks-images.s3.eu-central-1.amazonaws.com/cks-v1.34.2-calico-x86_64.iso) |
+| 1.34.2           | cks-v1.34.2-cilium_v1.18.2-x86_64 | [v1.34.2-cilium-x86_64](https://nulcell-apache-cks-images.s3.eu-central-1.amazonaws.com/cks-v1.34.2-cilium-x86_64.iso) |
 
 ## SSH Keys
 

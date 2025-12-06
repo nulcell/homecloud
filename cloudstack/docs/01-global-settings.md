@@ -12,12 +12,18 @@
 
 ### VM
 
+- cluster.cpu.allocated.capacity.disablethreshold:
+  - Description: Percentage (as a value between 0 and 1) of cpu utilization above which allocators will disable using the cluster for low cpu available. Keep the corresponding notification threshold lower than this to be notified beforehand.
+  - Value: 100
+- cluster.cpu.allocated.capacity.notificationthreshold:
+  - Description: Percentage (as a value between 0 and 1) of cpu utilization above which alerts will be sent about low cpu available.
+  - Value: 100
 - **enable.additional.vm.configuration**:
   - Description: Allow additional arbitrary configuration to vm
   - Value: true
 - **enable.dynamic.scale.vm**:
   - Description: Enables/Disables dynamically scaling a VM.
-  - Value: false (default but you can enable it as needed)
+  - Value: true (default but you can enable it as needed)
 - **instance.lease.enabled**:
   - Description: Indicates whether to enable the Instance lease, will be applicable only on instances created after lease is enabled. Disabling the feature cancels lease on existing instances with lease. Re-enabling feature will not cause lease expiry actions on grandfathered instances.
   - Value: true
@@ -75,7 +81,7 @@
 
 - **vpc.max.networks**:
   - Description: Maximum number of networks per vpc.
-  - Value: 8
+  - Value: 4
 - **vpc.tier.name.prepend**:
   - Description: Whether to prepend the VPC name to the VPC tier network name.
   - Value: true
@@ -119,7 +125,7 @@
 
 - **endpoint.url**:
   - Description: The endpoint URL for the management server.
-  - Value: `http://10.10.16.60:8080/client/api`  # Set to the management server or load balancer URL (it should be publicly resolvable if it a hostname and not an IP)
+  - Value: `http://10.10.17.10:8080/client/api` # Set to the management server or load balancer URL (it should be publicly resolvable if it a hostname and not an IP)
 - **store.download.follow.redirects**:
   - Description: Whether HTTP redirect is followed during store downloads for objects such as template, volume etc.
   - Value: true

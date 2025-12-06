@@ -66,9 +66,9 @@ helm upgrade --install cilium cilium/cilium --version ${CILIUM_VERSION} \
   --take-ownership
 ```
 
-__Note__:
+**Note**:
 
-- If you run into an error regarding `ctr not found`, ensure that `containerd` is installed on the  server where you are executing the script, by following the instructions on [Docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository).
+- If you run into an error regarding `ctr not found`, ensure that `containerd` is installed on the server where you are executing the script, by following the instructions on [Docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository).
 - If using the Cilium CNI image generator, ensure that `helm` sources are configured properly by following the instructions on [Helm](http://helm.sh/docs/intro/install/#from-apt-debianubuntu).
 
 The ISO can then be uploaded to CloudStack as a Kubernetes ISO image.

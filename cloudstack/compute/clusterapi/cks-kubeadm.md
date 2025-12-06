@@ -1,5 +1,23 @@
 # CloudStack Cluster API (CKS + Kubeadm)
 
+- [CloudStack Cluster API (CKS + Kubeadm)](#cloudstack-cluster-api-cks-kubeadm)
+  - [Managing Cluster API Image Templates](#managing-cluster-api-image-templates)
+    - [Pre-built Image Templates](#pre-built-image-templates)
+    - [Building Custom Image Templates](#building-custom-image-templates)
+  - [Cluster API Management Cluster Setup with CKS](#cluster-api-management-cluster-setup-with-cks)
+    - [Setup CloudStack Credentials Secret](#setup-cloudstack-credentials-secret)
+    - [Initialize the management cluster](#initialize-the-management-cluster)
+  - [Creating Workload Clusters](#creating-workload-clusters)
+    - [Dev Cluster](#dev-cluster)
+    - [Prod Cluster](#prod-cluster)
+    - [Post-deployment Processes](#post-deployment-processes)
+  - [Updating a Workload Cluster](#updating-a-workload-cluster)
+  - [Updating Workload Cluster Image Templates](#updating-workload-cluster-image-templates)
+    - [Worker Nodes](#worker-nodes)
+    - [Control Plane Nodes](#control-plane-nodes)
+  - [Deleting a Workload Cluster](#deleting-a-workload-cluster)
+  <!--toc:end-->
+
 This directory contains the procedures and configurations necessary to set up a number of CloudStack kubernetes clusters using the Cluster API (CAPI) framework. Ensure that [clusterctl](https://cluster-api.sigs.k8s.io/user/quick-start.html#install-clusterctl) is installed on your local machine.
 
 ## Managing Cluster API Image Templates
@@ -18,11 +36,11 @@ Follow the instructions in the [Cluster API Provider CloudStack documentation](h
 
 Create a management cluster using CKS with CloudStack as the infrastructure provider. This management cluster will be used to create and manage workload clusters for dev and prod environments.
 
-__Note__: Ensure that scheduled volume snapshots are enabled for the instances created by the management cluster to ensure data durability. You can migrate the cluster-api management cluster data to a different cluster later if needed for migrations, backups, disaster recovery, etc.
+**Note**: Ensure that scheduled volume snapshots are enabled for the instances created by the management cluster to ensure data durability. You can migrate the cluster-api management cluster data to a different cluster later if needed for migrations, backups, disaster recovery, etc.
 
-| Name | Description | Zone | Hypervisor | Kubernetes version | Compute Offering | Node root disk size (in GB) | Network | HA enabled | Cluster size (Worker nodes) | SSH key pair | Show advanced settings | Enable CloudStack CSI Driver | Service Offering for Control Nodes | Template for Control Nodes | Service Offering for Worker Nodes | Template for Worker Nodes | Etcd Nodes | Service Offering for etcd Nodes | Template for etcd Nodes | CNI Configuration | CNI Configuration Parameters |
-|------|-------------|------|------------|--------------------|------------------|-----------------------------|---------|------------|------------|---------------------------|--------------|------------------------|-------------------------------|----------------------------|-----------------------------|----------------------------|-------------------------|------------|------------------------------|-------------------------|-------------------|
-| `homecloud-cluster-api-management` | Homecloud Cluster API Management Cluster | `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 30 | homecloud-iso-net-shared | false | 1 | _your-ssh-key_ | true | false | None | None | None | None | None | null | null | cilium | cilium_version: `1.18.4` |
+| Name                               | Description                              | Zone             | Hypervisor | Kubernetes version | Compute Offering    | Node root disk size (in GB) | Network                  | HA enabled | Cluster size (Worker nodes) | SSH key pair   | Show advanced settings | Enable CloudStack CSI Driver | Service Offering for Control Nodes | Template for Control Nodes | Service Offering for Worker Nodes | Template for Worker Nodes | Etcd Nodes | Service Offering for etcd Nodes | Template for etcd Nodes | CNI Configuration | CNI Configuration Parameters |
+| ---------------------------------- | ---------------------------------------- | ---------------- | ---------- | ------------------ | ------------------- | --------------------------- | ------------------------ | ---------- | --------------------------- | -------------- | ---------------------- | ---------------------------- | ---------------------------------- | -------------------------- | --------------------------------- | ------------------------- | ---------- | ------------------------------- | ----------------------- | ----------------- | ---------------------------- |
+| `homecloud-cluster-api-management` | Homecloud Cluster API Management Cluster | `zone-homecloud` | KVM        | 1.34.2             | acs.comp.gen.medium | 30                          | homecloud-iso-net-shared | false      | 1                           | _your-ssh-key_ | true                   | false                        | None                               | None                       | None                              | None                      | None       | null                            | null                    | cilium            | cilium_version: `1.18.4`     |
 
 Download the kubeconfig file for the management cluster after deployment and update the following names for easier access:
 
@@ -204,15 +222,15 @@ Follow the steps below to update a workload cluster created using the management
 2. Update the `CloudStackMachineTemplate` reference in the `MachineDeployment` resource section of the yaml file to point to the new template created in step 1.
 3. Apply the updated yaml file to the management cluster:
 
-    ```sh
-    kubectl --context capi-admin@homecloud-cluster-api-management apply -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
-    ```
+   ```sh
+   kubectl --context capi-admin@homecloud-cluster-api-management apply -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
+   ```
 
 4. You can use `k9s` to monitor the rollout of the new worker nodes. Once the new nodes are ready, the cloudstack cloud controller will automatically drain and delete the old nodes.
 
-  ```sh
-  k9s --context homecloud-cks-dev-admin@homecloud-cks-dev
-  ```
+```sh
+k9s --context homecloud-cks-dev-admin@homecloud-cks-dev
+```
 
 ### Control Plane Nodes
 
@@ -222,15 +240,15 @@ Follow the steps below to update the control plane nodes of a workload cluster c
 2. Update the `CloudStackMachineTemplate` reference in the `KubeadmControlPlane` resource section of the yaml file to point to the new template created in step 1.
 3. Apply the updated yaml file to the management cluster:
 
-    ```sh
-    kubectl --context capi-admin@homecloud-cluster-api-management apply -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
-    ```
+   ```sh
+   kubectl --context capi-admin@homecloud-cluster-api-management apply -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
+   ```
 
 4. You can use `k9s` to monitor the rollout of the new control plane nodes. It is very likely that the old control plane will not be automatically drained and deleted, so you may need to manually drain and delete the old control plane nodes once the new nodes are ready. When looking at the `nodes` in `k9s`, the control plane nodes to be drained and deleted can be identified by their red color. Make sure to set the following parameters when draining the nodes to avoid issues, `force=true`, `ignore-daemonsets=true`, and `delete-emptydir-data=true` (the node would have already been drained during the deployment).
 
-  ```sh
-  k9s --context homecloud-cks-dev-admin@homecloud-cks-dev
-  ```
+```sh
+k9s --context homecloud-cks-dev-admin@homecloud-cks-dev
+```
 
 ## Deleting a Workload Cluster
 

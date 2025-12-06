@@ -17,12 +17,12 @@
 - **Zone Details**:
   - Description: A Zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more Pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.
   - Values:
-    - *Name: `zone-homecloud`
-    - *IPv4 DNS1: `10.10.31.254` # Replace with your preferred DNS server
-    - IPv4 DNS2: `8.8.8.8`  # Google Public DNS as secondary. You can also use `1.1.1.1` (Cloudflare) or another DNS server of your choice.
-    - *Internal DNS 1: `10.10.31.254` # Replace with your internal DNS server (e.g., your router or local DNS server)
+    - \*Name: `zone-homecloud`
+    - \*IPv4 DNS1: `10.10.31.254` # Replace with your preferred DNS server
+    - IPv4 DNS2: `8.8.8.8` # Google Public DNS as secondary. You can also use `1.1.1.1` (Cloudflare) or another DNS server of your choice.
+    - \*Internal DNS 1: `10.10.31.254` # Replace with your internal DNS server (e.g., your router or local DNS server)
     - Internal DNS 2: ``
-    - *Hypervisor: KVM
+    - \*Hypervisor: KVM
     - Network Offerings: Offering for Shared Security group enabled networks
     - Default network domain for Isolated networks: `homecloud.internal`
     - Dedicated: false
@@ -78,14 +78,14 @@
 - **Zone Details**:
   - Description: A Zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more Pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.
   - Values:
-    - *Name: `zone-homecloud`
-    - *IPv4 DNS1: `10.10.31.254` # Replace with your preferred DNS server
-    - IPv4 DNS2: `8.8.8.8`  # Google Public DNS as secondary. You can also use `1.1.1.1` (Cloudflare) or another DNS server of your choice.
+    - \*Name: `zone-homecloud`
+    - \*IPv4 DNS1: `10.10.31.254` # Replace with your preferred DNS server
+    - IPv4 DNS2: `8.8.8.8` # Google Public DNS as secondary. You can also use `1.1.1.1` (Cloudflare) or another DNS server of your choice.
     - IPv6 DNS1: ``
     - IPv6 DNS2: ``
-    - *Internal DNS 1: `10.10.31.254` # Replace with your internal DNS server (e.g., your router or local DNS server)
+    - \*Internal DNS 1: `10.10.31.254` # Replace with your internal DNS server (e.g., your router or local DNS server)
     - Internal DNS 2: ``
-    - *Hypervisor: KVM
+    - \*Hypervisor: KVM
     - Default network domain for Isolated networks: `homecloud.internal`
     - Default guest CIDR for Isolated Networks: `10.0.0.0/24`
     - Enable local storage for User Instances: true
@@ -100,14 +100,14 @@
 - **Zone Details**:
   - Description: A Zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more Pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.
   - Values:
-    - *Name: `zone-homecloud`
-    - *IPv4 DNS1: `10.10.31.254` # Replace with your preferred DNS server
-    - IPv4 DNS2: `8.8.8.8`  # Google Public DNS as secondary. You can also use `1.1.1.1` (Cloudflare) or another DNS server of your choice.
+    - \*Name: `zone-homecloud`
+    - \*IPv4 DNS1: `10.10.31.254` # Replace with your preferred DNS server
+    - IPv4 DNS2: `8.8.8.8` # Google Public DNS as secondary. You can also use `1.1.1.1` (Cloudflare) or another DNS server of your choice.
     - IPv6 DNS1: ``
     - IPv6 DNS2: ``
-    - *Internal DNS 1: `10.10.31.254` # Replace with your internal DNS server (e.g., your router or local DNS server)
+    - \*Internal DNS 1: `10.10.31.254` # Replace with your internal DNS server (e.g., your router or local DNS server)
     - Internal DNS 2: ``
-    - *Hypervisor: KVM
+    - \*Hypervisor: KVM
     - Network Offerings: Offering for Shared Security group enabled networks
     - Default network domain for Isolated networks: `homecloud.internal`
     - Dedicated: false
@@ -121,12 +121,15 @@
     - Description: When adding a Zone, you need to set up one or more physical networks. Each physical network can carry one or more types of traffic, with certain restrictions on how they may be combined. Add or remove one or more traffic types onto each physical network.
     - Values:
       - Network name: `cloudbr0`
-      - Isolation method: VLAN
-      - Traffic types (traffic label):
-        - Public (cloudbr0) (only if Security Groups are disabled)
-        - Management (cloudbr0)
-        - Storage (cloudbr0)
-        - Guest (cloudbr0)
+        - Isolation method: VLAN
+        - Traffic types (traffic label):
+          - Management (cloudbr0)
+      - Network name: cloudbr1
+        - Isolation method: VLAN
+        - Traffic types (traffic label):
+          - Public (cloudbr1) (only if Security Groups are disabled)
+          - Storage (cloudbr1)
+          - Guest (cloudbr1)
   - **Public Traffic** (only if Security Groups are disabled):
     - Description: Public traffic is generated when Instances in the cloud access the internet. Publicly-accessible IPs must be allocated for this purpose. End Users can use the CloudStack UI to acquire these IPs to implement NAT between their guest Network and their public Network. Provide at least one range of IP addresses for internet traffic.
     - Values:
@@ -167,7 +170,7 @@
   - **IP Address (Host)**:
     - Description: Each Cluster must contain at least one host (computer) for guest Instances to run on. We will add the first host now. For a host to function in CloudStack, you must install hypervisor software on the host, assign an IP address to the host, and ensure the host is connected to the CloudStack management server. Give the host's DNS or IP address, the user name (usually root) and password, and any labels you use to categorize hosts.
     - Values:
-      - Hostname/IP address: `acs-node-0` (Replace with the actual hostname or IP address of your hypervisor host)
+      - Hostname/IP address: `10.10.17.10` (Replace with the actual hostname or IP address of your hypervisor host)
       - Username: `root`
       - Authentication Method: System SSH Key
   - **Primary Storage**:
@@ -176,7 +179,7 @@
       - Name: `primary-nfs-zone-homecloud`
       - Scope: `Zone`
       - Protocol: `nfs`
-      - Server: `acs-node-0` (Replace with the actual NFS server hostname or IP)
+      - Server: `10.10.17.10` (Replace with the actual NFS server hostname or IP)
       - Path: `/export/primary` (Replace with the actual export path on the NFS server)
       - Provider: `DefaultPrimary`
   - **Secondary Storage**:
@@ -184,7 +187,7 @@
     - Values:
       - Provider: `nfs`
       - Name: `secondary-nfs-zone-homecloud`
-      - Server: `acs-node-0` (Replace with the actual NFS server hostname or IP)
+      - Server: `10.10.17.10` (Replace with the actual NFS server hostname or IP)
       - Path: `/export/secondary` (Replace with the actual export path on the NFS server)
 - **Launch and Enable Zone**
 - **Register Templates**:
@@ -197,21 +200,21 @@
     - Oracle Linux 9 (KVM) - `https://download.cloudstack.org/templates/cloud-images/oraclelinux/OL9U5_x86_64-kvm-b259.qcow2`
 - **Post-Setup Tasks**:
   1. Add object storage server (for example, MinIO):
-      - Access the CloudStack UI as an administrator.
-      - Navigate to "Infrastructure > Object Storage".
-      - Add your MinIO server details, including the endpoint URL, access key, secret key, and bucket name. For example:
-        - Name: `minio-local`
-        - Endpoint URL: `http://<your-minio-server-ip>:9000` (replace with your MinIO server address)
-        - Access Key: `your-admin-username`
-        - Secret Key: `your-admin-password`
-        - Size (in GB): `1000` (or as needed)
-      - Save the configuration and verify that CloudStack can connect to the MinIO server successfully.
+     - Access the CloudStack UI as an administrator.
+     - Navigate to "Infrastructure > Object Storage".
+     - Add your MinIO server details, including the endpoint URL, access key, secret key, and bucket name. For example:
+       - Name: `minio-local`
+       - Endpoint URL: `http://<your-minio-server-ip>:9000` (replace with your MinIO server address)
+       - Access Key: `your-admin-username`
+       - Secret Key: `your-admin-password`
+       - Size (in GB): `1000` (or as needed)
+     - Save the configuration and verify that CloudStack can connect to the MinIO server successfully.
 
   2. After adding a new host, ensure TLS is configured on the host by running the following command on the kvm host server (connect via SSH - `ssh cloud-admin@acs-node-0` - replace with your host address and user):
 
-      ```shell
-      sudo systemctl unmask libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tls.socket libvirtd-tcp.socket
-      sudo systemctl stop libvirtd; sudo systemctl start libvirtd-tls.socket; sudo systemctl enable libvirtd-tls.socket
-      sudo service cloudstack-agent restart
-      sudo reboot now
-      ```
+     ```shell
+     sudo systemctl unmask libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tls.socket libvirtd-tcp.socket
+     sudo systemctl stop libvirtd; sudo systemctl start libvirtd-tls.socket; sudo systemctl enable libvirtd-tls.socket
+     sudo service cloudstack-agent restart
+     sudo reboot now
+     ```

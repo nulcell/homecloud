@@ -6,16 +6,16 @@
 
 Generally avoid using the root domain for activities other than creating images, ISOs, roles, offerings, accounts, and projects.
 
-| Name | Network Domain |
-|------|----------------|
+| Name        | Network Domain     |
+| ----------- | ------------------ |
 | `homecloud` | homecloud.internal |
 
 ### Accounts & Users
 
 Create the homecloud account that will own the resources for each environment. You can also create additional users under this account as needed.
 
-| Role | Username | Domain | Account | Timezone |
-|------|----------|--------|---------|----------|
+| Role         | Username          | Domain    | Account     | Timezone         |
+| ------------ | ----------------- | --------- | ----------- | ---------------- |
 | Domain Admin | `homecloud-admin` | homecloud | `homecloud` | Europe/Amsterdam |
 
 ### Projects
@@ -24,10 +24,10 @@ Create the homecloud account that will own the resources for each environment. Y
 
 Sign in as the `homecloud-admin` user to create the following projects under the `homecloud` domain. These projects will own the resources for each environment.
 
-| Name | Description |
-|------|-------------|
-| `homecloud-prod` | Homecloud Production Environment |
-| `homecloud-dev` | Homecloud Development Environment |
+| Name             | Description                       |
+| ---------------- | --------------------------------- |
+| `homecloud-prod` | Homecloud Production Environment  |
+| `homecloud-dev`  | Homecloud Development Environment |
 
 ## Networking Configuration
 
@@ -65,18 +65,18 @@ You should be creating these in a project under a dedicated domain (or root doma
       - netmask: `255.255.255.192` (i.e., /26)
       - acl: default-allow
 
-| Name | Description | CIDR | Network Domain | VPC Offering | IPv4 address for the VR in this Network | Networks |
-|------|-------------|------|----------------|--------------|-----------------------------------------|----------|
-| `homecloud-vpc-prod` | Homecloud VPC Production Network | 10.1.1.0/24 | homecloud-prod.internal | `acs.vpc.natted.redundant-core` | N/A | Network 1, Network 2, Network 3, Network 4 |
-| `homecloud-vpc-dev` | Homecloud VPC Development Network | 10.0.0.0/24 | homecloud-dev.internal | `acs.vpc.natted.core` | N/A | Network 1, Network 2 |
+| Name                 | Description                       | CIDR        | Network Domain          | VPC Offering                    | IPv4 address for the VR in this Network | Networks                                   |
+| -------------------- | --------------------------------- | ----------- | ----------------------- | ------------------------------- | --------------------------------------- | ------------------------------------------ |
+| `homecloud-vpc-prod` | Homecloud VPC Production Network  | 10.1.1.0/24 | homecloud-prod.internal | `acs.vpc.natted.redundant-core` | N/A                                     | Network 1, Network 2, Network 3, Network 4 |
+| `homecloud-vpc-dev`  | Homecloud VPC Development Network | 10.0.0.0/24 | homecloud-dev.internal  | `acs.vpc.natted.core`           | N/A                                     | Network 1, Network 2                       |
 
 ### Isolated Networks
 
 Create general-purpose isolated networks for miscellaneous use for resources that do not need to be in the VPC networks or for those resources that are shared across multiple environments, such as a Cluster API management and the primary network for the tailscale router.
 
-| Name | Description | Zone | Owner Type | Domain | Account | Project | Network Domain | Network Offering | Gateway | Netmask |
-|------|-------------|------|------------|--------|---------|---------|----------------|------------------|---------|---------|
-| `homecloud-iso-net-shared` | Homecloud Shared Isolated Network | `zone-homecloud` | Account | homecloud | homecloud | N/A | homecloud.internal | `acs.net.isolated.core-redundant` | 10.2.2.1 | 255.255.255.0 |
+| Name                       | Description                       | Zone             | Owner Type | Domain    | Account   | Project | Network Domain     | Network Offering                  | Gateway  | Netmask       |
+| -------------------------- | --------------------------------- | ---------------- | ---------- | --------- | --------- | ------- | ------------------ | --------------------------------- | -------- | ------------- |
+| `homecloud-iso-net-shared` | Homecloud Shared Isolated Network | `zone-homecloud` | Account    | homecloud | homecloud | N/A     | homecloud.internal | `acs.net.isolated.core-redundant` | 10.2.2.1 | 255.255.255.0 |
 
 ### VPN
 
@@ -84,18 +84,18 @@ To access the VPC networks securely, a single Tailscale router can be set up wit
 
 Create an instance in with a single NIC in all networks that need to be accessed with the following configuration (generate an ephemeral single-use tailscale auth key from your Tailscale admin console for use during setup):
 
-| Name | Image Template | Compute Offering | Data Disk | Networks | SSH Key Pair | Stored User Data | network_router_cidr |
-|------|----------------|------------------|-----------|----------|--------------|------------------|---------------------|
-| `tailscale-vpn-router` | Ubuntu 24.04 - Noble | acs.comp.gen.small | None | _all_ | _your-ssh-key_ | `tailscale-router-debian` | `10.0.0.0/13` |
+| Name                   | Image Template       | Compute Offering   | Data Disk | Networks | SSH Key Pair   | Stored User Data          | network_router_cidr |
+| ---------------------- | -------------------- | ------------------ | --------- | -------- | -------------- | ------------------------- | ------------------- |
+| `tailscale-vpn-router` | Ubuntu 24.04 - Noble | acs.comp.gen.small | None      | _all_    | _your-ssh-key_ | `tailscale-router-debian` | `10.0.0.0/13`       |
 
 ### VPS
 
 Create a VPS instance in each environment for general use. Use the following configuration:
 
-| Name | Image Template | Compute Offering | Data Disk | Network | SSH Key Pair | Stored User Data |
-|------|----------------|------------------|-----------|---------|--------------|------------------|
-| `homecloud-vps-prod` | Ubuntu 24.04 - Noble | acs.comp.gen.medium | None | homecloud-vpc-prod_priv-net-1 | _your-ssh-key_ | `cloud-default` |
-| `homecloud-vps-dev` | Ubuntu 24.04 - Noble | acs.comp.gen.small | None | homecloud-vpc-dev_priv-net-1 | _your-ssh-key_ | `cloud-default` |
+| Name                 | Image Template       | Compute Offering    | Data Disk | Network                       | SSH Key Pair   | Stored User Data |
+| -------------------- | -------------------- | ------------------- | --------- | ----------------------------- | -------------- | ---------------- |
+| `homecloud-vps-prod` | Ubuntu 24.04 - Noble | acs.comp.gen.medium | None      | homecloud-vpc-prod_priv-net-1 | _your-ssh-key_ | `cloud-default`  |
+| `homecloud-vps-dev`  | Ubuntu 24.04 - Noble | acs.comp.gen.small  | None      | homecloud-vpc-dev_priv-net-1  | _your-ssh-key_ | `cloud-default`  |
 
 ### Windows Desktop VM
 
@@ -107,10 +107,10 @@ Follow the guidelines in the [Windows Desktop VM Setup](./06-windows-setup.md) d
 
 Create a Kubernetes cluster in the environment VPC using whatever version. Pass the relevant CNI configuration for Cilium with the most recent supported version.
 
-| Name | Description | Zone | Hypervisor | Kubernetes version | Compute Offering | Node root disk size (in GB) | Network | HA enabled | Cluster size (Worker nodes) | SSH key pair | Show advanced settings | Enable CloudStack CSI Driver | Service Offering for Control Nodes | Template for Control Nodes | Service Offering for Worker Nodes | Template for Worker Nodes | Etcd Nodes | Service Offering for etcd Nodes | Template for etcd Nodes | CNI Configuration | CNI Configuration Parameters | Auto Scaling  | Min Nodes | Max Nodes |
-|------|-------------|------|------------|--------------------|------------------|-----------------------------|---------|------------|------------|---------------------------|--------------|------------------------|-------------------------------|----------------------------|-----------------------------|----------------------------|-------------------------|------------|------------------------------|-------------------------|-------------------|--------------|----------|----------|
-| `homecloud-cks-prod` | Homecloud Production Kubernetes Cluster | `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 200 | homecloud-vpc-prod_net-1 | true | 5 | _your-ssh-key_ | true | true | acs.comp.mem.large | None | acs.comp.mem.medium | None | 3 | acs.comp.mem.medium | None | cilium | cilium_version: `1.18.4` | true | 3 | 10 |
-| `homecloud-cks-dev` | Homecloud Development Kubernetes Cluster |  `zone-homecloud` | KVM | 1.34.2 | acs.comp.gen.medium | 75 | homecloud-vpc-dev_net-1 | false | 2 | _your-ssh-key_ | true | true | acs.comp.mem.medium | None | acs.comp.gen.medium | None | 0 | N/A | N/A | cilium | cilium_version: `1.18.4` | false | N/A | N/A |
+| Name                 | Description                              | Zone             | Hypervisor | Kubernetes version | Compute Offering    | Node root disk size (in GB) | Network                  | HA enabled | Cluster size (Worker nodes) | SSH key pair   | Show advanced settings | Enable CloudStack CSI Driver | Service Offering for Control Nodes | Template for Control Nodes | Service Offering for Worker Nodes | Template for Worker Nodes | Etcd Nodes | Service Offering for etcd Nodes | Template for etcd Nodes | CNI Configuration | CNI Configuration Parameters | Auto Scaling | Min Nodes | Max Nodes |
+| -------------------- | ---------------------------------------- | ---------------- | ---------- | ------------------ | ------------------- | --------------------------- | ------------------------ | ---------- | --------------------------- | -------------- | ---------------------- | ---------------------------- | ---------------------------------- | -------------------------- | --------------------------------- | ------------------------- | ---------- | ------------------------------- | ----------------------- | ----------------- | ---------------------------- | ------------ | --------- | --------- |
+| `homecloud-cks-prod` | Homecloud Production Kubernetes Cluster  | `zone-homecloud` | KVM        | 1.34.2             | acs.comp.gen.medium | 200                         | homecloud-vpc-prod_net-1 | true       | 5                           | _your-ssh-key_ | true                   | true                         | acs.comp.mem.large                 | None                       | acs.comp.mem.medium               | None                      | 3          | acs.comp.mem.medium             | None                    | cilium            | cilium_version: `1.18.4`     | true         | 3         | 10        |
+| `homecloud-cks-dev`  | Homecloud Development Kubernetes Cluster | `zone-homecloud` | KVM        | 1.34.2             | acs.comp.gen.medium | 75                          | homecloud-vpc-dev_net-1  | false      | 2                           | _your-ssh-key_ | true                   | true                         | acs.comp.mem.medium                | None                       | acs.comp.gen.medium               | None                      | 0          | N/A                             | N/A                     | cilium            | cilium_version: `1.18.4`     | false        | N/A       | N/A       |
 
 Note:
 
@@ -220,7 +220,7 @@ Create Kubernetes clusters using Cluster API (CAPI) with CloudStack as the infra
 - (Dev) Install `knative` via Helm if you need serverless capabilities:
 
   ```sh
-  helm repo add knative-operator https://knative.github.io/operator 
+  helm repo add knative-operator https://knative.github.io/operator
   helm repo update
   helm install knative-operator --create-namespace --namespace knative-operator knative-operator/knative-operator --version v1.20.0
   kubectl apply -f https://raw.githubusercontent.com/nulcell/homecloud/refs/heads/main/kubernetes/charts/knative/templates/knative-serving.yaml

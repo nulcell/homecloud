@@ -40,7 +40,7 @@ The home lab is built using a combination of physical and virtual infrastructure
 
 - [Homebrew](https://brew.sh/)
 
-```bash
+````bash
 # Variables
 export PYTHON_VERSION=3.11.7
 export TERRAFORM_VERSION=1.11.4
@@ -94,6 +94,7 @@ tgenv use $TERRAGRUNT_VERSION
 
 #### Proxmox Server
 
-This is a Proxmox server running on a bare metal machine. It is used to host the VMs and containers for the home lab. It is configured manually based on the Proxmox documentation. 
+This is a Proxmox server running on a bare metal machine. It is used to host the VMs and containers for the home lab. It is configured manually based on the Proxmox documentation.
 
 Note: The Proxmox server is not included in the repository. You will need to set it up manually. Also, only a single Proxmox server is used in this home lab, the Proxmox server is not a cluster.
+````
