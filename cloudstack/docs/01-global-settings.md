@@ -71,7 +71,7 @@
 
 ## Network
 
-### Network
+### Network (general)
 
 - **network.throttling.rate**:
   - Description: Default data transfer rate in megabits per second allowed in network.
