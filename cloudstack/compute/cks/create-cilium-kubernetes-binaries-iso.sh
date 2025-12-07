@@ -98,8 +98,20 @@ helm repo add cilium https://helm.cilium.io/
 helm template cilium cilium/cilium --version ${CILIUM_VERSION} \
   --namespace kube-system > ${network_conf_file} \
   --set kubeProxyReplacement=true \
-  --set hubble.relay.enabled=true \
-  --set hubble.ui.enabled=true
+  --set bgpControlPlane.enabled=true \
+  --set encryption.enabled=true \
+  --set encryption.type=wireguard \
+  --set encryption.nodeEncryption=true \
+  --set gatewayAPI.enabled=false \
+  --set ingressController.enabled=false \
+  --set l2announcements.enabled=true \
+  --set l2podAnnouncements.enabled=true \
+  --set l7Proxy=true \
+  --set ipam.mode=cluster-pool \
+  --set ipam.operator.clusterPoolIPv4PodCIDRList={10.168.0.0/16} \
+  --set ipam.operator.clusterPoolIPv4MaskSize=24 \
+  --set hubble.relay.enabled=false \
+  --set hubble.ui.enabled=false
 # curl -sSL ${NETWORK_CONFIG_URL} -o ${network_conf_file}
 
 DASHBOARD_YAML_CONFIG="${6}"

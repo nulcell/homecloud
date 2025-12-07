@@ -1,6 +1,6 @@
 # Zone Setup
 
-## Basic Zone (Recommended for simplicity)
+## Basic Zone (recommended for simplicity)
 
 - Notes:
   - Ideal for simple environments with a single network

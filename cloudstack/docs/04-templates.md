@@ -12,16 +12,25 @@ General Options:
 - Arch: x86_64
 - User Data: None
 - User Data link policy: None
-- Password Enabled: true (just because it could be needed and you can always discard the password. Always use SSH keys and access private VMs via ZTNA or VPN)
+- Password Enabled: false
 - HVM: true
 - Featured: true
 - Public: true
-- Dynamically scalable: false (I don't believe this is supported by KVM anyway)
+- Dynamically scalable: true
 
-| URL                                                                                                           | Name                 | Description                  | Format | Root Disk Controller | OS Type      | Template Type | Extractable | For CKS |
-| ------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------- | ------ | -------------------- | ------------ | ------------- | ----------- | ------- |
-| [Ubuntu 24.04 - Noble](https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img)         | Ubuntu 24.04 - Noble | Ubuntu 24.04 LTS Cloud Image | QCOW2  | scsi                 | Ubuntu 24.04 | USER          | false       | false   |
-| [Debian 12 - Bookworm](https://cdimage.debian.org/images/cloud/bookworm/latest/debian-12-nocloud-amd64.qcow2) | Debian 12 - Bookworm | Debian 12 Bookworm           | QCOW2  | scsi                 | Debian 12    | USER          | false       | false   |
+| URL                                                                                                           | Name                 | Description                  | Format | OS Type      | Template Type | Extractable | For CKS |
+| ------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------- | ------ | ------------ | ------------- | ----------- | ------- |
+| [Ubuntu 24.04 - Noble](https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img)         | Ubuntu 24.04 - Noble | Ubuntu 24.04 LTS Cloud Image | QCOW2  | Ubuntu 24.04 | USER          | false       | false   |
+| [Debian 12 - Bookworm](https://cdimage.debian.org/images/cloud/bookworm/latest/debian-12-nocloud-amd64.qcow2) | Debian 12 - Bookworm | Debian 12 Bookworm           | QCOW2  | Debian 12    | USER          | false       | false   |
+
+Settings:
+
+- keyboard: us
+- video.hardware: qxl
+- video.ram: 256
+- guest.cpu.mode: host-passthrough
+- nicAdapter: virtio
+- rootDiskController: scsi
 
 ## CKS Images
 

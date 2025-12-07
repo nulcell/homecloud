@@ -2,6 +2,8 @@
 
 ## Creating a CKS ISO
 
+### Official Script
+
 On the CloudStack management server, the following commands can be used to create a CKS ISO. Calico is used as the CNI plugin in this example because it can be easily installed via a single YAML manifest, same with the older version of Kubernetes Dashboard.
 It is possible to modify the script to generate yaml configs using helm.
 
@@ -29,6 +31,8 @@ sudo apt install -y wget curl genisoimage containerd.io
     $ARCH \
     $ETCD_VERSION
 ```
+
+### Custom Cilium CNI Script
 
 Alternatively, there is a modified builder script of the original script located at `/usr/share/cloudstack-common/scripts/util/create-kubernetes-binaries-iso.sh` found on the CloudStack management server, [source](https://raw.githubusercontent.com/apache/cloudstack/refs/heads/main/scripts/util/create-kubernetes-binaries-iso.sh), to support helm and cilium as the CNI plugin.
 

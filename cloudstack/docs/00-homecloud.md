@@ -18,17 +18,6 @@ Create the homecloud account that will own the resources for each environment. Y
 | ------------ | ----------------- | --------- | ----------- | ---------------- |
 | Domain Admin | `homecloud-admin` | homecloud | `homecloud` | Europe/Amsterdam |
 
-### Projects
-
-**Note**: Due to a "bug" in the kubernetes `cloudstack-csi-driver:3.0.0` where project-scoped resources are not returned correctly, it is recommended not to use projects for now. Instead, use accounts directly. Just ensure that the resources are organized properly using tags and/or naming conventions.
-
-Sign in as the `homecloud-admin` user to create the following projects under the `homecloud` domain. These projects will own the resources for each environment.
-
-| Name             | Description                       |
-| ---------------- | --------------------------------- |
-| `homecloud-prod` | Homecloud Production Environment  |
-| `homecloud-dev`  | Homecloud Development Environment |
-
 ## Networking Configuration
 
 ### VPC Networks
@@ -72,7 +61,7 @@ You should be creating these in a project under a dedicated domain (or root doma
 
 ### Isolated Networks
 
-Create general-purpose isolated networks for miscellaneous use for resources that do not need to be in the VPC networks or for those resources that are shared across multiple environments, such as a Cluster API management and the primary network for the tailscale router.
+Create general-purpose isolated networks for miscellaneous use for resources that do not need to be in the VPC networks or for those resources that are shared across multiple environments, such as a Cluster API or ArgoCD/Flux.
 
 | Name                       | Description                       | Zone             | Owner Type | Domain    | Account   | Project | Network Domain     | Network Offering                  | Gateway  | Netmask       |
 | -------------------------- | --------------------------------- | ---------------- | ---------- | --------- | --------- | ------- | ------------------ | --------------------------------- | -------- | ------------- |
@@ -84,22 +73,23 @@ To access the VPC networks securely, a single Tailscale router can be set up wit
 
 Create an instance in with a single NIC in all networks that need to be accessed with the following configuration (generate an ephemeral single-use tailscale auth key from your Tailscale admin console for use during setup):
 
-| Name                   | Image Template       | Compute Offering   | Data Disk | Networks | SSH Key Pair   | Stored User Data          | network_router_cidr |
-| ---------------------- | -------------------- | ------------------ | --------- | -------- | -------------- | ------------------------- | ------------------- |
-| `tailscale-vpn-router` | Ubuntu 24.04 - Noble | acs.comp.gen.small | None      | _all_    | _your-ssh-key_ | `tailscale-router-debian` | `10.0.0.0/13`       |
+| Name                        | Image Template | Compute Offering   | Data Disk | Networks | SSH Key Pair   | Stored User Data          | network_router_cidr |
+| --------------------------- | -------------- | ------------------ | --------- | -------- | -------------- | ------------------------- | ------------------- |
+| `tailscale-vpn-router-prod` | Ubuntu 24.04   | acs.comp.gen.small | None      | _all_    | _your-ssh-key_ | `tailscale-router-debian` | `10.1.1.0/24`       |
+| `tailscale-vpn-router-dev`  | Ubuntu 24.04   | acs.comp.gen.small | None      | _all_    | _your-ssh-key_ | `tailscale-router-debian` | `10.0.0.0/24`       |
 
 ### VPS
 
 Create a VPS instance in each environment for general use. Use the following configuration:
 
-| Name                 | Image Template       | Compute Offering    | Data Disk | Network                       | SSH Key Pair   | Stored User Data |
-| -------------------- | -------------------- | ------------------- | --------- | ----------------------------- | -------------- | ---------------- |
-| `homecloud-vps-prod` | Ubuntu 24.04 - Noble | acs.comp.gen.medium | None      | homecloud-vpc-prod_priv-net-1 | _your-ssh-key_ | `cloud-default`  |
-| `homecloud-vps-dev`  | Ubuntu 24.04 - Noble | acs.comp.gen.small  | None      | homecloud-vpc-dev_priv-net-1  | _your-ssh-key_ | `cloud-default`  |
+| Name                 | Image Template       | Compute Offering   | Data Disk | Network                       | SSH Key Pair   | Stored User Data |
+| -------------------- | -------------------- | ------------------ | --------- | ----------------------------- | -------------- | ---------------- |
+| `homecloud-vps-prod` | Ubuntu 24.04 - Noble | acs.comp.mem.large | None      | homecloud-vpc-prod_priv-net-1 | _your-ssh-key_ | `cloud-default`  |
+| `homecloud-vps-dev`  | Ubuntu 24.04 - Noble | acs.comp.gen.small | None      | homecloud-vpc-dev_priv-net-1  | _your-ssh-key_ | `cloud-default`  |
 
-### Windows Desktop VM
+### Windows Desktop VM (Optional)
 
-Follow the guidelines in the [Windows Desktop VM Setup](./06-windows-setup.md) document to create a Windows Desktop VM in the `homecloud-vpc-prod_priv-net-1` network for occasional use.
+Follow the guidelines in the [Windows Desktop VM Setup](./05-windows-setup.md) document to create a Windows Desktop VM in the `homecloud-vpc-prod_priv-net-1` network for occasional use.
 
 ### Kubernetes Cluster
 
@@ -109,8 +99,8 @@ Create a Kubernetes cluster in the environment VPC using whatever version. Pass 
 
 | Name                 | Description                              | Zone             | Hypervisor | Kubernetes version | Compute Offering    | Node root disk size (in GB) | Network                  | HA enabled | Cluster size (Worker nodes) | SSH key pair   | Show advanced settings | Enable CloudStack CSI Driver | Service Offering for Control Nodes | Template for Control Nodes | Service Offering for Worker Nodes | Template for Worker Nodes | Etcd Nodes | Service Offering for etcd Nodes | Template for etcd Nodes | CNI Configuration | CNI Configuration Parameters | Auto Scaling | Min Nodes | Max Nodes |
 | -------------------- | ---------------------------------------- | ---------------- | ---------- | ------------------ | ------------------- | --------------------------- | ------------------------ | ---------- | --------------------------- | -------------- | ---------------------- | ---------------------------- | ---------------------------------- | -------------------------- | --------------------------------- | ------------------------- | ---------- | ------------------------------- | ----------------------- | ----------------- | ---------------------------- | ------------ | --------- | --------- |
-| `homecloud-cks-prod` | Homecloud Production Kubernetes Cluster  | `zone-homecloud` | KVM        | 1.34.2             | acs.comp.gen.medium | 200                         | homecloud-vpc-prod_net-1 | true       | 5                           | _your-ssh-key_ | true                   | true                         | acs.comp.mem.large                 | None                       | acs.comp.mem.medium               | None                      | 3          | acs.comp.mem.medium             | None                    | cilium            | cilium_version: `1.18.4`     | true         | 3         | 10        |
-| `homecloud-cks-dev`  | Homecloud Development Kubernetes Cluster | `zone-homecloud` | KVM        | 1.34.2             | acs.comp.gen.medium | 75                          | homecloud-vpc-dev_net-1  | false      | 2                           | _your-ssh-key_ | true                   | true                         | acs.comp.mem.medium                | None                       | acs.comp.gen.medium               | None                      | 0          | N/A                             | N/A                     | cilium            | cilium_version: `1.18.4`     | false        | N/A       | N/A       |
+| `homecloud-cks-prod` | Homecloud Production Kubernetes Cluster  | `zone-homecloud` | KVM        | 1.34.2             | acs.comp.mem.medium | 200                         | homecloud-vpc-prod_net-1 | true       | 5                           | _your-ssh-key_ | true                   | true                         | acs.comp.mem.large                 | None                       | acs.comp.mem.large                | None                      | 0          | N/A                             | N/A                     | cilium            | cilium_version: `1.18.4`     | true         | 3         | 10        |
+| `homecloud-cks-dev`  | Homecloud Development Kubernetes Cluster | `zone-homecloud` | KVM        | 1.34.2             | acs.comp.mem.medium | 75                          | homecloud-vpc-dev_net-1  | false      | 2                           | _your-ssh-key_ | true                   | true                         | acs.comp.mem.large                 | None                       | acs.comp.mem.medium               | None                      | 0          | N/A                             | N/A                     | cilium            | cilium_version: `1.18.4`     | true         | 1         | 3         |
 
 Note:
 
@@ -118,7 +108,11 @@ Note:
 
 Post-deployment steps:
 
-- Access the cluster via kubectl using the kubeconfig file downloaded from CloudStack UI (you can import it to `kubectl` using `kubectl konfig import -s ~/Downloads/kube.conf`)
+- Access the cluster via kubectl using the kubeconfig file downloaded from CloudStack UI and update the following in the `kubeconfig` (you can import it to `kubectl` using `kubectl konfig import -s ~/Downloads/kube.conf`)
+  - Cluster: `homecloud-cks-prod` or `homecloud-cks-dev`
+  - User: `admin-homecloud-cks-prod` or `admin-homecloud-cks-dev`
+  - Context: `admin@homecloud-cks-prod` or `admin@homecloud-cks-dev`
+
 - Access the Kubernetes Dashboard:
   - Create the token:
 
@@ -166,7 +160,7 @@ Post-deployment steps:
     kubectl proxy
     ```
 
-#### Cluster API Clusters
+#### Cluster API Clusters (Development)
 
 Create Kubernetes clusters using Cluster API (CAPI) with CloudStack as the infrastructure provider. Follow the instructions to set up the management cluster and deploy workload clusters as needed.
 
@@ -193,7 +187,7 @@ Create Kubernetes clusters using Cluster API (CAPI) with CloudStack as the infra
   EOF
   ```
 
-- Verify Cilium is installed and running correctly:
+- Verify installation of Cilium and CloudStack CSI Driver:
 
   ```sh
   kubectl get pods -n kube-system | grep cilium
@@ -203,33 +197,19 @@ Create Kubernetes clusters using Cluster API (CAPI) with CloudStack as the infra
   cilium status
   ```
 
-- (Optional) Update the Cilium configuration if needed:
-
-  ```sh
-  helm dependency update ./kubernetes/charts/cilium
-  helm upgrade --install cilium ./kubernetes/charts/cilium --namespace kube-system
-  ```
-
-- Install `traefik` via Helm (you can also just use cilium ingress controller if you prefer):
+- Install `traefik` via Helm:
 
   ```sh
   helm dependency update ./kubernetes/charts/traefik
   helm upgrade --install traefik ./kubernetes/charts/traefik --namespace traefik --create-namespace
   ```
 
-- (Dev) Install `knative` via Helm if you need serverless capabilities:
+- (Dev) Install `knative` via Helm for serverless capabilities:
 
   ```sh
   helm repo add knative-operator https://knative.github.io/operator
   helm repo update
   helm install knative-operator --create-namespace --namespace knative-operator knative-operator/knative-operator --version v1.20.0
-  kubectl apply -f https://raw.githubusercontent.com/nulcell/homecloud/refs/heads/main/kubernetes/charts/knative/templates/knative-serving.yaml
-  kubectl apply -f https://raw.githubusercontent.com/nulcell/homecloud/refs/heads/main/kubernetes/charts/knative/templates/knative-eventing.yaml
-  ```
-
-- Install `media-server` app via Helm. Access the `media-server` app at `http://<LOAD_BALANCER_IP>/` (you can get the Load Balancer IP from CloudStack UI or via `kubectl get svc -n media-server`)
-
-  ```sh
-  helm dependency update ./kubernetes/charts/media-server
-  helm upgrade --install media-server ./kubernetes/charts/media-server --namespace media-server --create-namespace
+  kubectl apply -f https://raw.githubusercontent.com/nulcell/homecloud/refs/heads/main/kubernetes/charts/wip/knative/templates/knative-serving.yaml
+  kubectl apply -f https://raw.githubusercontent.com/nulcell/homecloud/refs/heads/main/kubernetes/charts/wip/knative/templates/knative-eventing.yaml
   ```
