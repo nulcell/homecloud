@@ -12,12 +12,12 @@
 
 ### VM
 
-- cluster.cpu.allocated.capacity.disablethreshold:
+- **cluster.cpu.allocated.capacity.disablethreshold**:
   - Description: Percentage (as a value between 0 and 1) of cpu utilization above which allocators will disable using the cluster for low cpu available. Keep the corresponding notification threshold lower than this to be notified beforehand.
-  - Value: 100
-- cluster.cpu.allocated.capacity.notificationthreshold:
+  - Value: 1
+- **cluster.cpu.allocated.capacity.notificationthreshold**:
   - Description: Percentage (as a value between 0 and 1) of cpu utilization above which alerts will be sent about low cpu available.
-  - Value: 100
+  - Value: 1
 - **enable.additional.vm.configuration**:
   - Description: Allow additional arbitrary configuration to vm
   - Value: true
@@ -129,3 +129,72 @@
 - **store.download.follow.redirects**:
   - Description: Whether HTTP redirect is followed during store downloads for objects such as template, volume etc.
   - Value: true
+
+## Configure Global Settings via CLI
+
+Use the following script to configure all global settings via cloudmonkey (cmk):
+
+```bash
+#!/bin/bash
+# Configure CloudStack Global Settings
+
+# Variables
+ENDPOINT_URL="http://10.10.17.10:8080/client/api"  # Replace with your management server URL
+
+# Access Settings
+cmk update configuration name=metadata.allow.expose.domain value=true
+
+# Compute - VM Settings
+cmk update configuration name=cluster.cpu.allocated.capacity.disablethreshold value=1
+cmk update configuration name=cluster.cpu.allocated.capacity.notificationthreshold value=1
+cmk update configuration name=enable.additional.vm.configuration value=true
+cmk update configuration name=enable.dynamic.scale.vm value=true
+cmk update configuration name=instance.lease.enabled value=true
+cmk update configuration name=system.vm.default.hypervisor value=KVM
+cmk update configuration name=vm.allocation.algorithm value=userdispersing
+cmk update configuration name=vm.deployment.planner value=UserDispersingPlanner
+cmk update configuration name=vm.destroy.forcestop value=true
+cmk update configuration name=vm.display.ovf.properties value=true
+cmk update configuration name=vm.password.length value=12
+cmk update configuration name=vm.userdata.max.length value=1048576
+
+# Compute - Kubernetes Settings
+cmk update configuration name=cloud.kubernetes.cluster.experimental.features.enabled value=true
+
+# Storage Settings
+cmk update configuration name=destroy.root.volume.on.vm.destruction value=true
+cmk update configuration name=snapshot.delta.max value=32
+
+# Network Settings
+cmk update configuration name=network.throttling.rate value=500
+cmk update configuration name=vpc.max.networks value=4
+cmk update configuration name=vpc.tier.name.prepend value=true
+cmk update configuration name=vpc.tier.name.prepend.delimiter value=_
+
+cmk update configuration name=cloud.dns.name value=homecloud.internal
+cmk update configuration name=guest.domain.suffix value=homecloud.internal
+
+# Hypervisor - KVM Settings
+cmk update configuration name=enable.kvm.host.auto.enable.disable value=true
+cmk update configuration name=kvm.incremental.snapshot value=true
+
+# Management Server - API Settings
+cmk update configuration name=enable.ec2.api value=true
+cmk update configuration name=enable.s3.api value=true
+
+# System VMs - Console Proxy
+cmk update configuration name=consoleproxy.sslEnabled value=true
+
+# Miscellaneous
+cmk update configuration name=endpoint.url value="$ENDPOINT_URL"
+cmk update configuration name=store.download.follow.redirects value=true
+
+echo "Global configuration completed."
+```
+
+**Notes:**
+
+- Run this script after CloudStack installation but before creating zones
+- Replace the `ENDPOINT_URL` variable with your actual management server URL
+- Some settings may require CloudStack management server restart to take effect
+- Verify settings in CloudStack UI under "Global Settings"
