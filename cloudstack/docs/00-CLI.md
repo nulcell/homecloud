@@ -127,7 +127,309 @@ echo "Global configuration completed."
 
 ## Zone Setup
 
-TBD
+**Note**: Since, this is a one time setup, it may be better to simply use the CloudStack UI for this step.
+
+```bash
+# Variables
+ZONE_NAME="zone-homecloud"
+DNS1="10.10.31.254"
+DNS2="8.8.8.8"
+INTERNAL_DNS1="10.10.31.254"
+GUEST_CIDR="10.0.0.0/24"
+NETWORK_DOMAIN="homecloud.internal"
+
+# Physical Networks
+PHYS_NET_1="cloudbr0"
+PHYS_NET_2="cloudbr1"
+
+# Public IP Range (for cloudbr1)
+PUBLIC_GATEWAY="10.10.31.254"
+PUBLIC_NETMASK="255.255.240.0"
+PUBLIC_VLAN="vlan://untagged"
+PUBLIC_START_IP="10.10.20.1"
+PUBLIC_END_IP="10.10.20.254"
+
+# Pod Configuration
+POD_NAME="pod-homecloud"
+POD_GATEWAY="10.10.31.254"
+POD_NETMASK="255.255.240.0"
+POD_START_IP="10.10.21.1"
+POD_END_IP="10.10.21.254"
+
+# Guest Traffic VLAN Range
+GUEST_VLAN_START="500"
+GUEST_VLAN_END="700"
+
+# Cluster Configuration
+CLUSTER_NAME="cluster-homecloud"
+HYPERVISOR="KVM"
+
+# Host Configuration
+HOST_IP="10.10.17.10"
+HOST_USERNAME="root"
+
+# Primary Storage (NFS)
+PRIMARY_STORAGE_NAME="primary-nfs-zone-homecloud"
+PRIMARY_STORAGE_SERVER="10.10.17.10"
+PRIMARY_STORAGE_PATH="/export/primary"
+
+# Secondary Storage (NFS)
+SECONDARY_STORAGE_NAME="secondary-nfs-zone-homecloud"
+SECONDARY_STORAGE_SERVER="10.10.17.10"
+SECONDARY_STORAGE_PATH="/export/secondary"
+
+echo "Creating Advanced Zone: $ZONE_NAME..."
+ZONE_ID=$(cmk -p admin create zone \
+  name="$ZONE_NAME" \
+  dns1="$DNS1" \
+  dns2="$DNS2" \
+  internaldns1="$INTERNAL_DNS1" \
+  networktype="Advanced" \
+  guestcidraddress="$GUEST_CIDR" \
+  domain="$NETWORK_DOMAIN" \
+  localstorageenabled=true \
+  localstorageenabledforsystemvm=false \
+  | jq -r '.zone.id')
+echo "Zone created with ID: $ZONE_ID"
+
+# Create Physical Network 1 (cloudbr0) for Management
+echo "Creating physical network: $PHYS_NET_1..."
+PHYS_NET_1_ID=$(cmk -p admin create physicalnetwork \
+  name="$PHYS_NET_1" \
+  zoneid="$ZONE_ID" \
+  isolationmethods="VLAN" \
+  | jq -r '.physicalnetwork.id')
+echo "Physical network $PHYS_NET_1 created with ID: $PHYS_NET_1_ID"
+
+# Add Management traffic to cloudbr0
+echo "Adding Management traffic type to $PHYS_NET_1..."
+cmk -p admin add traffictype \
+  physicalnetworkid="$PHYS_NET_1_ID" \
+  traffictype="Management" \
+  kvmnetworklabel="$PHYS_NET_1"
+
+# Create Physical Network 2 (cloudbr1) for Public and Guest
+echo "Creating physical network: $PHYS_NET_2..."
+PHYS_NET_2_ID=$(cmk -p admin create physicalnetwork \
+  name="$PHYS_NET_2" \
+  zoneid="$ZONE_ID" \
+  isolationmethods="VLAN" \
+  | jq -r '.physicalnetwork.id')
+echo "Physical network $PHYS_NET_2 created with ID: $PHYS_NET_2_ID"
+
+# Add Public traffic to cloudbr1
+echo "Adding Public traffic type to $PHYS_NET_2..."
+cmk -p admin add traffictype \
+  physicalnetworkid="$PHYS_NET_2_ID" \
+  traffictype="Public" \
+  kvmnetworklabel="$PHYS_NET_2"
+
+# Add Guest traffic to cloudbr1
+echo "Adding Guest traffic type to $PHYS_NET_2..."
+cmk -p admin add traffictype \
+  physicalnetworkid="$PHYS_NET_2_ID" \
+  traffictype="Guest" \
+  kvmnetworklabel="$PHYS_NET_2"
+
+# Enable Physical Network 1
+echo "Enabling physical network: $PHYS_NET_1..."
+cmk -p admin update physicalnetwork \
+  id="$PHYS_NET_1_ID" \
+  state="Enabled"
+
+# Enable Physical Network 2
+echo "Enabling physical network: $PHYS_NET_2..."
+cmk -p admin update physicalnetwork \
+  id="$PHYS_NET_2_ID" \
+  state="Enabled"
+
+# Get and enable network service providers for Physical Network 1
+echo "Configuring network service providers for $PHYS_NET_1..."
+cmk -p admin list networkserviceproviders physicalnetworkid="$PHYS_NET_1_ID" | jq -r '.networkserviceprovider[] | "\(.id)|\(.name)"' | while IFS='|' read -r PROVIDER_ID PROVIDER_NAME; do
+  if [ -n "$PROVIDER_ID" ]; then
+    echo "Processing provider: $PROVIDER_NAME (ID: $PROVIDER_ID)"
+    
+    # Configure VirtualRouter element before enabling
+    if [ "$PROVIDER_NAME" = "VirtualRouter" ]; then
+      VR_ELEMENT_ID=$(cmk -p admin list virtualrouterelements nspid="$PROVIDER_ID" | jq -r '.virtualrouterelement[0].id')
+      if [ -n "$VR_ELEMENT_ID" ] && [ "$VR_ELEMENT_ID" != "null" ]; then
+        echo "  Configuring VirtualRouter element: $VR_ELEMENT_ID"
+        cmk -p admin configure virtualrouterelement id="$VR_ELEMENT_ID" enabled=true
+      fi
+    fi
+    
+    # Configure InternalLbVm element before enabling
+    if [ "$PROVIDER_NAME" = "InternalLbVm" ]; then
+      ILB_ELEMENT_ID=$(cmk -p admin list internalloadbalancerelements nspid="$PROVIDER_ID" | jq -r '.internalloadbalancerelement[0].id')
+      if [ -n "$ILB_ELEMENT_ID" ] && [ "$ILB_ELEMENT_ID" != "null" ]; then
+        echo "  Configuring InternalLbVm element: $ILB_ELEMENT_ID"
+        cmk -p admin configure internalloadbalancerelement id="$ILB_ELEMENT_ID" enabled=true
+      fi
+    fi
+    
+    # Configure VpcVirtualRouter element before enabling
+    if [ "$PROVIDER_NAME" = "VpcVirtualRouter" ]; then
+      VPC_VR_ELEMENT_ID=$(cmk -p admin list virtualrouterelements nspid="$PROVIDER_ID" | jq -r '.virtualrouterelement[0].id')
+      if [ -n "$VPC_VR_ELEMENT_ID" ] && [ "$VPC_VR_ELEMENT_ID" != "null" ]; then
+        echo "  Configuring VpcVirtualRouter element: $VPC_VR_ELEMENT_ID"
+        cmk -p admin configure virtualrouterelement id="$VPC_VR_ELEMENT_ID" enabled=true
+      fi
+    fi
+    
+    # Now enable the provider
+    echo "  Enabling provider: $PROVIDER_NAME"
+    cmk -p admin update networkserviceprovider id="$PROVIDER_ID" state="Enabled" || echo "  Warning: Could not enable $PROVIDER_NAME (may not be applicable for this network type)"
+  fi
+done
+
+# Get and enable network service providers for Physical Network 2
+echo "Configuring network service providers for $PHYS_NET_2..."
+cmk -p admin list networkserviceproviders physicalnetworkid="$PHYS_NET_2_ID" | jq -r '.networkserviceprovider[] | "\(.id)|\(.name)"' | while IFS='|' read -r PROVIDER_ID PROVIDER_NAME; do
+  if [ -n "$PROVIDER_ID" ]; then
+    echo "Processing provider: $PROVIDER_NAME (ID: $PROVIDER_ID)"
+    
+    # Configure VirtualRouter element before enabling
+    if [ "$PROVIDER_NAME" = "VirtualRouter" ]; then
+      VR_ELEMENT_ID=$(cmk -p admin list virtualrouterelements nspid="$PROVIDER_ID" | jq -r '.virtualrouterelement[0].id')
+      if [ -n "$VR_ELEMENT_ID" ] && [ "$VR_ELEMENT_ID" != "null" ]; then
+        echo "  Configuring VirtualRouter element: $VR_ELEMENT_ID"
+        cmk -p admin configure virtualrouterelement id="$VR_ELEMENT_ID" enabled=true
+      fi
+    fi
+    
+    # Configure InternalLbVm element before enabling
+    if [ "$PROVIDER_NAME" = "InternalLbVm" ]; then
+      ILB_ELEMENT_ID=$(cmk -p admin list internalloadbalancerelements nspid="$PROVIDER_ID" | jq -r '.internalloadbalancerelement[0].id')
+      if [ -n "$ILB_ELEMENT_ID" ] && [ "$ILB_ELEMENT_ID" != "null" ]; then
+        echo "  Configuring InternalLbVm element: $ILB_ELEMENT_ID"
+        cmk -p admin configure internalloadbalancerelement id="$ILB_ELEMENT_ID" enabled=true
+      fi
+    fi
+    
+    # Configure VpcVirtualRouter element before enabling
+    if [ "$PROVIDER_NAME" = "VpcVirtualRouter" ]; then
+      VPC_VR_ELEMENT_ID=$(cmk -p admin list virtualrouterelements nspid="$PROVIDER_ID" | jq -r '.virtualrouterelement[0].id')
+      if [ -n "$VPC_VR_ELEMENT_ID" ] && [ "$VPC_VR_ELEMENT_ID" != "null" ]; then
+        echo "  Configuring VpcVirtualRouter element: $VPC_VR_ELEMENT_ID"
+        cmk -p admin configure virtualrouterelement id="$VPC_VR_ELEMENT_ID" enabled=true
+      fi
+    fi
+    
+    # Now enable the provider
+    echo "  Enabling provider: $PROVIDER_NAME"
+    cmk -p admin update networkserviceprovider id="$PROVIDER_ID" state="Enabled" || echo "  Warning: Could not enable $PROVIDER_NAME (may not be applicable for this network type)"
+  fi
+done
+
+# Add public IP range to cloudbr1
+echo "Adding public IP range..."
+cmk -p admin create vlaniprange \
+  zoneid="$ZONE_ID" \
+  physicalnetworkid="$PHYS_NET_2_ID" \
+  gateway="$PUBLIC_GATEWAY" \
+  netmask="$PUBLIC_NETMASK" \
+  startip="$PUBLIC_START_IP" \
+  endip="$PUBLIC_END_IP" \
+  forvirtualnetwork=true \
+  vlan="$PUBLIC_VLAN"
+echo "Public IP range added: $PUBLIC_START_IP - $PUBLIC_END_IP"
+
+# Create Pod
+echo "Creating pod: $POD_NAME..."
+POD_ID=$(cmk -p admin create pod \
+  name="$POD_NAME" \
+  zoneid="$ZONE_ID" \
+  gateway="$POD_GATEWAY" \
+  netmask="$POD_NETMASK" \
+  startip="$POD_START_IP" \
+  endip="$POD_END_IP" \
+  | jq -r '.pod.id')
+echo "Pod created with ID: $POD_ID"
+
+# Configure Guest VLAN Range
+echo "Configuring guest VLAN range: $GUEST_VLAN_START-$GUEST_VLAN_END..."
+cmk -p admin update physicalnetwork \
+  id="$PHYS_NET_2_ID" \
+  vlan="$GUEST_VLAN_START-$GUEST_VLAN_END"
+echo "Guest VLAN range configured"
+
+# Create Cluster
+echo "Creating cluster: $CLUSTER_NAME..."
+CLUSTER_ID=$(cmk -p admin add cluster \
+  clustername="$CLUSTER_NAME" \
+  clustertype="CloudManaged" \
+  hypervisor="$HYPERVISOR" \
+  zoneid="$ZONE_ID" \
+  podid="$POD_ID" \
+  | jq -r '.cluster[0].id')
+echo "Cluster created with ID: $CLUSTER_ID"
+
+# Add Host
+echo "Adding host: $HOST_IP..."
+HOST_ID=$(cmk -p admin add host \
+  zoneid="$ZONE_ID" \
+  podid="$POD_ID" \
+  clusterid="$CLUSTER_ID" \
+  hypervisor="$HYPERVISOR" \
+  url="http://$HOST_IP" \
+  username="$HOST_USERNAME" \
+  | jq -r '.host[0].id')
+echo "Host added with ID: $HOST_ID"
+
+# Create Primary Storage (Zone-wide NFS)
+echo "Creating primary storage: $PRIMARY_STORAGE_NAME..."
+PRIMARY_STORAGE_ID=$(cmk -p admin create storagepool \
+  name="$PRIMARY_STORAGE_NAME" \
+  scope="ZONE" \
+  zoneid="$ZONE_ID" \
+  provider="DefaultPrimary" \
+  hypervisor="$HYPERVISOR" \
+  url="nfs://$PRIMARY_STORAGE_SERVER$PRIMARY_STORAGE_PATH" \
+  | jq -r '.storagepool.id')
+echo "Primary storage created with ID: $PRIMARY_STORAGE_ID"
+
+# Add Secondary Storage (Image Store)
+echo "Adding secondary storage: $SECONDARY_STORAGE_NAME..."
+SECONDARY_STORAGE_ID=$(cmk -p admin add imagestore \
+  name="$SECONDARY_STORAGE_NAME" \
+  provider="NFS" \
+  zoneid="$ZONE_ID" \
+  url="nfs://$SECONDARY_STORAGE_SERVER$SECONDARY_STORAGE_PATH" \
+  | jq -r '.imagestore.id')
+echo "Secondary storage added with ID: $SECONDARY_STORAGE_ID"
+
+# Enable Zone
+echo "Enabling zone: $ZONE_NAME..."
+cmk -p admin update zone \
+  id="$ZONE_ID" \
+  allocationstate="Enabled"
+echo "Zone enabled successfully"
+
+# Verification
+echo ""
+echo "=== Zone Setup Complete ==="
+echo "Verifying configuration..."
+echo ""
+echo "Zone:"
+cmk -p admin list zones id="$ZONE_ID" | jq -r '.zone[] | "  Name: \(.name), ID: \(.id), State: \(.allocationstate)"'
+echo ""
+echo "Pods:"
+cmk -p admin list pods zoneid="$ZONE_ID" | jq -r '.pod[] | "  Name: \(.name), ID: \(.id)"'
+echo ""
+echo "Clusters:"
+cmk -p admin list clusters zoneid="$ZONE_ID" | jq -r '.cluster[] | "  Name: \(.name), ID: \(.id), Hypervisor: \(.hypervisortype)"'
+echo ""
+echo "Hosts:"
+cmk -p admin list hosts zoneid="$ZONE_ID" | jq -r '.host[] | "  Name: \(.name), ID: \(.id), State: \(.state), Type: \(.type)"'
+echo ""
+echo "Primary Storage:"
+cmk -p admin list storagepools zoneid="$ZONE_ID" | jq -r '.storagepool[] | "  Name: \(.name), ID: \(.id), Type: \(.type), State: \(.state)"'
+echo ""
+echo "Secondary Storage:"
+cmk -p admin list imagestores zoneid="$ZONE_ID" | jq -r '.imagestore[] | "  Name: \(.name), ID: \(.id), Provider: \(.providername)"'
+echo ""
+echo "Zone setup completed successfully."
+```
 
 ## Service Offerings
 
@@ -193,7 +495,8 @@ cmk -p admin create vpcoffering name="acs.vpc.natted.redundant-core" displaytext
 
 ```bash
 # Variables - Customize these for your environment
-ZONE_ID=$(cmk -p admin list zones | jq -r '.zone[0].id')
+ZONE_NAME="zone-homecloud"
+ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 
 echo "Registering OS Templates..."
 
@@ -359,7 +662,8 @@ cmk -p homecloud-admin register sshkeypair \
 
 ```bash
 ACCOUNT_NAME="homecloud"
-ZONE_ID=$(cmk -p admin list zones | jq -r '.zone[0].id')
+ZONE_NAME="zone-homecloud"
+ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 ```
 
@@ -513,7 +817,8 @@ PROD_PRIV_NET_3_ID=$(cmk -p homecloud-admin create network \
 
 ```bash
 ACCOUNT_NAME="homecloud"
-ZONE_ID=$(cmk -p admin list zones | jq -r '.zone[0].id')
+ZONE_NAME="zone-homecloud"
+ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 
 ISOLATED_NETWORK_NAME="isolated-net-1"
@@ -537,7 +842,8 @@ ISOLATED_NETWORK_ID=$(cmk -p homecloud-admin create network \
 
 ```bash
 ACCOUNT_NAME="homecloud"
-ZONE_ID=$(cmk -p admin list zones | jq -r '.zone[0].id')
+ZONE_NAME="zone-homecloud"
+ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 TAILSCALE_USERDATA_ID=$(cmk -p homecloud-admin list userdata name="tailscale-router-debian" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.userdata[0].id')
 UBUNTU_TEMPLATE_ID=$(cmk -p homecloud-admin list templates templatefilter=all name="Ubuntu 24.04 - Noble" zoneid="$ZONE_ID" | jq -r '.template[0].id')
@@ -592,7 +898,8 @@ PROD_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
 
 ```bash
 ACCOUNT_NAME="homecloud"
-ZONE_ID=$(cmk -p admin list zones | jq -r '.zone[0].id')
+ZONE_NAME="zone-homecloud"
+ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 CKS_OFFERING_ID=$(cmk -p homecloud-admin list kubernetessupportedversions name="cks-v1.34.2-cilium_v1.18.2-x86_64" zoneid="$ZONE_ID" | jq -r '.kubernetessupportedversion[0].id')
 CNI_CONFIG_ID=$(cmk -p homecloud-admin listCniConfiguration name="cilium" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.cniconfig[0].id')
