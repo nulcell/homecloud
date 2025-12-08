@@ -1,6 +1,8 @@
-# CloudMonkey CLI Setup
+# Cloudmonkey CLI Setup
 
-## CLI Configuration
+*TODO*: Create the equivalent using Terraform CloudStack provider where possible.
+
+## Cloudmonkey Profile Configuration
 
 ### Admin User
 
@@ -29,6 +31,7 @@ cmk set domain /homecloud
 cmk set timeout 3600
 cmk set asyncblock true
 cmk set output json
+# Run the line below only after creating the homecloud-admin user
 cmk -p homecloud-admin sync
 ```
 
@@ -330,12 +333,7 @@ cmk -p homecloud-admin registerUserData \
   userdata="$(cat ../compute/cloud-init/tailscale-router-debian.yaml | base64)" \
   account=homecloud \
   domainid="$HOMECLOUD_DOMAIN_ID" \
-  "params[0].name=tailscale_auth_key" \
-  "params[0].description=Tailscale auth key with subnet router capability" \
-  "params[0].required=true" \
-  "params[1].name=network_router_cidr" \
-  "params[1].description=The CIDR of the network to be routed via Tailscale" \
-  "params[1].required=true"
+  "params=tailscale_auth_key,network_router_cidr"
 
 echo "Registering CNI Configurations..."
 
@@ -346,7 +344,8 @@ cmk -p homecloud-admin registerCniConfiguration \
   description="Cilium CNI configuration for CKS clusters" \
   cniconfig="$(tail -n +3 ../compute/cni-config/cilium.yaml | base64)" \
   account=homecloud \
-  domainid="$HOMECLOUD_DOMAIN_ID"
+  domainid="$HOMECLOUD_DOMAIN_ID" \
+  params="cilium_version"
 
 # SSH Key Pair
 cmk -p homecloud-admin register sshkeypair \
@@ -357,6 +356,12 @@ cmk -p homecloud-admin register sshkeypair \
 ```
 
 ## VPC
+
+```bash
+ACCOUNT_NAME="homecloud"
+ZONE_ID=$(cmk -p admin list zones | jq -r '.zone[0].id')
+HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
+```
 
 ### Dev VPC
 
@@ -507,6 +512,9 @@ PROD_PRIV_NET_3_ID=$(cmk -p homecloud-admin create network \
 ## Isolated Network
 
 ```bash
+ZONE_ID=$(cmk -p admin list zones | jq -r '.zone[0].id')
+HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
+
 ISOLATED_NETWORK_NAME="isolated-net-1"
 ISOLATED_NETWORK_CIDR="10.2.2.0/24"
 
@@ -527,10 +535,14 @@ ISOLATED_NETWORK_ID=$(cmk -p homecloud-admin create network \
 ## VPN
 
 ```bash
-TAILSCALE_AUTH_KEY="tskey-auth-xxxxxx-xxxxxxxxxxxxxxx"  # Replace with actual reusable ephemeral Tailscale auth key
-TAILSCALE_USERDATA_ID=$(cmk -p homecloud-admin list userdata name="tailscale-router-debian" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.userdata[0].id')
+ACCOUNT_NAME="homecloud"
+ZONE_ID=$(cmk -p admin list zones | jq -r '.zone[0].id')
+HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
+TAILSCALE_USERDATA_ID=$(cmk -p homecloud-admin list userdata name="tailscale-router-debian" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.userdata[0].id')
 UBUNTU_TEMPLATE_ID=$(cmk -p homecloud-admin list templates templatefilter=all name="Ubuntu 24.04 - Noble" zoneid="$ZONE_ID" | jq -r '.template[0].id')
 COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.small" | jq -r '.serviceoffering[0].id')
+
+TAILSCALE_AUTH_KEY="tskey-auth-xxxxxx-xxxxxxxxxxxxxxx"  # Replace with actual reusable ephemeral Tailscale auth key
 ```
 
 ### Dev VPN
@@ -545,7 +557,7 @@ DEV_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
   networkids="$DEV_PUB_NET_1_ID,$DEV_PRIV_NET_1_ID,$DEV_PRIV_NET_2_ID,$DEV_PRIV_NET_3_ID" \
-  account="homecloud" \
+  account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   userdataid="$TAILSCALE_USERDATA_ID" \
   "userdatadetails[0].tailscale_auth_key=$TAILSCALE_AUTH_KEY" \
@@ -566,7 +578,7 @@ PROD_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
   networkids="$PROD_PUB_NET_1_ID,$PROD_PRIV_NET_1_ID,$PROD_PRIV_NET_2_ID,$PROD_PRIV_NET_3_ID" \
-  account="homecloud" \
+  account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   userdataid="$TAILSCALE_USERDATA_ID" \
   "userdatadetails[0].tailscale_auth_key=$TAILSCALE_AUTH_KEY" \
@@ -578,13 +590,18 @@ PROD_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
 ## Kubernetes Cluster
 
 ```bash
+ACCOUNT_NAME="homecloud"
+ZONE_ID=$(cmk -p admin list zones | jq -r '.zone[0].id')
+HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 CKS_OFFERING_ID=$(cmk -p homecloud-admin list kubernetessupportedversions name="cks-v1.34.2-cilium_v1.18.2-x86_64" zoneid="$ZONE_ID" | jq -r '.kubernetessupportedversion[0].id')
+CNI_CONFIG_ID=$(cmk -p homecloud-admin listCniConfiguration name="cilium" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.cniconfig[0].id')
 ```
 
 ### Dev CKS Cluster
 
 ```bash
 echo "Creating Development CKS Cluster (this takes 15-30 minutes)..."
+DEV_PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-dev_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 CKS_SERVICE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.medium" | jq -r '.serviceoffering[0].id')
 DEV_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   name="homecloud-cks-dev" \
@@ -596,10 +613,26 @@ DEV_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   networkid="$DEV_PUB_NET_1_ID" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
-  masternodes=1 \
+  hypervisor="KVM" \
+  controlnodes=1 \
   size=1 \
   keypair="nulcell" \
+  enablecsi=true \
+  cniconfigurationid="$CNI_CONFIG_ID" \
+  "cniconfigdetails[0].cilium_version=1.18.4" \
   | jq -r '.kubernetescluster.id')
+cmk -p homecloud-admin scaleKubernetesCluster id="$DEV_CKS_ID" autoscalingenabled=true minsize=1 maxsize=2
+
+echo "Retrieving kubeconfig for Development CKS Cluster..."
+cmk -p homecloud-admin getKubernetesClusterConfig id="$DEV_CKS_ID" | jq -r .clusterconfig.configdata > dev-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes-admin@kubernetes/admin@homecloud-cks-dev/g' dev-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes-admin/homecloud-cks-dev-admin/g' dev-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes/homecloud-cks-dev/g' dev-cks-kubeconfig.yaml
+kubectl config delete-context admin@homecloud-cks-dev || true
+kubectl config delete-user homecloud-cks-dev-admin || true
+kubectl config delete-cluster homecloud-cks-dev || true
+kubectl konfig import -s dev-cks-kubeconfig.yaml
+rm dev-cks-kubeconfig.yaml
 echo "Development CKS Cluster ID: $DEV_CKS_ID"
 ```
 
@@ -607,6 +640,7 @@ echo "Development CKS Cluster ID: $DEV_CKS_ID"
 
 ```bash
 echo "Creating Production CKS Cluster (this takes 15-30 minutes)..."
+PROD_PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-prod_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 CKS_SERVICE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.large" | jq -r '.serviceoffering[0].id')
 PROD_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   name="homecloud-cks-prod" \
@@ -618,9 +652,24 @@ PROD_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   networkid="$PROD_PUB_NET_1_ID" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
-  masternodes=1 \
+  hypervisor="KVM" \
+  controlnodes=3 \
   size=3 \
   keypair="homecloud-admin" \
+  enablecsi=true \
+  cniconfigurationid="$CNI_CONFIG_ID" \
+  "cniconfigdetails[0].cilium_version=1.18.4" \
   | jq -r '.kubernetescluster.id')
+cmk -p homecloud-admin scaleKubernetesCluster id="$PROD_CKS_ID" autoscalingenabled=true minsize=3 maxsize=10
+echo "Retrieving kubeconfig for Production CKS Cluster..."
+cmk -p homecloud-admin getKubernetesClusterConfig id="$PROD_CKS_ID" | jq -r .clusterconfig.configdata > prod-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes-admin@kubernetes/admin@homecloud-cks-prod/g' prod-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes-admin/homecloud-cks-prod-admin/g' prod-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes/homecloud-cks-prod/g' prod-cks-kubeconfig.yaml
+kubectl config delete-context admin@homecloud-cks-prod || true
+kubectl config delete-user homecloud-cks-prod-admin || true
+kubectl config delete-cluster homecloud-cks-prod || true
+kubectl konfig import -s prod-cks-kubeconfig.yaml
+rm prod-cks-kubeconfig.yaml
 echo "Production CKS Cluster ID: $PROD_CKS_ID"
 ```
