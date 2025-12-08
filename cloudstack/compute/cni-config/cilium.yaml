@@ -1,5 +1,3 @@
-# Status: working
-# Description: Cilium CNI installation script for CloudStack K8s cluster
 runcmd: # don't add this line
   # Copy from below and add to CNI configruration in Cloudstack to install Cilium CNI
   - |

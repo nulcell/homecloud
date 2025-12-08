@@ -46,8 +46,14 @@ General Options:
 | ---------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | 1.32.5           | cks-v1.32.5-calico-x86_64         | [v1.32.5-calico-x86_64](https://download.cloudstack.org/cks/setup-v1.32.5-calico-x86_64.iso)                           |
 | 1.33.1           | cks-v1.33.1-calico_v3.30.0-x86_64 | [v1.33.1-calico-x86_64](https://download.cloudstack.org/cks/setup-v1.33.1-calico-x86_64.iso)                           |
-| 1.34.2           | cks-v1.34.2-calico-x86_64         | [v1.34.2-cilium-x86_64](https://nulcell-apache-cks-images.s3.eu-central-1.amazonaws.com/cks-v1.34.2-calico-x86_64.iso) |
+| 1.34.2           | cks-v1.34.2-calico-x86_64         | [v1.34.2-calico-x86_64](https://nulcell-apache-cks-images.s3.eu-central-1.amazonaws.com/cks-v1.34.2-calico-x86_64.iso) |
 | 1.34.2           | cks-v1.34.2-cilium_v1.18.2-x86_64 | [v1.34.2-cilium-x86_64](https://nulcell-apache-cks-images.s3.eu-central-1.amazonaws.com/cks-v1.34.2-cilium-x86_64.iso) |
+
+## Utility ISOs
+
+| Name                        | Description                                      | URL                                                                                               |
+| --------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| virtio-win (Latest Stable)  | VirtIO drivers for Windows VMs (disk, network)   | [virtio-win.iso](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso) |
 
 ## SSH Keys
 
