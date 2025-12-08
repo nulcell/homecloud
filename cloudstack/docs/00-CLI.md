@@ -375,7 +375,7 @@ INTERNAL_LB_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs
 
 DEV_VPC_ID=$(cmk -p homecloud-admin create vpc \
   name="$DEV_VPC_NAME" \
-  displaytext="Development VPC" \
+  displaytext="Homecloud VPC Development Network" \
   vpcofferingid="$VPC_OFFERING_ID" \
   cidr="$DEV_VPC_CIDR" \
   zoneid="$ZONE_ID" \
@@ -448,7 +448,7 @@ INTERNAL_LB_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs
 
 PROD_VPC_ID=$(cmk -p homecloud-admin create vpc \
   name="$PROD_VPC_NAME" \
-  displaytext="Production VPC" \
+  displaytext="Homecloud VPC Production Network" \
   vpcofferingid="$VPC_OFFERING_ID" \
   cidr="$PROD_VPC_CIDR" \
   zoneid="$ZONE_ID" \
@@ -512,6 +512,7 @@ PROD_PRIV_NET_3_ID=$(cmk -p homecloud-admin create network \
 ## Isolated Network
 
 ```bash
+ACCOUNT_NAME="homecloud"
 ZONE_ID=$(cmk -p admin list zones | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 
@@ -522,12 +523,12 @@ ISOLATED_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs.ne
 
 ISOLATED_NETWORK_ID=$(cmk -p homecloud-admin create network \
   name="$ISOLATED_NETWORK_NAME" \
-  displaytext="Isolated Network for Testing" \
+  displaytext="Homecloud Shared Isolated Network" \
   networkofferingid="$ISOLATED_OFFERING_ID" \
   zoneid="$ZONE_ID" \
   gateway="10.2.2.1" \
   netmask="255.255.255.0" \
-  account="homecloud" \
+  account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   | jq -r '.network.id')
 ```
@@ -552,7 +553,7 @@ DEV_VPC_CIDR="10.0.0.0/24"
 
 DEV_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
   name="tailscale-router-dev" \
-  displayname="Development Tailscale Router" \
+  displayname="Tailscale Router Development Network" \
   serviceofferingid="$COMPUTE_OFFERING_ID" \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
@@ -573,7 +574,7 @@ PROD_VPC_CIDR="10.1.1.0/24"
 
 PROD_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
   name="tailscale-router-prod" \
-  displayname="Production Tailscale Router" \
+  displayname="Tailscale Router Production Network" \
   serviceofferingid="$COMPUTE_OFFERING_ID" \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
@@ -605,7 +606,7 @@ DEV_PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-dev_
 CKS_SERVICE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.medium" | jq -r '.serviceoffering[0].id')
 DEV_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   name="homecloud-cks-dev" \
-  description="Development Kubernetes Cluster" \
+  description="Homecloud Development Kubernetes Cluster" \
   zoneid="$ZONE_ID" \
   kubernetesversionid="$CKS_OFFERING_ID" \
   serviceofferingid="$CKS_SERVICE_OFFERING_ID" \
@@ -644,7 +645,7 @@ PROD_PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-pro
 CKS_SERVICE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.large" | jq -r '.serviceoffering[0].id')
 PROD_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   name="homecloud-cks-prod" \
-  description="Production Kubernetes Cluster" \
+  description="Homecloud Production Kubernetes Cluster" \
   zoneid="$ZONE_ID" \
   kubernetesversionid="$CKS_OFFERING_ID" \
   serviceofferingid="$CKS_SERVICE_OFFERING_ID" \

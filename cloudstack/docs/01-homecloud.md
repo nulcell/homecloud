@@ -110,7 +110,7 @@ Post-deployment steps:
 
 - Access the cluster via kubectl using the kubeconfig file downloaded from CloudStack UI and update the following in the `kubeconfig` (you can import it to `kubectl` using `kubectl konfig import -s ~/Downloads/kube.conf`)
   - Cluster: `homecloud-cks-prod` or `homecloud-cks-dev`
-  - User: `admin-homecloud-cks-prod` or `admin-homecloud-cks-dev`
+  - User: `homecloud-cks-prod-admin` or `homecloud-cks-dev-admin`
   - Context: `admin@homecloud-cks-prod` or `admin@homecloud-cks-dev`
 
 - Access the Kubernetes Dashboard:
