@@ -124,11 +124,11 @@
         - Isolation method: VLAN
         - Traffic types (traffic label):
           - Management (cloudbr0)
-          - Guest (cloudbr0)
       - Network name: cloudbr1
         - Isolation method: VLAN
         - Traffic types (traffic label):
           - Public (cloudbr1) (only if Security Groups are disabled)
+          - Guest (cloudbr1)
   - **Public Traffic** (only if Security Groups are disabled):
     - Description: Public traffic is generated when Instances in the cloud access the internet. Publicly-accessible IPs must be allocated for this purpose. End Users can use the CloudStack UI to acquire these IPs to implement NAT between their guest Network and their public Network. Provide at least one range of IP addresses for internet traffic.
     - Values:
@@ -151,7 +151,7 @@
       - VLAN/VNI range: `500-700`
   - **Storage traffic**:
     - Description: Storage: Traffic between primary and secondary storage servers, such as Instance Templates and Snapshots.
-    - Values:
+    - Values: (only if included in physical network)
       - Gateway: `10.10.31.254`
       - Netmask: `255.255.240.0`
       - VLAN/VNI range: ``
