@@ -34,10 +34,14 @@ echo "CloudStack Management Server Installation Script"
 echo "Ubuntu 24.04 LTS - CloudStack ${CLOUDSTACK_VERSION} Single Node Setup with KVM Host and NFS Storage"
 echo "---------------------------------------------------"
 
+# =============================================================================
+# Dependencies Installation
+# =============================================================================
+
 echo "-> Installing general dependencies..."
 apt-get update -y
 apt-get full-upgrade -y
-apt-get install -y openntpd openssh-server sudo vim htop tar bridge-utils ovmf uuid cloud-init wget cloud-initramfs-growroot
+apt-get install -y openntpd openssh-server sudo vim htop tar bridge-utils ovmf uuid cloud-init wget cloud-initramfs-growroot xmlstarlet pciutils neofetch
 if grep -q 'GenuineIntel' /proc/cpuinfo; then
   apt-get install -y intel-microcode
 elif grep -q 'AuthenticAMD' /proc/cpuinfo; then
@@ -51,6 +55,10 @@ wget -qO - http://download.cloudstack.org/release.asc | gpg --dearmor | tee /etc
 echo "deb [signed-by=/etc/apt/keyrings/cloudstack.gpg] http://download.cloudstack.org/ubuntu noble $CLOUDSTACK_VERSION" >/etc/apt/sources.list.d/cloudstack.list
 apt-get update -y
 echo "-> CloudStack APT Repository Configured."
+
+# =============================================================================
+# CloudStack Management Server Installation
+# =============================================================================
 
 echo "-> Starting CloudStack Management Server installation..."
 apt-get update -y
@@ -68,6 +76,15 @@ systemctl restart mysql
 cloudstack-setup-databases $CLOUDSTACK_DB_USER:$CLOUDSTACK_DB_PASSWORD@$MYSQL_DATABASE_HOSTNAME --deploy-as=root:$MYSQL_ROOT_PASSWORD -i $CLOUDBR0_IP
 echo "-> CloudStack Management Server installation completed."
 
+echo "-> Starting CloudStack Management Server..."
+cloudstack-setup-management
+systemctl status cloudstack-management --no-pager
+echo "-> CloudStack Management Server started."
+
+# =============================================================================
+# NFS Server Configuration
+# =============================================================================
+
 echo "-> Configure NFS Server..."
 apt-get install -y nfs-kernel-server quota
 echo "/export  *(rw,async,no_root_squash,no_subtree_check)" >/etc/exports
@@ -79,6 +96,10 @@ echo "NEED_STATD=yes" >>/etc/default/nfs-common
 sed -i -e 's/^RPCRQUOTADOPTS=$/RPCRQUOTADOPTS="-p 875"/g' /etc/default/quota
 service nfs-kernel-server restart
 echo "-> NFS Server configured."
+
+# =============================================================================
+# KVM Host Configuration
+# =============================================================================
 
 echo "-> Configuring KVM Host..."
 apt-get -y install qemu-kvm cloudstack-agent
@@ -125,11 +146,6 @@ apparmor_parser -R /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper
 systemctl restart cloudstack-agent
 echo "-> KVM Host configured."
 
-echo "-> Starting CloudStack Management Server..."
-cloudstack-setup-management
-systemctl status cloudstack-management --no-pager
-echo "-> CloudStack Management Server started."
-
 echo "-> Configuring Root User..."
 echo "Waiting until SSH keys are generated..."
 while [ ! -f /var/lib/cloudstack/management/.ssh/id_rsa.pub ]; do
@@ -142,6 +158,10 @@ sed '1s/.*exit 142" //' /root/.ssh/authorized_keys >/root/.ssh/authorized_keys.t
 mv /root/.ssh/authorized_keys.tmp /root/.ssh/authorized_keys
 cat /var/lib/cloudstack/management/.ssh/id_rsa.pub >>/root/.ssh/authorized_keys
 echo "-> Root User configured."
+
+# =============================================================================
+# Completion Message
+# =============================================================================
 
 echo "\n\nCloudStack Management Server installation completed!"
 echo "Management Server IP: cloudbr0=${CLOUDBR0_IP} & cloudbr1${CLOUDBR1_IP}"

@@ -1,6 +1,8 @@
 # Cloudmonkey CLI Setup
 
-*TODO*: Create the equivalent using Terraform CloudStack provider where possible.
+**TODO**: Create the equivalent using Terraform CloudStack provider where possible.
+
+**Note**: When creating the network interfaces for the hosts, ensure that the `cloudbr0` and `cloudbr1` bridges are used against interfaces with the name format of `enp<id>s0`, e.g. `enp3s0`, `enp4s0`, etc. If this is not done, CloudStack may run into VLAN issues.
 
 ## Cloudmonkey Profile Configuration
 
@@ -8,7 +10,7 @@
 
 ```bash
 cmk set profile admin
-cmk set url http://10.10.17.10:8080/client/api
+cmk set url http://10.10.17.5:8080/client/api
 cmk set username $(op read "op://homecloud/CloudStack - admin/username")
 cmk set password $(op read "op://homecloud/CloudStack - admin/password")
 cmk set domain /
@@ -18,24 +20,7 @@ cmk set output json
 cmk -p admin sync
 ```
 
-### HomeCloud Admin User
-
-Note: Ensure the `homecloud-admin` user and `/homecloud` domain are created via the CloudStack UI before running these commands.
-
-```bash
-cmk set profile homecloud-admin
-cmk set url http://10.10.17.10:8080/client/api
-cmk set username $(op read "op://homecloud/CloudStack - homecloud-admin/username")
-cmk set password $(op read "op://homecloud/CloudStack - homecloud-admin/password")
-cmk set domain /homecloud
-cmk set timeout 3600
-cmk set asyncblock true
-cmk set output json
-# Run the line below only after creating the homecloud-admin user
-cmk -p homecloud-admin sync
-```
-
-## Account Setup
+### Account Setup
 
 ```bash
 # Domain and Account
@@ -69,13 +54,134 @@ ACCOUNT_ID=$(cmk -p admin create account \
   timezone="$TIMEZONE" \
   | jq -r '.account.id')
 echo "Account created: $ACCOUNT_NAME (ID: $ACCOUNT_ID)"
+
+echo "Updating account resouce limits..."
+# 0 - Instance. Number of instances a user can create.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=0 \
+  max=40
+# 1 - IP. Number of public IP addresses an account can own.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=1 \
+  max=40
+# 2 - Volume. Number of disk volumes an account can own.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=2 \
+  max=100
+# 3 - Snapshot. Number of snapshots an account can own.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=3 \
+  max=100
+# 4 - Template. Number of templates an account can register/create.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=4 \
+  max=40
+# 5 - Project. Number of projects an account can own.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=5 \
+  max=5
+# 6 - Network. Number of networks an account can own.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=6 \
+  max=20
+# 7 - VPC. Number of VPC an account can own.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=7 \
+  max=4
+# 8 - CPU. Number of CPU an account can allocate for their resources.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=8 \
+  max=110 # Assuming 2GHz per vCPU with a cluster of 234.59GHz (with overprovisioning of 1), this allows for ~117 vCPUs.
+# 9 - Memory. Amount of RAM an account can allocate for their resources.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=9 \
+  max=118784 # In MiB, assuming a cluster with 116GiB RAM and overprovisioning of 1
+# 10 - PrimaryStorage. Total primary storage space (in GiB) a user can use.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=10 \
+  max=2000
+# 11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=11 \
+  max=2000
+# 12 - Backups. Number of backups an account can own.
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=12 \
+  max=50
+# 13 - Backup Storage (GiB)
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=13 \
+  max=1000
+# 14 - Buckets
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=14 \
+  max=0
+# 15 - Object Storage (GiB)
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=15 \
+  max=0
+# 16 - GPUs
+cmk -p admin updateResourceLimit \
+  account="$ACCOUNT_NAME" \
+  domainid="$DOMAIN_ID" \
+  resourcetype=16 \
+  max=0
+echo "Account resource limits updated."
+```
+
+### HomeCloud Admin User
+
+Note: Ensure the `homecloud-admin` user and `/homecloud` domain are created via the CloudStack UI before running these commands.
+
+```bash
+cmk set profile homecloud-admin
+cmk set url http://10.10.17.5:8080/client/api
+cmk set username $(op read "op://homecloud/CloudStack - homecloud-admin/username")
+cmk set password $(op read "op://homecloud/CloudStack - homecloud-admin/password")
+cmk set domain /homecloud
+cmk set timeout 3600
+cmk set asyncblock true
+cmk set output json
+cmk -p homecloud-admin sync
 ```
 
 ## Global Settings
 
 ```bash
 # Variables
-ENDPOINT_URL="http://10.10.17.10:8080/client/api"  # Replace with your management server URL
+ENDPOINT_URL="http://10.10.17.5:8080/client/api"  # Replace with your management server URL
 
 # Access Settings
 cmk -p admin update configuration name=metadata.allow.expose.domain value=true
@@ -93,8 +199,10 @@ cmk -p admin update configuration name=vm.destroy.forcestop value=true
 cmk -p admin update configuration name=vm.display.ovf.properties value=true
 cmk -p admin update configuration name=vm.password.length value=12
 cmk -p admin update configuration name=vm.userdata.max.length value=1048576
+cmk -p admin update configuration name=cpu.overprovisioning.factor value=1.25
 # Compute - Kubernetes Settings
 cmk -p admin update configuration name=cloud.kubernetes.cluster.experimental.features.enabled value=true
+cmk -p admin update configuration name=cloud.kubernetes.cluster.network.offering value="acs.net.isolated.core"
 
 # Storage Settings
 cmk -p admin update configuration name=destroy.root.volume.on.vm.destruction value=true
@@ -119,9 +227,13 @@ cmk -p admin update configuration name=enable.s3.api value=true
 # System VMs - Console Proxy
 cmk -p admin update configuration name=consoleproxy.sslEnabled value=true
 
+# Infrastructure - Primary Storage
+cmk -p admin update configuration name=storage.overprovisioning.factor value=2
+
 # Miscellaneous
 cmk -p admin update configuration name=endpoint.url value="$ENDPOINT_URL"
 cmk -p admin update configuration name=store.download.follow.redirects value=true
+cmk -p admin update configuration name=mem.overprovisioning.factor value=1
 echo "Global configuration completed."
 ```
 
@@ -165,7 +277,8 @@ CLUSTER_NAME="cluster-homecloud"
 HYPERVISOR="KVM"
 
 # Host Configuration
-HOST_IP="10.10.17.10"
+HOST_1_IP="10.10.17.5"
+HOST_2_IP="10.10.17.10"
 HOST_USERNAME="root"
 
 # Primary Storage (NFS)
@@ -208,39 +321,10 @@ cmk -p admin add traffictype \
   traffictype="Management" \
   kvmnetworklabel="$PHYS_NET_1"
 
-# Create Physical Network 2 (cloudbr1) for Public and Guest
-echo "Creating physical network: $PHYS_NET_2..."
-PHYS_NET_2_ID=$(cmk -p admin create physicalnetwork \
-  name="$PHYS_NET_2" \
-  zoneid="$ZONE_ID" \
-  isolationmethods="VLAN" \
-  | jq -r '.physicalnetwork.id')
-echo "Physical network $PHYS_NET_2 created with ID: $PHYS_NET_2_ID"
-
-# Add Public traffic to cloudbr1
-echo "Adding Public traffic type to $PHYS_NET_2..."
-cmk -p admin add traffictype \
-  physicalnetworkid="$PHYS_NET_2_ID" \
-  traffictype="Public" \
-  kvmnetworklabel="$PHYS_NET_2"
-
-# Add Guest traffic to cloudbr1
-echo "Adding Guest traffic type to $PHYS_NET_2..."
-cmk -p admin add traffictype \
-  physicalnetworkid="$PHYS_NET_2_ID" \
-  traffictype="Guest" \
-  kvmnetworklabel="$PHYS_NET_2"
-
 # Enable Physical Network 1
 echo "Enabling physical network: $PHYS_NET_1..."
 cmk -p admin update physicalnetwork \
   id="$PHYS_NET_1_ID" \
-  state="Enabled"
-
-# Enable Physical Network 2
-echo "Enabling physical network: $PHYS_NET_2..."
-cmk -p admin update physicalnetwork \
-  id="$PHYS_NET_2_ID" \
   state="Enabled"
 
 # Get and enable network service providers for Physical Network 1
@@ -282,6 +366,55 @@ cmk -p admin list networkserviceproviders physicalnetworkid="$PHYS_NET_1_ID" | j
   fi
 done
 
+# Create Physical Network 2 (cloudbr1) for Public and Guest
+echo "Creating physical network: $PHYS_NET_2..."
+PHYS_NET_2_ID=$(cmk -p admin create physicalnetwork \
+  name="$PHYS_NET_2" \
+  zoneid="$ZONE_ID" \
+  isolationmethods="VLAN" \
+  | jq -r '.physicalnetwork.id')
+echo "Physical network $PHYS_NET_2 created with ID: $PHYS_NET_2_ID"
+
+# Add Public traffic to cloudbr1
+echo "Adding Public traffic type to $PHYS_NET_2..."
+cmk -p admin add traffictype \
+  physicalnetworkid="$PHYS_NET_2_ID" \
+  traffictype="Public" \
+  kvmnetworklabel="$PHYS_NET_2"
+
+# Add public IP range to cloudbr1
+echo "Adding public IP range..."
+cmk -p admin create vlaniprange \
+  zoneid="$ZONE_ID" \
+  physicalnetworkid="$PHYS_NET_2_ID" \
+  gateway="$PUBLIC_GATEWAY" \
+  netmask="$PUBLIC_NETMASK" \
+  startip="$PUBLIC_START_IP" \
+  endip="$PUBLIC_END_IP" \
+  forvirtualnetwork=true \
+  vlan="$PUBLIC_VLAN"
+echo "Public IP range added: $PUBLIC_START_IP - $PUBLIC_END_IP"
+
+# Add Guest traffic to cloudbr1
+echo "Adding Guest traffic type to $PHYS_NET_2..."
+cmk -p admin add traffictype \
+  physicalnetworkid="$PHYS_NET_2_ID" \
+  traffictype="Guest" \
+  kvmnetworklabel="$PHYS_NET_2"
+
+# Configure Guest VLAN Range
+echo "Configuring guest VLAN range: $GUEST_VLAN_START-$GUEST_VLAN_END..."
+cmk -p admin update physicalnetwork \
+  id="$PHYS_NET_2_ID" \
+  vlan="$GUEST_VLAN_START-$GUEST_VLAN_END"
+echo "Guest VLAN range configured"
+
+# Enable Physical Network 2
+echo "Enabling physical network: $PHYS_NET_2..."
+cmk -p admin update physicalnetwork \
+  id="$PHYS_NET_2_ID" \
+  state="Enabled"
+
 # Get and enable network service providers for Physical Network 2
 echo "Configuring network service providers for $PHYS_NET_2..."
 cmk -p admin list networkserviceproviders physicalnetworkid="$PHYS_NET_2_ID" | jq -r '.networkserviceprovider[] | "\(.id)|\(.name)"' | while IFS='|' read -r PROVIDER_ID PROVIDER_NAME; do
@@ -321,19 +454,6 @@ cmk -p admin list networkserviceproviders physicalnetworkid="$PHYS_NET_2_ID" | j
   fi
 done
 
-# Add public IP range to cloudbr1
-echo "Adding public IP range..."
-cmk -p admin create vlaniprange \
-  zoneid="$ZONE_ID" \
-  physicalnetworkid="$PHYS_NET_2_ID" \
-  gateway="$PUBLIC_GATEWAY" \
-  netmask="$PUBLIC_NETMASK" \
-  startip="$PUBLIC_START_IP" \
-  endip="$PUBLIC_END_IP" \
-  forvirtualnetwork=true \
-  vlan="$PUBLIC_VLAN"
-echo "Public IP range added: $PUBLIC_START_IP - $PUBLIC_END_IP"
-
 # Create Pod
 echo "Creating pod: $POD_NAME..."
 POD_ID=$(cmk -p admin create pod \
@@ -345,13 +465,6 @@ POD_ID=$(cmk -p admin create pod \
   endip="$POD_END_IP" \
   | jq -r '.pod.id')
 echo "Pod created with ID: $POD_ID"
-
-# Configure Guest VLAN Range
-echo "Configuring guest VLAN range: $GUEST_VLAN_START-$GUEST_VLAN_END..."
-cmk -p admin update physicalnetwork \
-  id="$PHYS_NET_2_ID" \
-  vlan="$GUEST_VLAN_START-$GUEST_VLAN_END"
-echo "Guest VLAN range configured"
 
 # Create Cluster
 echo "Creating cluster: $CLUSTER_NAME..."
@@ -365,16 +478,25 @@ CLUSTER_ID=$(cmk -p admin add cluster \
 echo "Cluster created with ID: $CLUSTER_ID"
 
 # Add Host
-echo "Adding host: $HOST_IP..."
-HOST_ID=$(cmk -p admin add host \
+echo "Adding host: $HOST_1_IP..."
+cmk -p admin add host \
   zoneid="$ZONE_ID" \
   podid="$POD_ID" \
   clusterid="$CLUSTER_ID" \
   hypervisor="$HYPERVISOR" \
-  url="http://$HOST_IP" \
-  username="$HOST_USERNAME" \
-  | jq -r '.host[0].id')
-echo "Host added with ID: $HOST_ID"
+  url="http://$HOST_1_IP" \
+  username="$HOST_USERNAME"
+echo "Host added"
+
+echo "Adding host: $HOST_2_IP..."
+cmk -p admin add host \
+  zoneid="$ZONE_ID" \
+  podid="$POD_ID" \
+  clusterid="$CLUSTER_ID" \
+  hypervisor="$HYPERVISOR" \
+  url="http://$HOST_2_IP" \
+  username="$HOST_USERNAME"
+echo "Host added"
 
 # Create Primary Storage (Zone-wide NFS)
 echo "Creating primary storage: $PRIMARY_STORAGE_NAME..."
@@ -431,23 +553,40 @@ echo ""
 echo "Zone setup completed successfully."
 ```
 
+**Note**: After running the above script, run the following on each host to complete setup:
+
+```bash
+sudo systemctl unmask libvirtd.socket libvirtd-ro.socket libvirtd-admin.socket libvirtd-tls.socket libvirtd-tcp.socket
+sudo systemctl stop libvirtd; sudo systemctl start libvirtd-tls.socket; sudo systemctl enable libvirtd-tls.socket
+sudo service cloudstack-agent restart
+sudo reboot now
+```
+
 ## Service Offerings
 
 ### Compute Offering
 
 ```bash
-cmk -p admin create serviceoffering name="acs.comp.gen.small"  displaytext="General Purpose Small"    cpunumber=1 cpuspeed=4000 memory=1024  networkrate=200 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.medium" displaytext="General Purpose Medium"   cpunumber=2 cpuspeed=4000 memory=2048  networkrate=300 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.large"  displaytext="General Purpose Large"    cpunumber=4 cpuspeed=4000 memory=4096  networkrate=500 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.xlarge" displaytext="General Purpose xLarge"   cpunumber=8 cpuspeed=4000 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.small"  displaytext="Memory Optimized Small"   cpunumber=1 cpuspeed=4000 memory=2048  networkrate=200 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.medium" displaytext="Memory Optimized Medium"  cpunumber=2 cpuspeed=4000 memory=4096  networkrate=300 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.large"  displaytext="Memory Optimized Large"   cpunumber=4 cpuspeed=4000 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.xlarge" displaytext="Memory Optimized xLarge"  cpunumber=8 cpuspeed=4000 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.small"  displaytext="Storage Optimized Small"  cpunumber=1 cpuspeed=4000 memory=1024  networkrate=200 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.medium" displaytext="Storage Optimized Medium" cpunumber=2 cpuspeed=4000 memory=2048  networkrate=300 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.large"  displaytext="Storage Optimized Large"  cpunumber=4 cpuspeed=4000 memory=4096  networkrate=500 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.xlarge" displaytext="Storage Optimized xLarge" cpunumber=8 cpuspeed=4000 memory=8192  networkrate=500 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.tiny"    displaytext="General Purpose Tiny"      cpunumber=1  cpuspeed=1000 memory=512   networkrate=100 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=20  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.small"   displaytext="General Purpose Small"     cpunumber=1  cpuspeed=2000 memory=1024  networkrate=200 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.medium"  displaytext="General Purpose Medium"    cpunumber=2  cpuspeed=2000 memory=2048  networkrate=300 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.large"   displaytext="General Purpose Large"     cpunumber=4  cpuspeed=2000 memory=4096  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.xlarge"  displaytext="General Purpose xLarge"    cpunumber=8  cpuspeed=2000 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.2xlarge" displaytext="General Purpose 2xLarge"   cpunumber=16 cpuspeed=2000 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.cpu.small"   displaytext="Compute Optimized Small"   cpunumber=2  cpuspeed=4000 memory=1024  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.cpu.medium"  displaytext="Compute Optimized Medium"  cpunumber=4  cpuspeed=4000 memory=2048  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.cpu.large"   displaytext="Compute Optimized Large"   cpunumber=8  cpuspeed=4000 memory=4096  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.cpu.xlarge"  displaytext="Compute Optimized xLarge"  cpunumber=16 cpuspeed=4000 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.small"   displaytext="Memory Optimized Small"    cpunumber=1  cpuspeed=2000 memory=2048  networkrate=200 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.medium"  displaytext="Memory Optimized Medium"   cpunumber=2  cpuspeed=2000 memory=4096  networkrate=300 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.large"   displaytext="Memory Optimized Large"    cpunumber=4  cpuspeed=2000 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.xlarge"  displaytext="Memory Optimized xLarge"   cpunumber=8  cpuspeed=2000 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.2xlarge" displaytext="Memory Optimized 2xLarge"  cpunumber=16 cpuspeed=2000 memory=32768 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.ssd.small"   displaytext="Storage Optimized Small"   cpunumber=1  cpuspeed=2000 memory=1024  networkrate=200 offerha=false dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.ssd.medium"  displaytext="Storage Optimized Medium"  cpunumber=2  cpuspeed=2000 memory=2048  networkrate=300 offerha=false dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.ssd.large"   displaytext="Storage Optimized Large"   cpunumber=4  cpuspeed=2000 memory=4096  networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.ssd.xlarge"  displaytext="Storage Optimized xLarge"  cpunumber=8  cpuspeed=2000 memory=8192  networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.ssd.2xlarge" displaytext="Storage Optimized 2xLarge" cpunumber=16 cpuspeed=2000 memory=16384 networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
 ```
 
 ### Disk Offering
@@ -470,25 +609,25 @@ cmk -p admin create diskoffering name="acs.disk.local.xlarge"  displaytext="Loca
 ### Network Offering
 
 ```bash
-cmk -p admin create networkoffering name="acs.net.shared.core-redundant"      displaytext="Shared Network with Redundant Virtual Router"                    guestiptype="Shared" traffictype="Guest" networkrate=500 specifyvlan=false conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=true ispersistent=false forvpc=false supportedservices="Vpn,Dhcp,Dns,Firewall,Lb,UserData,SourceNat,StaticNat,PortForwarding" serviceproviderlist[0].service="Vpn" serviceproviderlist[0].provider="VirtualRouter" serviceproviderlist[1].service="Dhcp" serviceproviderlist[1].provider="VirtualRouter" serviceproviderlist[2].service="Dns" serviceproviderlist[2].provider="VirtualRouter" serviceproviderlist[3].service="Firewall" serviceproviderlist[3].provider="VirtualRouter" serviceproviderlist[4].service="Lb" serviceproviderlist[4].provider="VirtualRouter" serviceproviderlist[5].service="UserData" serviceproviderlist[5].provider="VirtualRouter" serviceproviderlist[6].service="SourceNat" serviceproviderlist[6].provider="VirtualRouter" serviceproviderlist[7].service="StaticNat" serviceproviderlist[7].provider="VirtualRouter" serviceproviderlist[8].service="PortForwarding" serviceproviderlist[8].provider="VirtualRouter" serviceCapabilityList[0].service="SourceNat" serviceCapabilityList[0].capabilitytype="RedundantRouter" serviceCapabilityList[0].capabilityvalue="true"
-cmk -p admin create networkoffering name="acs.net.shared.core-redundant-vlan" displaytext="Shared Network with Redundant Virtual Router and VLAN specified" guestiptype="Shared" traffictype="Guest" networkrate=500 specifyvlan=true  conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=true ispersistent=false forvpc=false supportedservices="Vpn,Dhcp,Dns,Firewall,Lb,UserData,SourceNat,StaticNat,PortForwarding" serviceproviderlist[0].service="Vpn" serviceproviderlist[0].provider="VirtualRouter" serviceproviderlist[1].service="Dhcp" serviceproviderlist[1].provider="VirtualRouter" serviceproviderlist[2].service="Dns" serviceproviderlist[2].provider="VirtualRouter" serviceproviderlist[3].service="Firewall" serviceproviderlist[3].provider="VirtualRouter" serviceproviderlist[4].service="Lb" serviceproviderlist[4].provider="VirtualRouter" serviceproviderlist[5].service="UserData" serviceproviderlist[5].provider="VirtualRouter" serviceproviderlist[6].service="SourceNat" serviceproviderlist[6].provider="VirtualRouter" serviceproviderlist[7].service="StaticNat" serviceproviderlist[7].provider="VirtualRouter" serviceproviderlist[8].service="PortForwarding" serviceproviderlist[8].provider="VirtualRouter" serviceCapabilityList[0].service="SourceNat" serviceCapabilityList[0].capabilitytype="RedundantRouter" serviceCapabilityList[0].capabilityvalue="true"
+cmk -p admin create networkoffering name="acs.net.shared.core-redundant"      displaytext="Shared Network with Redundant Virtual Router"                    guestiptype="Shared" traffictype="Guest" networkrate=500 specifyvlan=false conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=true ispersistent=false forvpc=false supportedservices="Vpn,Dhcp,Dns,Firewall,Lb,UserData,SourceNat,StaticNat,PortForwarding" "serviceproviderlist[0].service=Vpn" "serviceproviderlist[0].provider=VirtualRouter" "serviceproviderlist[1].service=Dhcp" "serviceproviderlist[1].provider=VirtualRouter" "serviceproviderlist[2].service=Dns" "serviceproviderlist[2].provider=VirtualRouter" "serviceproviderlist[3].service=Firewall" "serviceproviderlist[3].provider=VirtualRouter" "serviceproviderlist[4].service=Lb" "serviceproviderlist[4].provider=VirtualRouter" "serviceproviderlist[5].service=UserData" "serviceproviderlist[5].provider=VirtualRouter" "serviceproviderlist[6].service=SourceNat" "serviceproviderlist[6].provider=VirtualRouter" "serviceproviderlist[7].service=StaticNat" "serviceproviderlist[7].provider=VirtualRouter" "serviceproviderlist[8].service=PortForwarding" "serviceproviderlist[8].provider=VirtualRouter" "serviceCapabilityList[0].service=SourceNat" "serviceCapabilityList[0].capabilitytype=RedundantRouter" "serviceCapabilityList[0].capabilityvalue=true"
+cmk -p admin create networkoffering name="acs.net.shared.core-redundant-vlan" displaytext="Shared Network with Redundant Virtual Router and VLAN specified" guestiptype="Shared" traffictype="Guest" networkrate=500 specifyvlan=true  conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=true ispersistent=false forvpc=false supportedservices="Vpn,Dhcp,Dns,Firewall,Lb,UserData,SourceNat,StaticNat,PortForwarding" "serviceproviderlist[0].service=Vpn" "serviceproviderlist[0].provider=VirtualRouter" "serviceproviderlist[1].service=Dhcp" "serviceproviderlist[1].provider=VirtualRouter" "serviceproviderlist[2].service=Dns" "serviceproviderlist[2].provider=VirtualRouter" "serviceproviderlist[3].service=Firewall" "serviceproviderlist[3].provider=VirtualRouter" "serviceproviderlist[4].service=Lb" "serviceproviderlist[4].provider=VirtualRouter" "serviceproviderlist[5].service=UserData" "serviceproviderlist[5].provider=VirtualRouter" "serviceproviderlist[6].service=SourceNat" "serviceproviderlist[6].provider=VirtualRouter" "serviceproviderlist[7].service=StaticNat" "serviceproviderlist[7].provider=VirtualRouter" "serviceproviderlist[8].service=PortForwarding" "serviceproviderlist[8].provider=VirtualRouter" "serviceCapabilityList[0].service=SourceNat" "serviceCapabilityList[0].capabilitytype=RedundantRouter" "serviceCapabilityList[0].capabilityvalue=true"
 
 
 # Isolated Network offerings
-cmk -p admin create networkoffering name="acs.net.isolated.core"           displaytext="Isolated Network with Virtual Router"           guestiptype="Isolated" traffictype="Guest" networkrate=500 specifyvlan=false ispersistent=true forvpc=false networkmode="NATTED" conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=false supportedservices="Vpn,Dhcp,Dns,Firewall,Lb,UserData,SourceNat,StaticNat,PortForwarding" serviceproviderlist[0].service="Vpn" serviceproviderlist[0].provider="VirtualRouter" serviceproviderlist[1].service="Dhcp" serviceproviderlist[1].provider="VirtualRouter" serviceproviderlist[2].service="Dns" serviceproviderlist[2].provider="VirtualRouter" serviceproviderlist[3].service="Firewall" serviceproviderlist[3].provider="VirtualRouter" serviceproviderlist[4].service="Lb" serviceproviderlist[4].provider="VirtualRouter" serviceproviderlist[5].service="UserData" serviceproviderlist[5].provider="VirtualRouter" serviceproviderlist[6].service="SourceNat" serviceproviderlist[6].provider="VirtualRouter" serviceproviderlist[7].service="StaticNat" serviceproviderlist[7].provider="VirtualRouter" serviceproviderlist[8].service="PortForwarding" serviceproviderlist[8].provider="VirtualRouter"
-cmk -p admin create networkoffering name="acs.net.isolated.core-redundant" displaytext="Isolated Network with Redundant Virtual Router" guestiptype="Isolated" traffictype="Guest" networkrate=500 specifyvlan=false ispersistent=true forvpc=false networkmode="NATTED" conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=false supportedservices="Vpn,Dhcp,Dns,Firewall,Lb,UserData,SourceNat,StaticNat,PortForwarding" serviceproviderlist[0].service="Vpn" serviceproviderlist[0].provider="VirtualRouter" serviceproviderlist[1].service="Dhcp" serviceproviderlist[1].provider="VirtualRouter" serviceproviderlist[2].service="Dns" serviceproviderlist[2].provider="VirtualRouter" serviceproviderlist[3].service="Firewall" serviceproviderlist[3].provider="VirtualRouter" serviceproviderlist[4].service="Lb" serviceproviderlist[4].provider="VirtualRouter" serviceproviderlist[5].service="UserData" serviceproviderlist[5].provider="VirtualRouter" serviceproviderlist[6].service="SourceNat" serviceproviderlist[6].provider="VirtualRouter" serviceproviderlist[7].service="StaticNat" serviceproviderlist[7].provider="VirtualRouter" serviceproviderlist[8].service="PortForwarding" serviceproviderlist[8].provider="VirtualRouter" serviceCapabilityList[0].service="SourceNat" serviceCapabilityList[0].capabilitytype="RedundantRouter" serviceCapabilityList[0].capabilityvalue="true"
+cmk -p admin create networkoffering name="acs.net.isolated.core"           displaytext="Isolated Network with Virtual Router"           guestiptype="Isolated" traffictype="Guest" networkrate=500 specifyvlan=false ispersistent=true forvpc=false networkmode="NATTED" conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=false supportedservices="Vpn,Dhcp,Dns,Firewall,Lb,UserData,SourceNat,StaticNat,PortForwarding" "serviceproviderlist[0].service=Vpn" "serviceproviderlist[0].provider=VirtualRouter" "serviceproviderlist[1].service=Dhcp" "serviceproviderlist[1].provider=VirtualRouter" "serviceproviderlist[2].service=Dns" "serviceproviderlist[2].provider=VirtualRouter" "serviceproviderlist[3].service=Firewall" "serviceproviderlist[3].provider=VirtualRouter" "serviceproviderlist[4].service=Lb" "serviceproviderlist[4].provider=VirtualRouter" "serviceproviderlist[5].service=UserData" "serviceproviderlist[5].provider=VirtualRouter" "serviceproviderlist[6].service=SourceNat" "serviceproviderlist[6].provider=VirtualRouter" "serviceproviderlist[7].service=StaticNat" "serviceproviderlist[7].provider=VirtualRouter" "serviceproviderlist[8].service=PortForwarding" "serviceproviderlist[8].provider=VirtualRouter"
+cmk -p admin create networkoffering name="acs.net.isolated.core-redundant" displaytext="Isolated Network with Redundant Virtual Router" guestiptype="Isolated" traffictype="Guest" networkrate=500 specifyvlan=false ispersistent=true forvpc=false networkmode="NATTED" conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=false supportedservices="Vpn,Dhcp,Dns,Firewall,Lb,UserData,SourceNat,StaticNat,PortForwarding" "serviceproviderlist[0].service=Vpn" "serviceproviderlist[0].provider=VirtualRouter" "serviceproviderlist[1].service=Dhcp" "serviceproviderlist[1].provider=VirtualRouter" "serviceproviderlist[2].service=Dns" "serviceproviderlist[2].provider=VirtualRouter" "serviceproviderlist[3].service=Firewall" "serviceproviderlist[3].provider=VirtualRouter" "serviceproviderlist[4].service=Lb" "serviceproviderlist[4].provider=VirtualRouter" "serviceproviderlist[5].service=UserData" "serviceproviderlist[5].provider=VirtualRouter" "serviceproviderlist[6].service=SourceNat" "serviceproviderlist[6].provider=VirtualRouter" "serviceproviderlist[7].service=StaticNat" "serviceproviderlist[7].provider=VirtualRouter" "serviceproviderlist[8].service=PortForwarding" "serviceproviderlist[8].provider=VirtualRouter" "serviceCapabilityList[0].service=SourceNat" "serviceCapabilityList[0].capabilitytype=RedundantRouter" "serviceCapabilityList[0].capabilityvalue=true"
 
 
 # VPC Network offerings
-cmk -p admin create networkoffering name="acs.net.vpc.core-internal-lb" displaytext="VPC Network with VpcVirtualRouter and Internal LB VM" guestiptype="Isolated" traffictype="Guest" networkrate=500 specifyvlan=false ispersistent=true forvpc=true networkmode="NATTED" conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=false internetprotocol="IPv4" guestiptype="Isolated" lbtype="internalLb" supportedservices="Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL" serviceproviderlist[0].service="Vpn" serviceproviderlist[0].provider="VpcVirtualRouter" serviceproviderlist[1].service="Dhcp" serviceproviderlist[1].provider="VpcVirtualRouter" serviceproviderlist[2].service="Dns" serviceproviderlist[2].provider="VpcVirtualRouter" serviceproviderlist[3].service="Lb" serviceproviderlist[3].provider="InternalLbVm" serviceproviderlist[4].service="UserData" serviceproviderlist[4].provider="VpcVirtualRouter" serviceproviderlist[5].service="SourceNat" serviceproviderlist[5].provider="VpcVirtualRouter" serviceproviderlist[6].service="StaticNat" serviceproviderlist[6].provider="VpcVirtualRouter" serviceproviderlist[7].service="PortForwarding" serviceproviderlist[7].provider="VpcVirtualRouter"                                  serviceproviderlist[8].service="NetworkACL" serviceproviderlist[8].provider="VpcVirtualRouter" serviceCapabilityList[0].service="SourceNat" serviceCapabilityList[0].capabilitytype="SupportedSourceNatTypes" serviceCapabilityList[0].capabilityvalue="peraccount" serviceCapabilityList[1].service="lb" serviceCapabilityList[1].capabilitytype="SupportedLbIsolation" serviceCapabilityList[1].capabilityvalue="dedicated" serviceCapabilityList[2].service="lb" serviceCapabilityList[2].capabilitytype="lbSchemes"            serviceCapabilityList[2].capabilityvalue="internal"
-cmk -p admin create networkoffering name="acs.net.vpc.core-public-lb"   displaytext="VPC Network with VpcVirtualRouter and Public LB"      guestiptype="Isolated" traffictype="Guest" networkrate=500 specifyvlan=false ispersistent=true forvpc=true networkmode="NATTED" conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=false internetprotocol="IPv4" guestiptype="Isolated" lbtype="publicLb" vmautoscalingcapability="true" supportedservices="Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL" serviceproviderlist[0].service="Vpn" serviceproviderlist[0].provider="VpcVirtualRouter" serviceproviderlist[1].service="Dhcp" serviceproviderlist[1].provider="VpcVirtualRouter" serviceproviderlist[2].service="Dns" serviceproviderlist[2].provider="VpcVirtualRouter" serviceproviderlist[3].service="Lb" serviceproviderlist[3].provider="VpcVirtualRouter" serviceproviderlist[4].service="UserData" serviceproviderlist[4].provider="VpcVirtualRouter" serviceproviderlist[5].service="SourceNat" serviceproviderlist[5].provider="VpcVirtualRouter" serviceproviderlist[6].service="StaticNat" serviceproviderlist[6].provider="VpcVirtualRouter" serviceproviderlist[7].service="PortForwarding" serviceproviderlist[7].provider="VpcVirtualRouter" serviceproviderlist[8].service="NetworkACL" serviceproviderlist[8].provider="VpcVirtualRouter" serviceCapabilityList[0].service="SourceNat" serviceCapabilityList[0].capabilitytype="SupportedSourceNatTypes" serviceCapabilityList[0].capabilityvalue="peraccount" serviceCapabilityList[1].service="lb" serviceCapabilityList[1].capabilitytype="VmAutoScaling"        serviceCapabilityList[1].capabilityvalue="true"      serviceCapabilityList[2].service="lb" serviceCapabilityList[2].capabilitytype="SupportedLbIsolation" serviceCapabilityList[2].capabilityvalue="dedicated"
+cmk -p admin create networkoffering name="acs.net.vpc.core-internal-lb" displaytext="VPC Network with VpcVirtualRouter and Internal LB VM" guestiptype="Isolated" traffictype="Guest" networkrate=500 specifyvlan=false ispersistent=true forvpc=true networkmode="NATTED" conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=false internetprotocol="IPv4" guestiptype="Isolated" lbtype="internalLb" supportedservices="Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL"                              "serviceproviderlist[0].service=Vpn" "serviceproviderlist[0].provider=VpcVirtualRouter" "serviceproviderlist[1].service=Dhcp" "serviceproviderlist[1].provider=VpcVirtualRouter" "serviceproviderlist[2].service=Dns" "serviceproviderlist[2].provider=VpcVirtualRouter" "serviceproviderlist[3].service=Lb" "serviceproviderlist[3].provider=InternalLbVm"     "serviceproviderlist[4].service=UserData" "serviceproviderlist[4].provider=VpcVirtualRouter" "serviceproviderlist[5].service=SourceNat" "serviceproviderlist[5].provider=VpcVirtualRouter" "serviceproviderlist[6].service=StaticNat" "serviceproviderlist[6].provider=VpcVirtualRouter" "serviceproviderlist[7].service=PortForwarding" "serviceproviderlist[7].provider=VpcVirtualRouter" "serviceproviderlist[8].service=NetworkACL" "serviceproviderlist[8].provider=VpcVirtualRouter" "serviceCapabilityList[0].service=SourceNat" "serviceCapabilityList[0].capabilitytype=SupportedSourceNatTypes" "serviceCapabilityList[0].capabilityvalue=peraccount" "serviceCapabilityList[1].service=lb" "serviceCapabilityList[1].capabilitytype=SupportedLbIsolation" "serviceCapabilityList[1].capabilityvalue=dedicated" "serviceCapabilityList[2].service=lb" "serviceCapabilityList[2].capabilitytype=lbSchemes"            "serviceCapabilityList[2].capabilityvalue=internal"
+cmk -p admin create networkoffering name="acs.net.vpc.core-public-lb"   displaytext="VPC Network with VpcVirtualRouter and Public LB"      guestiptype="Isolated" traffictype="Guest" networkrate=500 specifyvlan=false ispersistent=true forvpc=true networkmode="NATTED" conservemode=true egressdefaultpolicy=true ispublic=true enable=true specifyipranges=false internetprotocol="IPv4" guestiptype="Isolated" lbtype="publicLb" vmautoscalingcapability="true" supportedservices="Vpn,Dhcp,Dns,Lb,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL" "serviceproviderlist[0].service=Vpn" "serviceproviderlist[0].provider=VpcVirtualRouter" "serviceproviderlist[1].service=Dhcp" "serviceproviderlist[1].provider=VpcVirtualRouter" "serviceproviderlist[2].service=Dns" "serviceproviderlist[2].provider=VpcVirtualRouter" "serviceproviderlist[3].service=Lb" "serviceproviderlist[3].provider=VpcVirtualRouter" "serviceproviderlist[4].service=UserData" "serviceproviderlist[4].provider=VpcVirtualRouter" "serviceproviderlist[5].service=SourceNat" "serviceproviderlist[5].provider=VpcVirtualRouter" "serviceproviderlist[6].service=StaticNat" "serviceproviderlist[6].provider=VpcVirtualRouter" "serviceproviderlist[7].service=PortForwarding" "serviceproviderlist[7].provider=VpcVirtualRouter" "serviceproviderlist[8].service=NetworkACL" "serviceproviderlist[8].provider=VpcVirtualRouter" "serviceCapabilityList[0].service=SourceNat" "serviceCapabilityList[0].capabilitytype=SupportedSourceNatTypes" "serviceCapabilityList[0].capabilityvalue=peraccount" "serviceCapabilityList[1].service=lb" "serviceCapabilityList[1].capabilitytype=VmAutoScaling"        "serviceCapabilityList[1].capabilityvalue=true"      "serviceCapabilityList[2].service=lb" "serviceCapabilityList[2].capabilitytype=SupportedLbIsolation" "serviceCapabilityList[2].capabilityvalue=dedicated"
 ```
 
 ### VPC Offering
 
 ```bash
-cmk -p admin create vpcoffering name="acs.vpc.natted.core"           displaytext="NATTED Single Virtual Router VPC with VpcVirtualRouter, ConfigDrive, InternalLbVm"    internetprotocol="IPv4" ispublic=true enable=true networkmode="NATTED" supportedservices="Vpn,Dhcp,Dns,Lb,Gateway,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL" serviceproviderlist[0].service="Vpn" serviceproviderlist[0].provider="VpcVirtualRouter" serviceproviderlist[1].service="Dhcp" serviceproviderlist[1].provider="VpcVirtualRouter" serviceproviderlist[2].service="Dhcp" serviceproviderlist[2].provider="ConfigDrive" serviceproviderlist[3].service="Dns" serviceproviderlist[3].provider="VpcVirtualRouter" serviceproviderlist[4].service="Dns" serviceproviderlist[4].provider="ConfigDrive" serviceproviderlist[5].service="Lb" serviceproviderlist[5].provider="InternalLbVm" serviceproviderlist[6].service="Lb" serviceproviderlist[6].provider="VpcVirtualRouter" serviceproviderlist[7].service="Gateway" serviceproviderlist[7].provider="VpcVirtualRouter" serviceproviderlist[8].service="UserData" serviceproviderlist[8].provider="VpcVirtualRouter" serviceproviderlist[9].service="UserData" serviceproviderlist[9].provider="ConfigDrive" serviceproviderlist[10].service="SourceNat" serviceproviderlist[10].provider="VpcVirtualRouter" serviceproviderlist[11].service="StaticNat" serviceproviderlist[11].provider="VpcVirtualRouter" serviceproviderlist[12].service="PortForwarding" serviceproviderlist[12].provider="VpcVirtualRouter" serviceproviderlist[13].service="NetworkACL" serviceproviderlist[13].provider="VpcVirtualRouter"
-cmk -p admin create vpcoffering name="acs.vpc.natted.redundant-core" displaytext="NATTED Redundant Virtual Router VPC with VpcVirtualRouter, ConfigDrive, InternalLbVm" internetprotocol="IPv4" ispublic=true enable=true networkmode="NATTED" supportedservices="Vpn,Dhcp,Dns,Lb,Gateway,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL" serviceproviderlist[0].service="Vpn" serviceproviderlist[0].provider="VpcVirtualRouter" serviceproviderlist[1].service="Dhcp" serviceproviderlist[1].provider="VpcVirtualRouter" serviceproviderlist[2].service="Dhcp" serviceproviderlist[2].provider="ConfigDrive" serviceproviderlist[3].service="Dns" serviceproviderlist[3].provider="VpcVirtualRouter" serviceproviderlist[4].service="Dns" serviceproviderlist[4].provider="ConfigDrive" serviceproviderlist[5].service="Lb" serviceproviderlist[5].provider="InternalLbVm" serviceproviderlist[6].service="Lb" serviceproviderlist[6].provider="VpcVirtualRouter" serviceproviderlist[7].service="Gateway" serviceproviderlist[7].provider="VpcVirtualRouter" serviceproviderlist[8].service="UserData" serviceproviderlist[8].provider="VpcVirtualRouter" serviceproviderlist[9].service="UserData" serviceproviderlist[9].provider="ConfigDrive" serviceproviderlist[10].service="SourceNat" serviceproviderlist[10].provider="VpcVirtualRouter" serviceproviderlist[11].service="StaticNat" serviceproviderlist[11].provider="VpcVirtualRouter" serviceproviderlist[12].service="PortForwarding" serviceproviderlist[12].provider="VpcVirtualRouter" serviceproviderlist[13].service="NetworkACL" serviceproviderlist[13].provider="VpcVirtualRouter" serviceCapabilityList[0].service="SourceNat" serviceCapabilityList[0].capabilitytype="RedundantRouter" serviceCapabilityList[0].capabilityvalue="true"
+cmk -p admin create vpcoffering name="acs.vpc.natted.core"           displaytext="NATTED Single Virtual Router VPC with VpcVirtualRouter, ConfigDrive, InternalLbVm"    internetprotocol="IPv4" ispublic=true enable=true networkmode="NATTED" supportedservices="Vpn,Dhcp,Dns,Lb,Gateway,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL" "serviceproviderlist[0].service=Vpn" "serviceproviderlist[0].provider=VpcVirtualRouter" "serviceproviderlist[1].service=Dhcp" "serviceproviderlist[1].provider=VpcVirtualRouter" "serviceproviderlist[2].service=Dhcp" "serviceproviderlist[2].provider=ConfigDrive" "serviceproviderlist[3].service=Dns" "serviceproviderlist[3].provider=VpcVirtualRouter" "serviceproviderlist[4].service=Dns" "serviceproviderlist[4].provider=ConfigDrive" "serviceproviderlist[5].service=Lb" "serviceproviderlist[5].provider=InternalLbVm" "serviceproviderlist[6].service=Lb" "serviceproviderlist[6].provider=VpcVirtualRouter" "serviceproviderlist[7].service=Gateway" "serviceproviderlist[7].provider=VpcVirtualRouter" "serviceproviderlist[8].service=UserData" "serviceproviderlist[8].provider=VpcVirtualRouter" "serviceproviderlist[9].service=UserData" "serviceproviderlist[9].provider=ConfigDrive" "serviceproviderlist[10].service=SourceNat" "serviceproviderlist[10].provider=VpcVirtualRouter" "serviceproviderlist[11].service=StaticNat" "serviceproviderlist[11].provider=VpcVirtualRouter" "serviceproviderlist[12].service=PortForwarding" "serviceproviderlist[12].provider=VpcVirtualRouter" "serviceproviderlist[13].service=NetworkACL" "serviceproviderlist[13].provider=VpcVirtualRouter"
+cmk -p admin create vpcoffering name="acs.vpc.natted.redundant-core" displaytext="NATTED Redundant Virtual Router VPC with VpcVirtualRouter, ConfigDrive, InternalLbVm" internetprotocol="IPv4" ispublic=true enable=true networkmode="NATTED" supportedservices="Vpn,Dhcp,Dns,Lb,Gateway,UserData,SourceNat,StaticNat,PortForwarding,NetworkACL" "serviceproviderlist[0].service=Vpn" "serviceproviderlist[0].provider=VpcVirtualRouter" "serviceproviderlist[1].service=Dhcp" "serviceproviderlist[1].provider=VpcVirtualRouter" "serviceproviderlist[2].service=Dhcp" "serviceproviderlist[2].provider=ConfigDrive" "serviceproviderlist[3].service=Dns" "serviceproviderlist[3].provider=VpcVirtualRouter" "serviceproviderlist[4].service=Dns" "serviceproviderlist[4].provider=ConfigDrive" "serviceproviderlist[5].service=Lb" "serviceproviderlist[5].provider=InternalLbVm" "serviceproviderlist[6].service=Lb" "serviceproviderlist[6].provider=VpcVirtualRouter" "serviceproviderlist[7].service=Gateway" "serviceproviderlist[7].provider=VpcVirtualRouter" "serviceproviderlist[8].service=UserData" "serviceproviderlist[8].provider=VpcVirtualRouter" "serviceproviderlist[9].service=UserData" "serviceproviderlist[9].provider=ConfigDrive" "serviceproviderlist[10].service=SourceNat" "serviceproviderlist[10].provider=VpcVirtualRouter" "serviceproviderlist[11].service=StaticNat" "serviceproviderlist[11].provider=VpcVirtualRouter" "serviceproviderlist[12].service=PortForwarding" "serviceproviderlist[12].provider=VpcVirtualRouter" "serviceproviderlist[13].service=NetworkACL" "serviceproviderlist[13].provider=VpcVirtualRouter" "serviceCapabilityList[0].service=SourceNat" "serviceCapabilityList[0].capabilitytype=RedundantRouter" "serviceCapabilityList[0].capabilityvalue=true"
 ```
 
 ## Templates
@@ -606,6 +745,8 @@ cmk -p admin register iso \
   url="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso" \
   zoneid="$ZONE_ID" \
   bootable=false \
+  ispublic=true \
+  isfeatured=false \
   ostypeid=$(cmk -p admin list ostypes description="Other (64-bit)" | jq -r '.ostype[0].id')
 
 cmk -p admin list templates templatefilter=all zoneid=$ZONE_ID | jq -r '.template[] | select(.name | contains(\"Ubuntu\") or contains(\"Debian\")) | {name: .name, status: .status}'
@@ -625,7 +766,7 @@ HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r
 echo "Registering cloud-default user data..."
 cmk -p homecloud-admin registerUserData \
   name="cloud-default" \
-  userdata="$(cat ../compute/cloud-init/cloud-default.yaml | base64)" \
+  userdata="$(cat cloudstack/compute/cloud-init/cloud-default.yaml | base64)" \
   account=homecloud \
   domainid="$HOMECLOUD_DOMAIN_ID"
 
@@ -633,7 +774,7 @@ cmk -p homecloud-admin registerUserData \
 echo "Registering tailscale-router-debian user data..."
 cmk -p homecloud-admin registerUserData \
   name="tailscale-router-debian" \
-  userdata="$(cat ../compute/cloud-init/tailscale-router-debian.yaml | base64)" \
+  userdata="$(cat cloudstack/compute/cloud-init/tailscale-router-debian.yaml | base64)" \
   account=homecloud \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   "params=tailscale_auth_key,network_router_cidr"
@@ -645,7 +786,7 @@ echo "Registering Cilium CNI configuration..."
 cmk -p homecloud-admin registerCniConfiguration \
   name="cilium" \
   description="Cilium CNI configuration for CKS clusters" \
-  cniconfig="$(tail -n +3 ../compute/cni-config/cilium.yaml | base64)" \
+  cniconfig="$(tail -n +3 cloudstack/compute/cni-config/cilium.yaml | base64)" \
   account=homecloud \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   params="cilium_version"
@@ -673,7 +814,7 @@ HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r
 DEV_VPC_NAME="homecloud-vpc-dev"
 DEV_VPC_CIDR="10.0.0.0/24"
 
-VPC_OFFERING_ID=$(cmk -p homecloud-admin list vpcofferings name="acs.vpc.natted.core" | jq -r '.vpcoffering[0].id')
+VPC_OFFERING_ID=$(cmk -p homecloud-admin list vpcofferings name="acs.vpc.natted.redundant-core" | jq -r '.vpcoffering[0].id')
 PUBLIC_LB_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs.net.vpc.core-public-lb" | jq -r '.networkoffering[0].id')
 INTERNAL_LB_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs.net.vpc.core-internal-lb" | jq -r '.networkoffering[0].id')
 
@@ -824,7 +965,7 @@ HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r
 ISOLATED_NETWORK_NAME="isolated-net-1"
 ISOLATED_NETWORK_CIDR="10.2.2.0/24"
 
-ISOLATED_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs.net.isolated.core" | jq -r '.networkoffering[0].id')
+ISOLATED_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs.net.isolated.core-redundant" | jq -r '.networkoffering[0].id')
 
 ISOLATED_NETWORK_ID=$(cmk -p homecloud-admin create network \
   name="$ISOLATED_NETWORK_NAME" \
@@ -847,7 +988,7 @@ ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 TAILSCALE_USERDATA_ID=$(cmk -p homecloud-admin list userdata name="tailscale-router-debian" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.userdata[0].id')
 UBUNTU_TEMPLATE_ID=$(cmk -p homecloud-admin list templates templatefilter=all name="Ubuntu 24.04 - Noble" zoneid="$ZONE_ID" | jq -r '.template[0].id')
-COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.small" | jq -r '.serviceoffering[0].id')
+COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.tiny" | jq -r '.serviceoffering[0].id')
 
 TAILSCALE_AUTH_KEY="tskey-auth-xxxxxx-xxxxxxxxxxxxxxx"  # Replace with actual reusable ephemeral Tailscale auth key
 ```
@@ -859,7 +1000,7 @@ DEV_VPC_CIDR="10.0.0.0/24"
 
 DEV_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
   name="tailscale-router-dev" \
-  displayname="Tailscale Router Development Network" \
+  displayname="tailscale-router-dev" \
   serviceofferingid="$COMPUTE_OFFERING_ID" \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
@@ -880,7 +1021,7 @@ PROD_VPC_CIDR="10.1.1.0/24"
 
 PROD_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
   name="tailscale-router-prod" \
-  displayname="Tailscale Router Production Network" \
+  displayname="tailscale-router-prod" \
   serviceofferingid="$COMPUTE_OFFERING_ID" \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
@@ -894,14 +1035,67 @@ PROD_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
   | jq -r '.virtualmachine.id')
 ```
 
-## Kubernetes Cluster
+## VPS
 
 ```bash
 ACCOUNT_NAME="homecloud"
 ZONE_NAME="zone-homecloud"
 ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
-CKS_OFFERING_ID=$(cmk -p homecloud-admin list kubernetessupportedversions name="cks-v1.34.2-cilium_v1.18.2-x86_64" zoneid="$ZONE_ID" | jq -r '.kubernetessupportedversion[0].id')
+DEFAULT_USERDATA_ID=$(cmk -p homecloud-admin list userdata name="cloud-default" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.userdata[0].id')
+UBUNTU_TEMPLATE_ID=$(cmk -p homecloud-admin list templates templatefilter=all name="Ubuntu 24.04 - Noble" zoneid="$ZONE_ID" | jq -r '.template[0].id')
+```
+
+### Dev VPS
+
+```bash
+DEV_COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.large" | jq -r '.serviceoffering[0].id')
+DEV_VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-dev_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+
+DEV_VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
+  name="homecloud-vps-dev-1" \
+  displayname="homecloud-vps-dev-1" \
+  serviceofferingid="$DEV_COMPUTE_OFFERING_ID" \
+  templateid="$UBUNTU_TEMPLATE_ID" \
+  zoneid="$ZONE_ID" \
+  networkids="$DEV_VPS_NETWORK_ID" \
+  userdataid="$DEFAULT_USERDATA_ID" \
+  account="$ACCOUNT_NAME" \
+  domainid="$HOMECLOUD_DOMAIN_ID" \
+  keypair="nulcell" \
+  | jq -r '.virtualmachine.id')
+```
+
+### Prod VPS
+
+```bash
+PROD_COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.xlarge" | jq -r '.serviceoffering[0].id')
+PROD_VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-prod_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+
+PROD_VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
+  name="homecloud-vps-prod-1" \
+  displayname="homecloud-vps-prod-1" \
+  serviceofferingid="$PROD_COMPUTE_OFFERING_ID" \
+  templateid="$UBUNTU_TEMPLATE_ID" \
+  zoneid="$ZONE_ID" \
+  networkids="$PROD_VPS_NETWORK_ID" \
+  userdataid="$DEFAULT_USERDATA_ID" \
+  account="$ACCOUNT_NAME" \
+  domainid="$HOMECLOUD_DOMAIN_ID" \
+  keypair="nulcell" \
+  | jq -r '.virtualmachine.id')
+```
+
+## Kubernetes Cluster
+
+**Note:** If cluster creation fails, check that the account has sufficient resource limits for CPU, RAM, and primary storage.
+
+```bash
+ACCOUNT_NAME="homecloud"
+ZONE_NAME="zone-homecloud"
+ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
+HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
+CKS_OFFERING_ID=$(cmk -p homecloud-admin list kubernetessupportedversions keyword="cks-v1.34.2-cilium_v1.18.2-x86_64" zoneid="$ZONE_ID" | jq -r '.kubernetessupportedversion[0].id')
 CNI_CONFIG_ID=$(cmk -p homecloud-admin listCniConfiguration name="cilium" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.cniconfig[0].id')
 ```
 
@@ -910,26 +1104,39 @@ CNI_CONFIG_ID=$(cmk -p homecloud-admin listCniConfiguration name="cilium" accoun
 ```bash
 echo "Creating Development CKS Cluster (this takes 15-30 minutes)..."
 DEV_PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-dev_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-CKS_SERVICE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.medium" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID_CONTROL=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.large" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID_WORKER=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.large" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID=$CKS_SERVICE_OFFERING_ID_WORKER
 DEV_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   name="homecloud-cks-dev" \
   description="Homecloud Development Kubernetes Cluster" \
   zoneid="$ZONE_ID" \
   kubernetesversionid="$CKS_OFFERING_ID" \
   serviceofferingid="$CKS_SERVICE_OFFERING_ID" \
+  "nodeofferings[0].node=control" \
+  "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
+  "nodeofferings[1].node=worker" \
+  "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER" \
   noderootdisksize=50 \
   networkid="$DEV_PUB_NET_1_ID" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   hypervisor="KVM" \
   controlnodes=1 \
-  size=1 \
+  size=2 \
   keypair="nulcell" \
   enablecsi=true \
   cniconfigurationid="$CNI_CONFIG_ID" \
   "cniconfigdetails[0].cilium_version=1.18.4" \
   | jq -r '.kubernetescluster.id')
-cmk -p homecloud-admin scaleKubernetesCluster id="$DEV_CKS_ID" autoscalingenabled=true minsize=1 maxsize=2
+cmk -p homecloud-admin scaleKubernetesCluster id="$DEV_CKS_ID" \
+  autoscalingenabled=true \
+  minsize=1 \
+  maxsize=3 \
+  "nodeofferings[0].node=control" \
+  "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
+  "nodeofferings[1].node=worker" \
+  "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER"
 
 echo "Retrieving kubeconfig for Development CKS Cluster..."
 cmk -p homecloud-admin getKubernetesClusterConfig id="$DEV_CKS_ID" | jq -r .clusterconfig.configdata > dev-cks-kubeconfig.yaml
@@ -949,26 +1156,40 @@ echo "Development CKS Cluster ID: $DEV_CKS_ID"
 ```bash
 echo "Creating Production CKS Cluster (this takes 15-30 minutes)..."
 PROD_PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-prod_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-CKS_SERVICE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.large" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID_CONTROL=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.large" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID_WORKER=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.large" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID=$CKS_SERVICE_OFFERING_ID_WORKER
 PROD_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   name="homecloud-cks-prod" \
   description="Homecloud Production Kubernetes Cluster" \
   zoneid="$ZONE_ID" \
   kubernetesversionid="$CKS_OFFERING_ID" \
   serviceofferingid="$CKS_SERVICE_OFFERING_ID" \
+  "nodeofferings[0].node=control" \
+  "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
+  "nodeofferings[1].node=worker" \
+  "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER" \
   noderootdisksize=50 \
   networkid="$PROD_PUB_NET_1_ID" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   hypervisor="KVM" \
-  controlnodes=3 \
+  controlnodes=1 \
   size=3 \
-  keypair="homecloud-admin" \
+  keypair="nulcell" \
   enablecsi=true \
   cniconfigurationid="$CNI_CONFIG_ID" \
   "cniconfigdetails[0].cilium_version=1.18.4" \
   | jq -r '.kubernetescluster.id')
-cmk -p homecloud-admin scaleKubernetesCluster id="$PROD_CKS_ID" autoscalingenabled=true minsize=3 maxsize=10
+cmk -p homecloud-admin scaleKubernetesCluster id="$PROD_CKS_ID" \
+  autoscalingenabled=true \
+  minsize=1 \
+  maxsize=5 \
+  "nodeofferings[0].node=control" \
+  "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
+  "nodeofferings[1].node=worker" \
+  "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER"
+
 echo "Retrieving kubeconfig for Production CKS Cluster..."
 cmk -p homecloud-admin getKubernetesClusterConfig id="$PROD_CKS_ID" | jq -r .clusterconfig.configdata > prod-cks-kubeconfig.yaml
 sed -i '' 's/kubernetes-admin@kubernetes/admin@homecloud-cks-prod/g' prod-cks-kubeconfig.yaml
