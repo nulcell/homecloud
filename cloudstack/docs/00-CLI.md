@@ -737,6 +737,18 @@ cmk -p admin addKubernetesSupportedVersion \
 
 echo "Registering Utility ISOs..."
 
+# Windows Server 2025 ISO (https://www.microsoft.com/en-us/evalcenter/download-windows-server-2025)
+echo "Registering Windows Server 2025 ISO..."
+cmk -p admin register iso \
+  displaytext="Windows Server 2025 ISO" \
+  name="windows-server-2025" \
+  url="https://software-static.download.prss.microsoft.com/dbazure/888969d5-f34g-4e03-ac9d-1f9786c66749/26100.1742.240906-0331.ge_release_svc_refresh_SERVER_EVAL_x64FRE_en-us.iso" \
+  zoneid="$ZONE_ID" \
+  bootable=true \
+  ispublic=true \
+  isfeatured=true \
+  ostypeid=$(cmk -p admin list ostypes description="Windows Server 2025" | jq -r '.ostype[0].id')
+
 # VirtIO Drivers for Windows
 echo "Registering VirtIO drivers ISO for Windows..."
 cmk -p admin register iso \
@@ -1053,8 +1065,8 @@ DEV_COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs
 DEV_VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-dev_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 
 DEV_VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
-  name="homecloud-vps-dev-1" \
-  displayname="homecloud-vps-dev-1" \
+  name="homecloud-vps-dev" \
+  displayname="homecloud-vps-dev" \
   serviceofferingid="$DEV_COMPUTE_OFFERING_ID" \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
@@ -1073,8 +1085,8 @@ PROD_COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="ac
 PROD_VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-prod_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 
 PROD_VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
-  name="homecloud-vps-prod-1" \
-  displayname="homecloud-vps-prod-1" \
+  name="homecloud-vps-prod" \
+  displayname="homecloud-vps-prod" \
   serviceofferingid="$PROD_COMPUTE_OFFERING_ID" \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
