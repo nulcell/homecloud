@@ -109,7 +109,7 @@ cmk -p admin updateResourceLimit \
   account="$ACCOUNT_NAME" \
   domainid="$DOMAIN_ID" \
   resourcetype=8 \
-  max=110 # Assuming 2GHz per vCPU with a cluster of 234.59GHz (with overprovisioning of 1), this allows for ~117 vCPUs.
+  max=110 # Assuming 2.5GHz per vCPU with a cluster of real 234.59GHz (with overprovisioning of 1.25), this allows for ~117 vCPUs.
 # 9 - Memory. Amount of RAM an account can allocate for their resources.
 cmk -p admin updateResourceLimit \
   account="$ACCOUNT_NAME" \
@@ -157,7 +157,7 @@ cmk -p admin updateResourceLimit \
   account="$ACCOUNT_NAME" \
   domainid="$DOMAIN_ID" \
   resourcetype=16 \
-  max=0
+  max=2
 echo "Account resource limits updated."
 ```
 
@@ -200,6 +200,10 @@ cmk -p admin update configuration name=vm.display.ovf.properties value=true
 cmk -p admin update configuration name=vm.password.length value=12
 cmk -p admin update configuration name=vm.userdata.max.length value=1048576
 cmk -p admin update configuration name=cpu.overprovisioning.factor value=1.25
+cmk -p admin update configuration name=vm.min.cpu.speed.equals.cpu.speed.divided.by.cpu.overprovisioning.factor value=false
+cmk -p admin update configuration name=vm.min.memory.equals.memory.divided.by.mem.overprovisioning.factor value=false
+cmk -p admin update configuration name=vm.serviceoffering.cpu.cores.max value=16
+cmk -p admin update configuration name=vm.serviceoffering.ram.size.max value=32768
 # Compute - Kubernetes Settings
 cmk -p admin update configuration name=cloud.kubernetes.cluster.experimental.features.enabled value=true
 cmk -p admin update configuration name=cloud.kubernetes.cluster.network.offering value="acs.net.isolated.core"
@@ -567,26 +571,22 @@ sudo reboot now
 ### Compute Offering
 
 ```bash
-cmk -p admin create serviceoffering name="acs.comp.gen.tiny"    displaytext="General Purpose Tiny"      cpunumber=1  cpuspeed=1000 memory=512   networkrate=100 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=20  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.small"   displaytext="General Purpose Small"     cpunumber=1  cpuspeed=2000 memory=1024  networkrate=200 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.medium"  displaytext="General Purpose Medium"    cpunumber=2  cpuspeed=2000 memory=2048  networkrate=300 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.large"   displaytext="General Purpose Large"     cpunumber=4  cpuspeed=2000 memory=4096  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.xlarge"  displaytext="General Purpose xLarge"    cpunumber=8  cpuspeed=2000 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.2xlarge" displaytext="General Purpose 2xLarge"   cpunumber=16 cpuspeed=2000 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.cpu.small"   displaytext="Compute Optimized Small"   cpunumber=2  cpuspeed=4000 memory=1024  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.cpu.medium"  displaytext="Compute Optimized Medium"  cpunumber=4  cpuspeed=4000 memory=2048  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.cpu.large"   displaytext="Compute Optimized Large"   cpunumber=8  cpuspeed=4000 memory=4096  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.cpu.xlarge"  displaytext="Compute Optimized xLarge"  cpunumber=16 cpuspeed=4000 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.small"   displaytext="Memory Optimized Small"    cpunumber=1  cpuspeed=2000 memory=2048  networkrate=200 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.medium"  displaytext="Memory Optimized Medium"   cpunumber=2  cpuspeed=2000 memory=4096  networkrate=300 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.large"   displaytext="Memory Optimized Large"    cpunumber=4  cpuspeed=2000 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.xlarge"  displaytext="Memory Optimized xLarge"   cpunumber=8  cpuspeed=2000 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.2xlarge" displaytext="Memory Optimized 2xLarge"  cpunumber=16 cpuspeed=2000 memory=32768 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.small"   displaytext="Storage Optimized Small"   cpunumber=1  cpuspeed=2000 memory=1024  networkrate=200 offerha=false dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.medium"  displaytext="Storage Optimized Medium"  cpunumber=2  cpuspeed=2000 memory=2048  networkrate=300 offerha=false dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.large"   displaytext="Storage Optimized Large"   cpunumber=4  cpuspeed=2000 memory=4096  networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.xlarge"  displaytext="Storage Optimized xLarge"  cpunumber=8  cpuspeed=2000 memory=8192  networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.2xlarge" displaytext="Storage Optimized 2xLarge" cpunumber=16 cpuspeed=2000 memory=16384 networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.tiny"    displaytext="General Purpose Tiny"      cpunumber=1  cpuspeed=1000 memory=512   networkrate=100 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=20  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.small"   displaytext="General Purpose Small"     cpunumber=1  cpuspeed=2500 memory=1024  networkrate=200 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.medium"  displaytext="General Purpose Medium"    cpunumber=2  cpuspeed=2500 memory=2048  networkrate=300 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.large"   displaytext="General Purpose Large"     cpunumber=4  cpuspeed=2500 memory=4096  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.xlarge"  displaytext="General Purpose xLarge"    cpunumber=8  cpuspeed=2500 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.2xlarge" displaytext="General Purpose 2xLarge"   cpunumber=16 cpuspeed=2500 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.small"   displaytext="Memory Optimized Small"    cpunumber=1  cpuspeed=2500 memory=2048  networkrate=200 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.medium"  displaytext="Memory Optimized Medium"   cpunumber=2  cpuspeed=2500 memory=4096  networkrate=300 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.large"   displaytext="Memory Optimized Large"    cpunumber=4  cpuspeed=2500 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.xlarge"  displaytext="Memory Optimized xLarge"   cpunumber=8  cpuspeed=2500 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.2xlarge" displaytext="Memory Optimized 2xLarge"  cpunumber=16 cpuspeed=2500 memory=32768 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.ssd.small"   displaytext="Storage Optimized Small"   cpunumber=1  cpuspeed=2500 memory=1024  networkrate=200 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.ssd.medium"  displaytext="Storage Optimized Medium"  cpunumber=2  cpuspeed=2500 memory=2048  networkrate=300 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.ssd.large"   displaytext="Storage Optimized Large"   cpunumber=4  cpuspeed=2500 memory=4096  networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.ssd.xlarge"  displaytext="Storage Optimized xLarge"  cpunumber=8  cpuspeed=2500 memory=8192  networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.ssd.2xlarge" displaytext="Storage Optimized 2xLarge" cpunumber=16 cpuspeed=2500 memory=16384 networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
 ```
 
 ### Disk Offering
@@ -1002,7 +1002,7 @@ TAILSCALE_USERDATA_ID=$(cmk -p homecloud-admin list userdata name="tailscale-rou
 UBUNTU_TEMPLATE_ID=$(cmk -p homecloud-admin list templates templatefilter=all name="Ubuntu 24.04 - Noble" zoneid="$ZONE_ID" | jq -r '.template[0].id')
 COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.tiny" | jq -r '.serviceoffering[0].id')
 
-TAILSCALE_AUTH_KEY="tskey-auth-xxxxxx-xxxxxxxxxxxxxxx"  # Replace with actual reusable ephemeral Tailscale auth key
+TAILSCALE_AUTH_KEY=$(op read "op://homecloud/Tailscale Token/credential")
 ```
 
 ### Dev VPN
@@ -1135,7 +1135,7 @@ DEV_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   hypervisor="KVM" \
   controlnodes=1 \
-  size=2 \
+  size=1 \
   keypair="nulcell" \
   enablecsi=true \
   cniconfigurationid="$CNI_CONFIG_ID" \
