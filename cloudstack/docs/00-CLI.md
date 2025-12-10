@@ -1062,11 +1062,11 @@ UBUNTU_TEMPLATE_ID=$(cmk -p homecloud-admin list templates templatefilter=all na
 
 ```bash
 DEV_COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.large" | jq -r '.serviceoffering[0].id')
-DEV_VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-dev_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+DEV_VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-dev_priv-net-2" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 
 DEV_VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
-  name="homecloud-vps-dev" \
-  displayname="homecloud-vps-dev" \
+  name="acs-vps-dev" \
+  displayname="acs-vps-dev" \
   serviceofferingid="$DEV_COMPUTE_OFFERING_ID" \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
@@ -1082,11 +1082,11 @@ DEV_VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
 
 ```bash
 PROD_COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.xlarge" | jq -r '.serviceoffering[0].id')
-PROD_VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-prod_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+PROD_VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc-prod_priv-net-2" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 
 PROD_VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
-  name="homecloud-vps-prod" \
-  displayname="homecloud-vps-prod" \
+  name="acs-vps-prod" \
+  displayname="acs-vps-prod" \
   serviceofferingid="$PROD_COMPUTE_OFFERING_ID" \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
@@ -1187,7 +1187,7 @@ PROD_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   hypervisor="KVM" \
   controlnodes=1 \
-  size=3 \
+  size=2 \
   keypair="nulcell" \
   enablecsi=true \
   cniconfigurationid="$CNI_CONFIG_ID" \
