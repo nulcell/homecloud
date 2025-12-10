@@ -157,6 +157,8 @@ echo "Cleaning root blocker commands in authorized_keys..."
 sed '1s/.*exit 142" //' /root/.ssh/authorized_keys >/root/.ssh/authorized_keys.tmp
 mv /root/.ssh/authorized_keys.tmp /root/.ssh/authorized_keys
 cat /var/lib/cloudstack/management/.ssh/id_rsa.pub >>/root/.ssh/authorized_keys
+# OR do the following on worker nodes after running `python3 -m http.server 8000` on management server in `/var/lib/cloudstack/management/.ssh/` directory
+# curl http://10.10.17.5:8000/id_rsa.pub >> /root/.ssh/authorized_keys
 echo "-> Root User configured."
 
 # =============================================================================
@@ -181,4 +183,6 @@ echo "   $ systemctl unmask libvirtd.socket libvirtd-ro.socket libvirtd-admin.so
 echo "   $ systemctl stop libvirtd; systemctl start libvirtd-tls.socket; systemctl restart cloudstack-agent; systemctl enable libvirtd-tls.socket"
 echo "   $ reboot now"
 echo "9. Enjoy your CloudStack environment!"
+echo "Tip: watch agent logs with: sudo tail -f -n 100 /var/log/cloudstack/agent/agent.log"
+echo "---------------------------------------------------"
 echo ""
