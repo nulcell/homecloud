@@ -34,7 +34,7 @@ Once all offerings have been created, disable the default offerings in CloudStac
 - **General options across all offerings**:
   - **Offer HA**: true
   - **Dynamic scaling enabled**: false
-  - **CPU cap**: false (no limit on CPU Speed, so it is always the max)
+  - **CPU cap**: true
   - **Volatile**: false
   - **Deployment planner**: UserDispersingPlanner
   - **Public**: true
