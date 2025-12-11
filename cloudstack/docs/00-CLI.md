@@ -56,6 +56,7 @@ ACCOUNT_ID=$(cmk -p admin create account \
 echo "Account created: $ACCOUNT_NAME (ID: $ACCOUNT_ID)"
 
 echo "Updating account resouce limits..."
+DOMAIN_ID=$(cmk -p admin list domains name="$DOMAIN_NAME" | jq -r '.domain[0].id')
 # 0 - Instance. Number of instances a user can create.
 cmk -p admin updateResourceLimit \
   account="$ACCOUNT_NAME" \
@@ -115,7 +116,7 @@ cmk -p admin updateResourceLimit \
   account="$ACCOUNT_NAME" \
   domainid="$DOMAIN_ID" \
   resourcetype=9 \
-  max=118784 # In MiB, assuming a cluster with 116GiB RAM and overprovisioning of 1
+  max=148480 # In MiB, assuming a cluster with 116GiB RAM and overprovisioning of 1.25, this allows for ~145GiB RAM.
 # 10 - PrimaryStorage. Total primary storage space (in GiB) a user can use.
 cmk -p admin updateResourceLimit \
   account="$ACCOUNT_NAME" \
@@ -239,7 +240,7 @@ cmk -p admin update configuration name=storage.overprovisioning.factor value=2
 # Miscellaneous
 cmk -p admin update configuration name=endpoint.url value="$ENDPOINT_URL"
 cmk -p admin update configuration name=store.download.follow.redirects value=true
-cmk -p admin update configuration name=mem.overprovisioning.factor value=1
+cmk -p admin update configuration name=mem.overprovisioning.factor value=1.25 # Be cautious with overprovisioning memory on hosts with low RAM
 echo "Global configuration completed."
 ```
 
