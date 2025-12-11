@@ -204,6 +204,8 @@ cmk -p admin update configuration name=vm.min.cpu.speed.equals.cpu.speed.divided
 cmk -p admin update configuration name=vm.min.memory.equals.memory.divided.by.mem.overprovisioning.factor value=false
 cmk -p admin update configuration name=vm.serviceoffering.cpu.cores.max value=16
 cmk -p admin update configuration name=vm.serviceoffering.ram.size.max value=32768
+cmk -p admin update configuration name=user.vm.readonly.details value=""
+cmk -p admin update configuration name=user.vm.denied.details value="cpuOvercommitRatio,memoryOvercommitRatio"
 # Compute - Kubernetes Settings
 cmk -p admin update configuration name=cloud.kubernetes.cluster.experimental.features.enabled value=true
 cmk -p admin update configuration name=cloud.kubernetes.cluster.network.offering value="acs.net.isolated.core"
@@ -662,8 +664,8 @@ cmk -p admin update template id="$UBUNTU_TEMPLATE_ID" \
   "details[0].keyboard=us" \
   "details[0].video.hardware=qxl" \
   "details[0].video.ram=256" \
-  "details[0].guest.cpu.mode=host-passthrough" \
-  "details[0].nicAdapter=virtio" \
+  "details[0].guest.cpu.mode=host-mode" \
+  "details[0].nicAdapter=rtl8139" \
   "details[0].rootDiskController=scsi"
 
 # Debian 12 - Bookworm
@@ -689,8 +691,8 @@ cmk -p admin update template id="$DEBIAN_TEMPLATE_ID" \
   "details[0].keyboard=us" \
   "details[0].video.hardware=qxl" \
   "details[0].video.ram=256" \
-  "details[0].guest.cpu.mode=host-passthrough" \
-  "details[0].nicAdapter=virtio" \
+  "details[0].guest.cpu.mode=host-mode" \
+  "details[0].nicAdapter=rtl8139" \
   "details[0].rootDiskController=scsi"
 
 echo "Registering CKS Kubernetes Versions..."
