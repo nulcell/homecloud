@@ -1,5 +1,4 @@
 # Create an ubuntu bastion host for testing purposes
-# use: k exec bastion-5c56468b9c-t9z29 -it -- sh (apk add --update curl bind-tools)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,19 +15,19 @@ spec:
     spec:
       containers:
         - name: bastion
-          image: alpine:3.21
+          image: ubuntu:24.04
           command: ["/bin/sh", "-c", "while true; do sleep 30; done;"]
           securityContext:
             runAsNonRoot: false # Allow running as root for testing purposes
             runAsUser: 0 # Run as root for testing purposes
             allowPrivilegeEscalation: false
             capabilities:
-              drop:
+              add:
                 - ALL
           resources:
             limits:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 200m
+              memory: 256Mi
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 200m
+              memory: 256Mi

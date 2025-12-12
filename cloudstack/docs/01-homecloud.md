@@ -245,6 +245,12 @@ Create Kubernetes clusters using Cluster API (CAPI) with CloudStack as the infra
   EOF
   ```
 
+- Create a bastion host for testing purposes:
+
+  ```sh
+  kubectl apply -f ./kubernetes/bastion.yaml
+  ```
+
 - (Dev) Install `knative` via Helm for serverless capabilities:
 
   ```sh
