@@ -204,6 +204,47 @@ Create Kubernetes clusters using Cluster API (CAPI) with CloudStack as the infra
   helm upgrade --install traefik ./kubernetes/charts/traefik --namespace traefik --create-namespace
   ```
 
+- Install `cnpg` operator via [Helm](https://cloudnative-pg.io/documentation/current/installation_upgrade/) for managed PostgreSQL databases:
+
+  ```sh
+  helm repo add cnpg https://cloudnative-pg.github.io/charts
+  helm repo update
+  helm upgrade --install cnpg cnpg/cloudnative-pg \
+    --namespace cnpg-system \
+    --create-namespace \
+    --version 0.27.0 \
+    --set config.clusterWide=true
+  ```
+
+  Create a sample PostgreSQL cluster:
+
+  ```sh
+  helm upgrade --install dev-pg-cluster cnpg/cluster \
+    --namespace database \
+    --create-namespace
+  ```
+
+  OR via kubectl:
+
+  ```sh
+  cat <<EOF | kubectl apply -f -
+  # Example of PostgreSQL cluster
+  apiVersion: postgresql.cnpg.io/v1
+  kind: Cluster
+  metadata:
+    name: dev-pg-cluster
+  spec:
+    imageName: ghcr.io/cloudnative-pg/postgresql:18.1-system-trixie
+    instances: 3
+    bootstrap:
+      initdb:
+        database: homecloud
+        owner: homecloud_admin
+    storage:
+      size: 1Gi
+  EOF
+  ```
+
 - (Dev) Install `knative` via Helm for serverless capabilities:
 
   ```sh
