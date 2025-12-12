@@ -10,7 +10,7 @@
 
 ```bash
 cmk set profile admin
-cmk set url http://10.10.17.5:8080/client/api
+cmk set url http://acs-node-0.nulcell.com:8080/client/api
 cmk set username $(op read "op://homecloud/CloudStack - admin/username")
 cmk set password $(op read "op://homecloud/CloudStack - admin/password")
 cmk set domain /
@@ -168,7 +168,7 @@ Note: Ensure the `homecloud-admin` user and `/homecloud` domain are created via 
 
 ```bash
 cmk set profile homecloud-admin
-cmk set url http://10.10.17.5:8080/client/api
+cmk set url http://acs-node-0.nulcell.com:8080/client/api
 cmk set username $(op read "op://homecloud/CloudStack - homecloud-admin/username")
 cmk set password $(op read "op://homecloud/CloudStack - homecloud-admin/password")
 cmk set domain /homecloud
