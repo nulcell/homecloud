@@ -130,7 +130,7 @@ services:
       - SYS_ADMIN
     environment:
       - N8N_RUNNERS_LAUNCHER_LOG_LEVEL=debug
-      - N8N_RUNNERS_TASK_BROKER_URI=http://${N8N_BROKER_URI:-n8n.default.svc.cluster.local}:5679
+      - N8N_RUNNERS_TASK_BROKER_URI=http://${N8N_BROKER_URI:-n8n.n8n.svc.cluster.local}:5679
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNER_SECRET:-your-secret-here}
       - N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT=15
       - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
