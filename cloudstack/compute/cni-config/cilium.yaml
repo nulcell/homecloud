@@ -23,6 +23,8 @@ runcmd: # don't add this line
     kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
     cilium install --version {{ ds.meta_data.cilium_version }} --wait \
       --set kubeProxyReplacement=true \
+      --set socketLB.hostNamespaceOnly=true \
+      --set cni.exclusive=true \
       --set bgpControlPlane.enabled=true \
       --set encryption.enabled=true \
       --set encryption.type=wireguard \
@@ -31,7 +33,6 @@ runcmd: # don't add this line
       --set ingressController.enabled=false \
       --set l2announcements.enabled=true \
       --set l2podAnnouncements.enabled=true \
-      --set l7Proxy=true \
       --set ipam.mode=cluster-pool \
       --set ipam.operator.clusterPoolIPv4PodCIDRList={10.168.0.0/16} \
       --set ipam.operator.clusterPoolIPv4MaskSize=24 \

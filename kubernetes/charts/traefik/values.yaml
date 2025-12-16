@@ -46,10 +46,14 @@ traefik:
       enabled: true # optional
       # -- The router match rule used for the dashboard ingressRoute
       matchRule: PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+      entryPoints: ["websecure"]
       # -- The internal service used for the dashboard ingressRoute
       services:
         - name: api@internal
           kind: TraefikService
+    healthcheck:
+      # -- Create an IngressRoute for the healthcheck probe
+      enabled: true # optional
 
   providers: # @schema additionalProperties: false
     kubernetesCRD:
@@ -150,3 +154,20 @@ traefik:
     runAsGroup: 65532
     runAsNonRoot: true
     runAsUser: 65532
+    fsGroup: null # https://github.com/traefik/traefik-helm-chart/issues/164
+
+  persistence:
+    # -- Enable persistence using Persistent Volume Claims
+    # ref: http://kubernetes.io/docs/user-guide/persistent-volumes/.
+    # It can be used to store TLS certificates along with `certificatesResolvers.<name>.acme.storage`  option
+    enabled: true
+    name: data
+    existingClaim: ""
+    accessMode: ReadWriteOnce
+    size: 128Mi
+    storageClass: "cloudstack-custom-disk-offering"
+    volumeName: ""
+    path: /data
+    annotations: {}
+    # -- Only mount a subpath of the Volume into the pod
+    subPath: ""
