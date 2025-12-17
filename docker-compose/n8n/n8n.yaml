@@ -41,8 +41,8 @@ services:
           cpus: "0.5"
           memory: 512M
         reservations:
-          cpus: "0.25"
-          memory: 256M
+          cpus: "0.5"
+          memory: 512M
       update_config:
         parallelism: 1
         delay: 10s
@@ -77,6 +77,7 @@ services:
       - traefik.http.middlewares.n8n.headers.STSPreload=true
       - traefik.http.routers.n8n.middlewares=n8n@docker
       - traefik.ingress.kubernetes.io/router.tls.certresolver=le
+      - traefik.ingress.kubernetes.io/ssl-host=*.${DOMAIN_NAME}
     cap_add:
       - ALL
     cap_drop:
@@ -112,14 +113,14 @@ services:
     image: n8nio/runners:2.0.2
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 1
       resources:
         limits:
           cpus: "0.5"
           memory: 512M
         reservations:
-          cpus: "0.25"
-          memory: 256M
+          cpus: "0.5"
+          memory: 512M
     labels:
       - kompose.image-pull-policy=IfNotPresent
       - kompose.service.group=n8n-task-runner
