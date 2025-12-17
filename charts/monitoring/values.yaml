@@ -1,0 +1,42 @@
+kube-prometheus-stack:
+  alertmanager:
+    ingress:
+      enabled: false
+      hosts:
+        - alertmanager.dev.nulcell.com
+      ingressClassName: "traefik"
+      annotations:
+        traefik.ingress.kubernetes.io/router.tls.certresolver: "le"
+  grafana:
+    ingress:
+      enabled: true
+      hosts:
+        - grafana.dev.nulcell.com
+      ingressClassName: "traefik"
+      annotations:
+        traefik.ingress.kubernetes.io/router.tls.certresolver: "le"
+    # # To make Grafana persistent (Using Statefulset)
+    # #
+    persistence:
+      enabled: true
+      type: sts
+      storageClassName: "cloudstack-custom-disk-offering"
+      accessModes:
+        - ReadWriteOnce
+      size: 20Gi
+  prometheus:
+    ingress:
+      enabled: false
+      hosts:
+        - prometheus.dev.nulcell.com
+      ingressClassName: "traefik"
+      annotations:
+        traefik.ingress.kubernetes.io/router.tls.certresolver: "le"
+loki:
+  ingress:
+    enabled: false
+    hosts:
+      - loki.dev.nulcell.com
+    ingressClassName: "traefik"
+    annotations:
+      traefik.ingress.kubernetes.io/router.tls.certresolver: "le"

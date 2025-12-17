@@ -1,4 +1,9 @@
 traefik:
+  additionalArguments:
+    - --certificatesresolvers.le.acme.storage=/data/acme.json
+    - --certificatesresolvers.le.acme.dnschallenge.provider=cloudflare
+    - --certificatesResolvers.le.acme.dnsChallenge.resolvers=1.1.1.1:53
+    - --api=true
   # Traefik experimental features
   experimental:
     # -- Defines whether all plugins must be loaded successfully for Traefik to start
@@ -27,7 +32,7 @@ traefik:
   # -- Create a default IngressClass for Traefik
   ingressClass: # @schema additionalProperties: false
     enabled: true
-    isDefaultClass: true
+    isDefaultClass: false
     name: ""
 
   gatewayClass: # @schema additionalProperties: false
@@ -125,6 +130,18 @@ traefik:
     single: true
     type: LoadBalancer
 
+  env:
+    - name: CF_DNS_API_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: cloudflare-api-token
+          key: credential
+    - name: CF_API_EMAIL
+      valueFrom:
+        secretKeyRef:
+          name: cloudflare-api-token
+          key: username
+
   autoscaling:
     # -- Create HorizontalPodAutoscaler object.
     # See EXAMPLES.md for more details.
@@ -171,3 +188,13 @@ traefik:
     annotations: {}
     # -- Only mount a subpath of the Volume into the pod
     subPath: ""
+
+  metrics:
+    # -- Enable metrics exposing
+    enabled: true
+    # -- Prometheus metrics configuration
+    prometheus:
+      # -- Enable Prometheus metrics endpoint
+      enabled: true
+      # -- Metrics entryPoint
+      entryPoint: "metrics"
