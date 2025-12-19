@@ -264,3 +264,21 @@ kubectl apply -f ./kubernetes/bastion.yaml
 ```sh
 ...
 ```
+
+### Media Server
+
+```sh
+...
+```
+
+### Homepage
+
+```sh
+...
+```
+
+### Uptime Kuma
+
+```sh
+...
+```
