@@ -821,23 +821,19 @@ ACCOUNT_NAME="homecloud"
 ZONE_NAME="zone-homecloud"
 ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
-```
 
-### Dev VPC
 
-```bash
-DEV_VPC_NAME="hc-vpc-dev"
-DEV_VPC_CIDR="10.0.0.0/24"
-
+VPC_NAME="homecloud-vpc"
+VPC_CIDR="10.0.0.0/24"
 VPC_OFFERING_ID=$(cmk -p homecloud-admin list vpcofferings name="acs.vpc.natted.redundant-core" | jq -r '.vpcoffering[0].id')
 PUBLIC_LB_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs.net.vpc.core-public-lb" | jq -r '.networkoffering[0].id')
 INTERNAL_LB_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs.net.vpc.core-internal-lb" | jq -r '.networkoffering[0].id')
 
-DEV_VPC_ID=$(cmk -p homecloud-admin create vpc \
-  name="$DEV_VPC_NAME" \
-  displaytext="Homecloud VPC Development Network" \
+VPC_ID=$(cmk -p homecloud-admin create vpc \
+  name="$VPC_NAME" \
+  displaytext="Homecloud VPC Network" \
   vpcofferingid="$VPC_OFFERING_ID" \
-  cidr="$DEV_VPC_CIDR" \
+  cidr="$VPC_CIDR" \
   zoneid="$ZONE_ID" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
@@ -845,127 +841,54 @@ DEV_VPC_ID=$(cmk -p homecloud-admin create vpc \
 
 DEV_PUB_NET_1_ID=$(cmk -p homecloud-admin create network \
   name="pub-net-1" \
-  displaytext="Development Public Network 1" \
+  displaytext="Public Network 1" \
   networkofferingid="$PUBLIC_LB_OFFERING_ID" \
   zoneid="$ZONE_ID" \
-  vpcid="$DEV_VPC_ID" \
+  vpcid="$VPC_ID" \
   gateway="10.0.0.1" \
   netmask="255.255.255.192" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
-  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$DEV_VPC_ID" | jq -r '.networkacllist[0].id') \
+  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$VPC_ID" | jq -r '.networkacllist[0].id') \
   | jq -r '.network.id')
 
 DEV_PRIV_NET_1_ID=$(cmk -p homecloud-admin create network \
   name="priv-net-1" \
-  displaytext="Development Private Network 1" \
+  displaytext="Private Network 1" \
   networkofferingid="$INTERNAL_LB_OFFERING_ID" \
   zoneid="$ZONE_ID" \
-  vpcid="$DEV_VPC_ID" \
+  vpcid="$VPC_ID" \
   gateway="10.0.0.65" \
   netmask="255.255.255.192" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
-  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$DEV_VPC_ID" | jq -r '.networkacllist[0].id') \
+  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$VPC_ID" | jq -r '.networkacllist[0].id') \
   | jq -r '.network.id')
 
 DEV_PRIV_NET_2_ID=$(cmk -p homecloud-admin create network \
   name="priv-net-2" \
-  displaytext="Development Private Network 2" \
+  displaytext="Private Network 2" \
   networkofferingid="$INTERNAL_LB_OFFERING_ID" \
   zoneid="$ZONE_ID" \
-  vpcid="$DEV_VPC_ID" \
+  vpcid="$VPC_ID" \
   gateway="10.0.0.129" \
   netmask="255.255.255.192" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
-  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$DEV_VPC_ID" | jq -r '.networkacllist[0].id') \
+  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$VPC_ID" | jq -r '.networkacllist[0].id') \
   | jq -r '.network.id')
 
 DEV_PRIV_NET_3_ID=$(cmk -p homecloud-admin create network \
   name="priv-net-3" \
-  displaytext="Development Private Network 3" \
+  displaytext="Private Network 3" \
   networkofferingid="$INTERNAL_LB_OFFERING_ID" \
   zoneid="$ZONE_ID" \
-  vpcid="$DEV_VPC_ID" \
+  vpcid="$VPC_ID" \
   gateway="10.0.0.193" \
   netmask="255.255.255.192" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
-  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$DEV_VPC_ID" | jq -r '.networkacllist[0].id') \
-  | jq -r '.network.id')
-```
-
-### Prod VPC
-
-```bash
-PROD_VPC_NAME="hc-vpc-prod"
-PROD_VPC_CIDR="10.1.1.0/24"
-
-VPC_OFFERING_ID=$(cmk -p homecloud-admin list vpcofferings name="acs.vpc.natted.redundant-core" | jq -r '.vpcoffering[0].id')
-PUBLIC_LB_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs.net.vpc.core-public-lb" | jq -r '.networkoffering[0].id')
-INTERNAL_LB_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs.net.vpc.core-internal-lb" | jq -r '.networkoffering[0].id')
-
-PROD_VPC_ID=$(cmk -p homecloud-admin create vpc \
-  name="$PROD_VPC_NAME" \
-  displaytext="Homecloud VPC Production Network" \
-  vpcofferingid="$VPC_OFFERING_ID" \
-  cidr="$PROD_VPC_CIDR" \
-  zoneid="$ZONE_ID" \
-  account="$ACCOUNT_NAME" \
-  domainid="$HOMECLOUD_DOMAIN_ID" \
-  | jq -r '.vpc.id')
-
-PROD_PUB_NET_1_ID=$(cmk -p homecloud-admin create network \
-  name="pub-net-1" \
-  displaytext="Production Public Network 1" \
-  networkofferingid="$PUBLIC_LB_OFFERING_ID" \
-  zoneid="$ZONE_ID" \
-  vpcid="$PROD_VPC_ID" \
-  gateway="10.1.1.1" \
-  netmask="255.255.255.192" \
-  account="$ACCOUNT_NAME" \
-  domainid="$HOMECLOUD_DOMAIN_ID" \
-  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$PROD_VPC_ID" | jq -r '.networkacllist[0].id') \
-  | jq -r '.network.id')
-
-PROD_PRIV_NET_1_ID=$(cmk -p homecloud-admin create network \
-  name="priv-net-1" \
-  displaytext="Production Private Network 1" \
-  networkofferingid="$INTERNAL_LB_OFFERING_ID" \
-  zoneid="$ZONE_ID" \
-  vpcid="$PROD_VPC_ID" \
-  gateway="10.1.1.65" \
-  netmask="255.255.255.192" \
-  account="$ACCOUNT_NAME" \
-  domainid="$HOMECLOUD_DOMAIN_ID" \
-  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$PROD_VPC_ID" | jq -r '.networkacllist[0].id') \
-  | jq -r '.network.id')
-
-PROD_PRIV_NET_2_ID=$(cmk -p homecloud-admin create network \
-  name="priv-net-2" \
-  displaytext="Production Private Network 2" \
-  networkofferingid="$INTERNAL_LB_OFFERING_ID" \
-  zoneid="$ZONE_ID" \
-  vpcid="$PROD_VPC_ID" \
-  gateway="10.1.1.129" \
-  netmask="255.255.255.192" \
-  account="$ACCOUNT_NAME" \
-  domainid="$HOMECLOUD_DOMAIN_ID" \
-  aclid=$(cmk list networkacllists name="default_allow" vpcid="$PROD_VPC_ID" | jq -r '.networkacllist[0].id') \
-  | jq -r '.network.id')
-
-PROD_PRIV_NET_3_ID=$(cmk -p homecloud-admin create network \
-  name="priv-net-3" \
-  displaytext="Production Private Network 3" \
-  networkofferingid="$INTERNAL_LB_OFFERING_ID" \
-  zoneid="$ZONE_ID" \
-  vpcid="$PROD_VPC_ID" \
-  gateway="10.1.1.193" \
-  netmask="255.255.255.192" \
-  account="$ACCOUNT_NAME" \
-  domainid="$HOMECLOUD_DOMAIN_ID" \
-  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$PROD_VPC_ID" | jq -r '.networkacllist[0].id') \
+  aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$VPC_ID" | jq -r '.networkacllist[0].id') \
   | jq -r '.network.id')
 ```
 
@@ -978,7 +901,7 @@ ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 
 ISOLATED_NETWORK_NAME="iso-net-shared"
-ISOLATED_NETWORK_CIDR="10.2.2.0/24"
+ISOLATED_NETWORK_CIDR="10.1.1.0/24"
 
 ISOLATED_OFFERING_ID=$(cmk -p homecloud-admin list networkofferings name="acs.net.isolated.core-redundant" | jq -r '.networkoffering[0].id')
 
@@ -987,7 +910,7 @@ ISOLATED_NETWORK_ID=$(cmk -p homecloud-admin create network \
   displaytext="Homecloud Shared Isolated Network" \
   networkofferingid="$ISOLATED_OFFERING_ID" \
   zoneid="$ZONE_ID" \
-  gateway="10.2.2.1" \
+  gateway="10.1.1.1" \
   netmask="255.255.255.0" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
@@ -1006,54 +929,25 @@ UBUNTU_TEMPLATE_ID=$(cmk -p homecloud-admin list templates templatefilter=all na
 COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.tiny" | jq -r '.serviceoffering[0].id')
 
 TAILSCALE_AUTH_KEY=$(op read "op://homecloud/Tailscale Token/credential")
-```
 
-### Dev VPN
-
-```bash
-DEV_VPC_CIDR="10.0.0.0/24"
-DEV_PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-dev_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-DEV_PRIV_NET_1_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-dev_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-DEV_PRIV_NET_2_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-dev_priv-net-2" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-DEV_PRIV_NET_3_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-dev_priv-net-3" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+VPC_CIDR="10.0.0.0/24"
+PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+PRIV_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+PRIV_NET_2_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_priv-net-2" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+PRIV_NET_3_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_priv-net-3" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 
 DEV_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
-  name="hc-vpn-router-dev" \
-  displayname="hc-vpn-router-dev" \
+  name="homecloud-vpn-router" \
+  displayname="homecloud-vpn-router" \
   serviceofferingid="$COMPUTE_OFFERING_ID" \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
-  networkids="$DEV_PUB_NET_1_ID,$DEV_PRIV_NET_1_ID,$DEV_PRIV_NET_2_ID,$DEV_PRIV_NET_3_ID" \
+  networkids="$PUB_NET_1_ID,$PRIV_NET_1_ID,$PRIV_NET_2_ID,$PRIV_NET_3_ID" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   userdataid="$TAILSCALE_USERDATA_ID" \
   "userdatadetails[0].tailscale_auth_key=$TAILSCALE_AUTH_KEY" \
-  "userdatadetails[0].network_router_cidr=$DEV_VPC_CIDR" \
-  keypair="nulcell" \
-  | jq -r '.virtualmachine.id')
-```
-
-### Prod VPN
-
-```bash
-PROD_VPC_CIDR="10.1.1.0/24"
-PROD_PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-prod_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-PROD_PRIV_NET_1_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-prod_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-PROD_PRIV_NET_2_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-prod_priv-net-2" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-PROD_PRIV_NET_3_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-prod_priv-net-3" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-
-PROD_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
-  name="hc-vpn-router-prod" \
-  displayname="hc-vpn-router-prod" \
-  serviceofferingid="$COMPUTE_OFFERING_ID" \
-  templateid="$UBUNTU_TEMPLATE_ID" \
-  zoneid="$ZONE_ID" \
-  networkids="$PROD_PUB_NET_1_ID,$PROD_PRIV_NET_1_ID,$PROD_PRIV_NET_2_ID,$PROD_PRIV_NET_3_ID" \
-  account="$ACCOUNT_NAME" \
-  domainid="$HOMECLOUD_DOMAIN_ID" \
-  userdataid="$TAILSCALE_USERDATA_ID" \
-  "userdatadetails[0].tailscale_auth_key=$TAILSCALE_AUTH_KEY" \
-  "userdatadetails[0].network_router_cidr=$PROD_VPC_CIDR" \
+  "userdatadetails[0].network_router_cidr=$VPC_CIDR" \
   keypair="nulcell" \
   | jq -r '.virtualmachine.id')
 ```
@@ -1067,41 +961,17 @@ ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 DEFAULT_USERDATA_ID=$(cmk -p homecloud-admin list userdata name="cloud-default" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.userdata[0].id')
 UBUNTU_TEMPLATE_ID=$(cmk -p homecloud-admin list templates templatefilter=all name="Ubuntu 24.04 - Noble" zoneid="$ZONE_ID" | jq -r '.template[0].id')
-```
 
-### Dev VPS
-
-```bash
-DEV_COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.large" | jq -r '.serviceoffering[0].id')
-DEV_VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-dev_priv-net-2" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.xlarge" | jq -r '.serviceoffering[0].id')
+VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_priv-net-2" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 
 DEV_VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
-  name="hc-vps-dev" \
-  displayname="hc-vps-dev" \
-  serviceofferingid="$DEV_COMPUTE_OFFERING_ID" \
+  name="homecloud-vps-dev" \
+  displayname="homecloud-vps-dev" \
+  serviceofferingid="$COMPUTE_OFFERING_ID" \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
-  networkids="$DEV_VPS_NETWORK_ID" \
-  userdataid="$DEFAULT_USERDATA_ID" \
-  account="$ACCOUNT_NAME" \
-  domainid="$HOMECLOUD_DOMAIN_ID" \
-  keypair="nulcell" \
-  | jq -r '.virtualmachine.id')
-```
-
-### Prod VPS
-
-```bash
-PROD_COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.xlarge" | jq -r '.serviceoffering[0].id')
-PROD_VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-prod_priv-net-2" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-
-PROD_VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
-  name="hc-vps-prod" \
-  displayname="hc-vps-prod" \
-  serviceofferingid="$PROD_COMPUTE_OFFERING_ID" \
-  templateid="$UBUNTU_TEMPLATE_ID" \
-  zoneid="$ZONE_ID" \
-  networkids="$PROD_VPS_NETWORK_ID" \
+  networkids="$VPS_NETWORK_ID" \
   userdataid="$DEFAULT_USERDATA_ID" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
@@ -1120,19 +990,16 @@ ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 CKS_OFFERING_ID=$(cmk -p homecloud-admin list kubernetessupportedversions keyword="cks-v1.34.2-cilium_v1.18.2-x86_64" zoneid="$ZONE_ID" | jq -r '.kubernetessupportedversion[0].id')
 CNI_CONFIG_ID=$(cmk -p homecloud-admin listCniConfiguration name="cilium" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.cniconfig[0].id')
-```
 
-### Dev CKS Cluster
-
-```bash
-echo "Creating Development CKS Cluster (this takes 15-30 minutes)..."
-DEV_PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-dev_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 CKS_SERVICE_OFFERING_ID_CONTROL=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.large" | jq -r '.serviceoffering[0].id')
-CKS_SERVICE_OFFERING_ID_WORKER=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.large" | jq -r '.serviceoffering[0].id')
-CKS_SERVICE_OFFERING_ID=$CKS_SERVICE_OFFERING_ID_WORKER
-DEV_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
-  name="hc-cks-dev" \
-  description="Homecloud Development Kubernetes Cluster" \
+CKS_SERVICE_OFFERING_ID_WORKER=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.xlarge" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID=$CKS_SERVICE_OFFERING_ID_CONTROL
+
+echo "Creating CKS Cluster (this takes 15-30 minutes)..."
+CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
+  name="homecloud-cks" \
+  description="Homecloud Kubernetes Cluster" \
   zoneid="$ZONE_ID" \
   kubernetesversionid="$CKS_OFFERING_ID" \
   serviceofferingid="$CKS_SERVICE_OFFERING_ID" \
@@ -1141,87 +1008,100 @@ DEV_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   "nodeofferings[1].node=worker" \
   "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER" \
   noderootdisksize=50 \
-  networkid="$DEV_PUB_NET_1_ID" \
+  networkid="$PUB_NET_1_ID" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   hypervisor="KVM" \
-  controlnodes=1 \
-  size=1 \
-  keypair="nulcell" \
-  enablecsi=true \
-  cniconfigurationid="$CNI_CONFIG_ID" \
-  "cniconfigdetails[0].cilium_version=1.18.4" \
-  | jq -r '.kubernetescluster.id')
-cmk -p homecloud-admin scaleKubernetesCluster id="$DEV_CKS_ID" \
-  autoscalingenabled=true \
-  minsize=1 \
-  maxsize=3 \
-  "nodeofferings[0].node=control" \
-  "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
-  "nodeofferings[1].node=worker" \
-  "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER"
-
-echo "Retrieving kubeconfig for Development CKS Cluster..."
-cmk -p homecloud-admin getKubernetesClusterConfig id="$DEV_CKS_ID" | jq -r .clusterconfig.configdata > dev-cks-kubeconfig.yaml
-sed -i '' 's/kubernetes-admin@kubernetes/admin@hc-cks-dev/g' dev-cks-kubeconfig.yaml
-sed -i '' 's/kubernetes-admin/hc-cks-dev-admin/g' dev-cks-kubeconfig.yaml
-sed -i '' 's/kubernetes/hc-cks-dev/g' dev-cks-kubeconfig.yaml
-kubectl config delete-context admin@hc-cks-dev || true
-kubectl config delete-user hc-cks-dev-admin || true
-kubectl config delete-cluster hc-cks-dev || true
-kubectl konfig import -s dev-cks-kubeconfig.yaml
-rm dev-cks-kubeconfig.yaml
-echo "Development CKS Cluster ID: $DEV_CKS_ID"
-```
-
-### Prod CKS Cluster
-
-```bash
-echo "Creating Production CKS Cluster (this takes 15-30 minutes)..."
-PROD_PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="hc-vpc-prod_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-CKS_SERVICE_OFFERING_ID_CONTROL=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.large" | jq -r '.serviceoffering[0].id')
-CKS_SERVICE_OFFERING_ID_WORKER=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.large" | jq -r '.serviceoffering[0].id')
-CKS_SERVICE_OFFERING_ID=$CKS_SERVICE_OFFERING_ID_WORKER
-PROD_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
-  name="hc-cks-prod" \
-  description="Homecloud Production Kubernetes Cluster" \
-  zoneid="$ZONE_ID" \
-  kubernetesversionid="$CKS_OFFERING_ID" \
-  serviceofferingid="$CKS_SERVICE_OFFERING_ID" \
-  "nodeofferings[0].node=control" \
-  "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
-  "nodeofferings[1].node=worker" \
-  "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER" \
-  noderootdisksize=50 \
-  networkid="$PROD_PUB_NET_1_ID" \
-  account="$ACCOUNT_NAME" \
-  domainid="$HOMECLOUD_DOMAIN_ID" \
-  hypervisor="KVM" \
-  controlnodes=1 \
+  controlnodes=3 \
   size=2 \
   keypair="nulcell" \
   enablecsi=true \
   cniconfigurationid="$CNI_CONFIG_ID" \
   "cniconfigdetails[0].cilium_version=1.18.4" \
   | jq -r '.kubernetescluster.id')
-cmk -p homecloud-admin scaleKubernetesCluster id="$PROD_CKS_ID" \
+cmk -p homecloud-admin scaleKubernetesCluster id="$CKS_ID" \
   autoscalingenabled=true \
   minsize=1 \
-  maxsize=5 \
+  maxsize=4 \
   "nodeofferings[0].node=control" \
   "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
   "nodeofferings[1].node=worker" \
   "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER"
 
-echo "Retrieving kubeconfig for Production CKS Cluster..."
-cmk -p homecloud-admin getKubernetesClusterConfig id="$PROD_CKS_ID" | jq -r .clusterconfig.configdata > prod-cks-kubeconfig.yaml
-sed -i '' 's/kubernetes-admin@kubernetes/admin@hc-cks-prod/g' prod-cks-kubeconfig.yaml
-sed -i '' 's/kubernetes-admin/hc-cks-prod-admin/g' prod-cks-kubeconfig.yaml
-sed -i '' 's/kubernetes/hc-cks-prod/g' prod-cks-kubeconfig.yaml
-kubectl config delete-context admin@hc-cks-prod || true
-kubectl config delete-user hc-cks-prod-admin || true
-kubectl config delete-cluster hc-cks-prod || true
-kubectl konfig import -s prod-cks-kubeconfig.yaml
-rm prod-cks-kubeconfig.yaml
-echo "Production CKS Cluster ID: $PROD_CKS_ID"
+echo "Retrieving kubeconfig for CKS Cluster..."
+cmk -p homecloud-admin getKubernetesClusterConfig id="$CKS_ID" | jq -r .clusterconfig.configdata > homecloud-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes-admin@kubernetes/admin@homecloud-cks/g' homecloud-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes-admin/homecloud-cks-admin/g' homecloud-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes/homecloud-cks/g' homecloud-cks-kubeconfig.yaml
+kubectl config delete-context admin@homecloud-cks || true
+kubectl config delete-user homecloud-cks-admin || true
+kubectl config delete-cluster homecloud-cks || true
+kubectl konfig import -s homecloud-cks-kubeconfig.yaml
+rm homecloud-cks-kubeconfig.yaml
+echo "CKS Cluster ID: $CKS_ID"
+```
+
+## Shared File System
+
+### Media Server
+
+```bash
+# General Variables
+ACCOUNT_NAME="homecloud"
+ZONE_NAME="zone-homecloud"
+ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
+HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
+
+SERVICE_OFFERING_NAME="acs.comp.gen.medium"
+DISK_OFFERING_NAME="acs.disk.shared.custom"
+NETWORK_NAME="homecloud-vpc_pub-net-1"
+
+SERVICE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="$SERVICE_OFFERING_NAME" | jq -r '.serviceoffering[0].id')
+DISK_OFFERING_ID=$(cmk -p homecloud-admin list diskofferings name="$DISK_OFFERING_NAME" | jq -r '.diskoffering[0].id')
+NETWORK_ID=$(cmk -p homecloud-admin list networks name="$NETWORK_NAME" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+
+FILE_SYSTEM="EXT4"
+
+# Config File System
+SIZE=10 # Size in GB
+echo "Creating Media Server Config Shared File System ($SIZE GB)..."
+MEDIA_SERVER_FS_CONFIG_ID=$(cmk -p homecloud-admin createSharedFileSystem \
+  name="media-server-fs-config" \
+  displaytext="Media Server Config File System" \
+  diskofferingid="$DISK_OFFERING_ID" \
+  networkid="$NETWORK_ID" \
+  filesystem="$FILE_SYSTEM" \
+  account="$ACCOUNT_NAME" \
+  domainid="$HOMECLOUD_DOMAIN_ID" \
+  zoneid="$ZONE_ID" \
+  serviceofferingid="$SERVICE_OFFERING_ID" \
+  size=$SIZE \
+  provider="SHAREDFSVM" \
+  | jq -r '.sharedfs.id')
+MEDIA_SERVER_FS_CONFIG_IP=$(cmk -p homecloud-admin list sharedfilesystems id="$MEDIA_SERVER_FS_CONFIG_ID" | jq -r '.sharedfs[0].nic[].ipaddress')
+echo "Media Server Config File System ID: $MEDIA_SERVER_FS_CONFIG_ID"
+echo "Media Server Config File System IP Address: $MEDIA_SERVER_FS_CONFIG_IP"
+echo "Mount Command: \"mount -t nfs $MEDIA_SERVER_FS_CONFIG_IP:/export [local_mount_path]\""
+echo ""
+
+# Data File System
+SIZE=300 # Size in GB
+echo "Creating Media Server Data Shared File System ($SIZE GB)..."
+MEDIA_SERVER_FS_DATA_ID=$(cmk -p homecloud-admin createSharedFileSystem \
+  name="media-server-fs-data" \
+  displaytext="Media Server Data File System" \
+  diskofferingid="$DISK_OFFERING_ID" \
+  networkid="$NETWORK_ID" \
+  filesystem="$FILE_SYSTEM" \
+  account="$ACCOUNT_NAME" \
+  domainid="$HOMECLOUD_DOMAIN_ID" \
+  zoneid="$ZONE_ID" \
+  serviceofferingid="$SERVICE_OFFERING_ID" \
+  size=$SIZE \
+  provider="SHAREDFSVM" \
+  | jq -r '.sharedfs.id')
+MEDIA_SERVER_FS_DATA_IP=$(cmk -p homecloud-admin list sharedfilesystems id="$MEDIA_SERVER_FS_DATA_ID" | jq -r '.sharedfs[0].nic[].ipaddress')
+echo "Media Server Data File System ID: $MEDIA_SERVER_FS_DATA_ID"
+echo "Media Server Data File System IP Address: $MEDIA_SERVER_FS_DATA_IP"
+echo "Mount Command: \"mount -t nfs $MEDIA_SERVER_FS_DATA_IP:/export [local_mount_path]\""
 ```
