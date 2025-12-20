@@ -22,29 +22,29 @@ kubectl apply -f - <<EOF
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-    name: kubernetes-dashboard-admin-user
-    namespace: kubernetes-dashboard
+  name: kubernetes-dashboard-admin-user
+  namespace: kubernetes-dashboard
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-    name: kubernetes-dashboard-admin-user
+  name: kubernetes-dashboard-admin-user
 roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
 subjects:
 - kind: ServiceAccount
-    name: kubernetes-dashboard-admin-user
-    namespace: kubernetes-dashboard
+  name: kubernetes-dashboard-admin-user
+  namespace: kubernetes-dashboard
 ---
 apiVersion: v1
 kind: Secret
 type: kubernetes.io/service-account-token
 metadata:
-    name: kubernetes-dashboard-token
-    namespace: kubernetes-dashboard
-    annotations:
+  name: kubernetes-dashboard-token
+  namespace: kubernetes-dashboard
+  annotations:
     kubernetes.io/service-account.name: kubernetes-dashboard-admin-user
 EOF
 ```
@@ -68,27 +68,27 @@ kubectl apply -f - <<EOF
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-name: cloudstack-custom-disk-offering
-annotations:
+  name: cloudstack-custom-disk-offering
+  annotations:
     storageclass.kubernetes.io/is-default-class: "true"
 provisioner: csi.cloudstack.apache.org
 reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 parameters:
-csi.cloudstack.apache.org/disk-offering-id: $(cmk list diskofferings state=active name=acs.disk.shared.custom | jq -r ".diskoffering[0].id")
+  csi.cloudstack.apache.org/disk-offering-id: $(cmk list diskofferings state=active name=acs.disk.shared.custom | jq -r ".diskoffering[0].id")
 EOF
 ```
 
 ### Verification
 
-  ```sh
-  kubectl get pods -n kube-system | grep cilium
-  kubectl get csidrivers.storage.k8s.io
-  kubectl get csinodes.storage.k8s.io
-  kubectl get storageclasses.storage.k8s.io
-  cilium status
-  ```
+```sh
+kubectl get pods -n kube-system | grep cilium
+kubectl get csidrivers.storage.k8s.io
+kubectl get csinodes.storage.k8s.io
+kubectl get storageclasses.storage.k8s.io
+cilium status
+```
 
 ## Core Infrastructure Setup
 
@@ -106,6 +106,8 @@ Make changes with helm if needed. When using Istio, take note of the points made
 helm dependency update ./charts/cilium
 helm upgrade --install cilium ./charts/cilium --version 1.18.4 --namespace kube-system
 ```
+
+Note: If the deployment gets stuck when you run `cilium status --wait`, you may need to restart the Cilium pods or uninstall first using `helm uninstall cilium -n kube-system` and then reinstall.
 
 ### Metrics Server
 
@@ -208,7 +210,7 @@ helm dependency update ./charts/traefik
 helm upgrade --install traefik ./charts/traefik --namespace traefik --create-namespace --version 37.4.0
 ```
 
-### Monitoring Stack
+### Monitoring Stack (For Operations Cluster)
 
 ```sh
 helm dependency update ./charts/monitoring
@@ -265,12 +267,6 @@ kubectl apply -f ./kubernetes/bastion.yaml
 ...
 ```
 
-### Media Server
-
-```sh
-...
-```
-
 ### Homepage
 
 ```sh
@@ -278,6 +274,12 @@ kubectl apply -f ./kubernetes/bastion.yaml
 ```
 
 ### Uptime Kuma
+
+```sh
+...
+```
+
+### Media Server
 
 ```sh
 ...
