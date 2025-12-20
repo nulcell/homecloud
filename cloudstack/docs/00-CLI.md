@@ -571,27 +571,6 @@ sudo reboot now
 
 ## Service Offerings
 
-### Compute Offering
-
-```bash
-cmk -p admin create serviceoffering name="acs.comp.gen.tiny"    displaytext="General Purpose Tiny"      cpunumber=1  cpuspeed=1000 memory=512   networkrate=100 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=20  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.small"   displaytext="General Purpose Small"     cpunumber=1  cpuspeed=2500 memory=1024  networkrate=200 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.medium"  displaytext="General Purpose Medium"    cpunumber=2  cpuspeed=2500 memory=2048  networkrate=300 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.large"   displaytext="General Purpose Large"     cpunumber=4  cpuspeed=2500 memory=4096  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.xlarge"  displaytext="General Purpose xLarge"    cpunumber=8  cpuspeed=2500 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.2xlarge" displaytext="General Purpose 2xLarge"   cpunumber=16 cpuspeed=2500 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.small"   displaytext="Memory Optimized Small"    cpunumber=1  cpuspeed=2500 memory=2048  networkrate=200 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.medium"  displaytext="Memory Optimized Medium"   cpunumber=2  cpuspeed=2500 memory=4096  networkrate=300 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.large"   displaytext="Memory Optimized Large"    cpunumber=4  cpuspeed=2500 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.xlarge"  displaytext="Memory Optimized xLarge"   cpunumber=8  cpuspeed=2500 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.mem.2xlarge" displaytext="Memory Optimized 2xLarge"  cpunumber=16 cpuspeed=2500 memory=32768 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.small"   displaytext="Storage Optimized Small"   cpunumber=1  cpuspeed=2500 memory=1024  networkrate=200 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=30  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.medium"  displaytext="Storage Optimized Medium"  cpunumber=2  cpuspeed=2500 memory=2048  networkrate=300 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=50  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.large"   displaytext="Storage Optimized Large"   cpunumber=4  cpuspeed=2500 memory=4096  networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.xlarge"  displaytext="Storage Optimized xLarge"  cpunumber=8  cpuspeed=2500 memory=8192  networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.ssd.2xlarge" displaytext="Storage Optimized 2xLarge" cpunumber=16 cpuspeed=2500 memory=16384 networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=100 encryptroot=false purgeresources=true
-```
-
 ### Disk Offering
 
 ```bash
@@ -607,6 +586,40 @@ cmk -p admin create diskoffering name="acs.disk.local.small"   displaytext="Loca
 cmk -p admin create diskoffering name="acs.disk.local.medium"  displaytext="Local Storage Medium Disk" storagetype="local" disksize=50  customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
 cmk -p admin create diskoffering name="acs.disk.local.large"   displaytext="Local Storage Large Disk"  storagetype="local" disksize=100 customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
 cmk -p admin create diskoffering name="acs.disk.local.xlarge"  displaytext="Local Storage xLarge Disk" storagetype="local" disksize=200 customdisksize=false disksizeStrictness=false encrypt=false ispublic=true qostype="None" cachemode="none"
+```
+
+### Compute Offering
+
+```bash
+ACS_DISK_SHARED_CUSTOM_ID=$(cmk -p admin list diskofferings name="acs.disk.shared.custom" | jq -r '.diskoffering[0].id')
+ACS_DISK_LOCAL_CUSTOM_ID=$(cmk -p admin list diskofferings name="acs.disk.local.custom"  | jq -r '.diskoffering[0].id')
+
+# Fixed Compute offerings with Custom Storage Disks
+cmk -p admin create serviceoffering name="acs.comp.gen.tiny"      displaytext="General Purpose Tiny with Custom Disk"        customized=false cpunumber=1  cpuspeed=1000 memory=512   networkrate=250 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.gen.small"     displaytext="General Purpose Small with Custom Disk"       customized=false cpunumber=1  cpuspeed=2500 memory=1024  networkrate=250 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.gen.medium"    displaytext="General Purpose Medium with Custom Disk"      customized=false cpunumber=2  cpuspeed=2500 memory=2048  networkrate=250 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.gen.large"     displaytext="General Purpose Large with Custom Disk"       customized=false cpunumber=4  cpuspeed=2500 memory=4096  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.gen.xlarge"    displaytext="General Purpose xLarge with Custom Disk"      customized=false cpunumber=8  cpuspeed=2500 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.gen.1_5xlarge" displaytext="General Purpose 1.5xLarge with Custom Disk"   customized=false cpunumber=12 cpuspeed=2500 memory=12288 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.gen.2xlarge"   displaytext="General Purpose 2xLarge with Custom Disk"     customized=false cpunumber=16 cpuspeed=2500 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.mem.tiny"      displaytext="Memory Optimized Tiny with Custom Disk"       customized=false cpunumber=1  cpuspeed=1000 memory=1024  networkrate=250 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.mem.small"     displaytext="Memory Optimized Small with Custom Disk"      customized=false cpunumber=1  cpuspeed=2500 memory=2048  networkrate=250 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.mem.medium"    displaytext="Memory Optimized Medium with Custom Disk"     customized=false cpunumber=2  cpuspeed=2500 memory=4096  networkrate=250 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.mem.large"     displaytext="Memory Optimized Large with Custom Disk"      customized=false cpunumber=4  cpuspeed=2500 memory=8192  networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.mem.xlarge"    displaytext="Memory Optimized xLarge with Custom Disk"     customized=false cpunumber=8  cpuspeed=2500 memory=16384 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.mem.1_5xlarge" displaytext="Memory Optimized 1.5xLarge with Custom Disk"  customized=false cpunumber=12 cpuspeed=2500 memory=24576 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.mem.2xlarge"   displaytext="Memory Optimized 2xLarge with Custom Disk"    customized=false cpunumber=16 cpuspeed=2500 memory=32768 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.ssd.tiny"      displaytext="Storage Optimized Tiny with Custom Disk"      customized=false cpunumber=1  cpuspeed=1000 memory=512   networkrate=250 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_LOCAL_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.ssd.small"     displaytext="Storage Optimized Small with Custom Disk"     customized=false cpunumber=1  cpuspeed=2500 memory=1024  networkrate=250 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_LOCAL_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.ssd.medium"    displaytext="Storage Optimized Medium with Custom Disk"    customized=false cpunumber=2  cpuspeed=2500 memory=2048  networkrate=250 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_LOCAL_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.ssd.large"     displaytext="Storage Optimized Large with Custom Disk"     customized=false cpunumber=4  cpuspeed=2500 memory=4096  networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_LOCAL_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.ssd.xlarge"    displaytext="Storage Optimized xLarge with Custom Disk"    customized=false cpunumber=8  cpuspeed=2500 memory=8192  networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_LOCAL_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.ssd.1_5xlarge" displaytext="Storage Optimized 1.5xLarge with Custom Disk" customized=false cpunumber=12 cpuspeed=2500 memory=12288 networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_LOCAL_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.ssd.2xlarge"   displaytext="Storage Optimized 2xLarge with Custom Disk"   customized=false cpunumber=16 cpuspeed=2500 memory=16384 networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true diskofferingstrictness=true diskofferingid=$ACS_DISK_LOCAL_CUSTOM_ID
+
+# Custom Compute offerings and Custom Storage Disks
+cmk -p admin create serviceoffering name="acs.comp.custom.shared" displaytext="Custom Compute with Shared Custom Disk" customized=true cpuspeed=2500 mincpunumber=1 maxcpunumber=16 minmemory=1024 maxmemory=32768 networkrate=500 offerha=true  dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true customized=true diskofferingstrictness=true diskofferingid=$ACS_DISK_SHARED_CUSTOM_ID
+cmk -p admin create serviceoffering name="acs.comp.custom.local"  displaytext="Custom Compute with Local Custom Disk"  customized=true cpuspeed=2500 mincpunumber=1 maxcpunumber=16 minmemory=1024 maxmemory=32768 networkrate=500 offerha=false dynamicscalingenabled=true limitcpuuse=true isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true purgeresources=true customized=true diskofferingstrictness=true diskofferingid=$ACS_DISK_LOCAL_CUSTOM_ID
 ```
 
 ### Network Offering
@@ -665,6 +678,7 @@ cmk -p admin update template id="$UBUNTU_TEMPLATE_ID" \
   "details[0].keyboard=us" \
   "details[0].video.hardware=qxl" \
   "details[0].video.ram=256" \
+  "details[0].rootdisksize=10" \
   "details[0].guest.cpu.mode=host-mode" \
   "details[0].nicAdapter=rtl8139" \
   "details[0].rootDiskController=scsi"
@@ -692,6 +706,7 @@ cmk -p admin update template id="$DEBIAN_TEMPLATE_ID" \
   "details[0].keyboard=us" \
   "details[0].video.hardware=qxl" \
   "details[0].video.ram=256" \
+  "details[0].rootdisksize=10" \
   "details[0].guest.cpu.mode=host-mode" \
   "details[0].nicAdapter=rtl8139" \
   "details[0].rootDiskController=scsi"
@@ -927,27 +942,32 @@ HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r
 TAILSCALE_USERDATA_ID=$(cmk -p homecloud-admin list userdata name="tailscale-router-debian" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.userdata[0].id')
 UBUNTU_TEMPLATE_ID=$(cmk -p homecloud-admin list templates templatefilter=all name="Ubuntu 24.04 - Noble" zoneid="$ZONE_ID" | jq -r '.template[0].id')
 COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.tiny" | jq -r '.serviceoffering[0].id')
+ROOT_DISK_SIZE=10
 
 TAILSCALE_AUTH_KEY=$(op read "op://homecloud/Tailscale Token/credential")
 
 VPC_CIDR="10.0.0.0/24"
+ISOLATED_NETWORK_CIDR="10.1.1.0/24"
+VPN_CIDR="10.0.0.0/15" # 10.0.0.0 - 10.1.255.254
 PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 PRIV_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 PRIV_NET_2_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_priv-net-2" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 PRIV_NET_3_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_priv-net-3" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+ISOLATED_NETWORK_ID=$(cmk -p homecloud-admin list networks name="iso-net-shared" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 
-DEV_ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
+ROUTER_VM_ID=$(cmk -p homecloud-admin deploy virtualmachine \
   name="homecloud-vpn-router" \
   displayname="homecloud-vpn-router" \
   serviceofferingid="$COMPUTE_OFFERING_ID" \
+  rootdisksize=$ROOT_DISK_SIZE \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
-  networkids="$PUB_NET_1_ID,$PRIV_NET_1_ID,$PRIV_NET_2_ID,$PRIV_NET_3_ID" \
+  networkids="$PUB_NET_1_ID,$PRIV_NET_1_ID,$PRIV_NET_2_ID,$PRIV_NET_3_ID,$ISOLATED_NETWORK_ID" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   userdataid="$TAILSCALE_USERDATA_ID" \
   "userdatadetails[0].tailscale_auth_key=$TAILSCALE_AUTH_KEY" \
-  "userdatadetails[0].network_router_cidr=$VPC_CIDR" \
+  "userdatadetails[0].network_router_cidr=$VPN_CIDR" \
   keypair="nulcell" \
   | jq -r '.virtualmachine.id')
 ```
@@ -963,12 +983,14 @@ DEFAULT_USERDATA_ID=$(cmk -p homecloud-admin list userdata name="cloud-default" 
 UBUNTU_TEMPLATE_ID=$(cmk -p homecloud-admin list templates templatefilter=all name="Ubuntu 24.04 - Noble" zoneid="$ZONE_ID" | jq -r '.template[0].id')
 
 COMPUTE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.xlarge" | jq -r '.serviceoffering[0].id')
-VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_priv-net-2" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+ROOT_DISK_SIZE=30
+VPS_NETWORK_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_priv-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 
-DEV_VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
-  name="homecloud-vps-dev" \
-  displayname="homecloud-vps-dev" \
+VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
+  name="homecloud-vps" \
+  displayname="homecloud-vps" \
   serviceofferingid="$COMPUTE_OFFERING_ID" \
+  rootdisksize=$ROOT_DISK_SIZE \
   templateid="$UBUNTU_TEMPLATE_ID" \
   zoneid="$ZONE_ID" \
   networkids="$VPS_NETWORK_ID" \
@@ -988,15 +1010,15 @@ ACCOUNT_NAME="homecloud"
 ZONE_NAME="zone-homecloud"
 ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
-CKS_OFFERING_ID=$(cmk -p homecloud-admin list kubernetessupportedversions keyword="cks-v1.34.2-cilium_v1.18.2-x86_64" zoneid="$ZONE_ID" | jq -r '.kubernetessupportedversion[0].id')
+CKS_OFFERING_ID=$(cmk -p homecloud-admin list kubernetessupportedversions keyword="cks-v1.33.1-calico_v3.30.0-x86_64" zoneid="$ZONE_ID" | jq -r '.kubernetessupportedversion[0].id')
 CNI_CONFIG_ID=$(cmk -p homecloud-admin listCniConfiguration name="cilium" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.cniconfig[0].id')
 
+echo "Creating Main CKS Cluster (this takes 15-30 minutes)..."
 PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-CKS_SERVICE_OFFERING_ID_CONTROL=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.large" | jq -r '.serviceoffering[0].id')
-CKS_SERVICE_OFFERING_ID_WORKER=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.xlarge" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID_CONTROL=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.medium" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID_WORKER=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.1_5xlarge" | jq -r '.serviceoffering[0].id')
 CKS_SERVICE_OFFERING_ID=$CKS_SERVICE_OFFERING_ID_CONTROL
-
-echo "Creating CKS Cluster (this takes 15-30 minutes)..."
+ROOT_DISK_SIZE=50
 CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   name="homecloud-cks" \
   description="Homecloud Kubernetes Cluster" \
@@ -1007,13 +1029,13 @@ CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
   "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
   "nodeofferings[1].node=worker" \
   "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER" \
-  noderootdisksize=50 \
+  noderootdisksize=$ROOT_DISK_SIZE \
   networkid="$PUB_NET_1_ID" \
   account="$ACCOUNT_NAME" \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   hypervisor="KVM" \
   controlnodes=3 \
-  size=2 \
+  size=1 \
   keypair="nulcell" \
   enablecsi=true \
   cniconfigurationid="$CNI_CONFIG_ID" \
@@ -1039,6 +1061,56 @@ kubectl config delete-cluster homecloud-cks || true
 kubectl konfig import -s homecloud-cks-kubeconfig.yaml
 rm homecloud-cks-kubeconfig.yaml
 echo "CKS Cluster ID: $CKS_ID"
+
+
+echo "Creating Operations CKS Cluster (this takes 15-30 minutes)..."
+ISO_NET_ID=$(cmk -p homecloud-admin list networks name="iso-net-shared" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+CKS_SERVICE_OFFERING_ID_CONTROL=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.medium" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID_WORKER=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.medium" | jq -r '.serviceoffering[0].id')
+CKS_SERVICE_OFFERING_ID=$CKS_SERVICE_OFFERING_ID_CONTROL
+ROOT_DISK_SIZE=30
+OPS_CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
+  name="homecloud-ops-cks" \
+  description="Homecloud Operations Kubernetes Cluster" \
+  zoneid="$ZONE_ID" \
+  kubernetesversionid="$CKS_OFFERING_ID" \
+  serviceofferingid="$CKS_SERVICE_OFFERING_ID" \
+  "nodeofferings[0].node=control" \
+  "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
+  "nodeofferings[1].node=worker" \
+  "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER" \
+  noderootdisksize=$ROOT_DISK_SIZE \
+  networkid="$ISO_NET_ID" \
+  account="$ACCOUNT_NAME" \
+  domainid="$HOMECLOUD_DOMAIN_ID" \
+  hypervisor="KVM" \
+  controlnodes=1 \
+  size=1 \
+  keypair="nulcell" \
+  enablecsi=true \
+  cniconfigurationid="$CNI_CONFIG_ID" \
+  "cniconfigdetails[0].cilium_version=1.18.4" \
+  | jq -r '.kubernetescluster.id')
+cmk -p homecloud-admin scaleKubernetesCluster id="$OPS_CKS_ID" \
+  autoscalingenabled=true \
+  minsize=1 \
+  maxsize=2 \
+  "nodeofferings[0].node=control" \
+  "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
+  "nodeofferings[1].node=worker" \
+  "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER"
+
+echo "Retrieving kubeconfig for Operations CKS Cluster..."
+cmk -p homecloud-admin getKubernetesClusterConfig id="$OPS_CKS_ID" | jq -r .clusterconfig.configdata > homecloud-ops-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes-admin@kubernetes/admin@homecloud-ops-cks/g' homecloud-ops-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes-admin/homecloud-ops-cks-admin/g' homecloud-ops-cks-kubeconfig.yaml
+sed -i '' 's/kubernetes/homecloud-ops-cks/g' homecloud-ops-cks-kubeconfig.yaml
+kubectl config delete-context admin@homecloud-ops-cks || true
+kubectl config delete-user homecloud-ops-cks-admin || true
+kubectl config delete-cluster homecloud-ops-cks || true
+kubectl konfig import -s homecloud-ops-cks-kubeconfig.yaml
+rm homecloud-ops-cks-kubeconfig.yaml
+echo "Operations CKS Cluster ID: $OPS_CKS_ID"
 ```
 
 ## Shared File System
