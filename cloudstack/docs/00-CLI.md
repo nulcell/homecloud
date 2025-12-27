@@ -676,12 +676,12 @@ echo "Ubuntu 24.04 Template ID: $UBUNTU_TEMPLATE_ID"
 # Configure Ubuntu template settings
 cmk -p admin update template id="$UBUNTU_TEMPLATE_ID" \
   "details[0].keyboard=us" \
-  "details[0].video.hardware=qxl" \
-  "details[0].video.ram=256" \
   "details[0].rootdisksize=10" \
-  "details[0].guest.cpu.mode=host-mode" \
-  "details[0].nicAdapter=rtl8139" \
-  "details[0].rootDiskController=scsi"
+  "details[0].guest.cpu.mode=host-model"
+  # "details[0].video.hardware=qxl" \
+  # "details[0].video.ram=256" \
+  # "details[0].nicAdapter=rtl8139" \
+  # "details[0].rootDiskController=scsi"
 
 # Debian 12 - Bookworm
 echo "Registering Debian 12..."
@@ -704,12 +704,12 @@ echo "Debian 12 Template ID: $DEBIAN_TEMPLATE_ID"
 # Configure Debian template settings
 cmk -p admin update template id="$DEBIAN_TEMPLATE_ID" \
   "details[0].keyboard=us" \
-  "details[0].video.hardware=qxl" \
-  "details[0].video.ram=256" \
   "details[0].rootdisksize=10" \
-  "details[0].guest.cpu.mode=host-mode" \
-  "details[0].nicAdapter=rtl8139" \
-  "details[0].rootDiskController=scsi"
+  "details[0].guest.cpu.mode=host-model"
+  # "details[0].video.hardware=qxl" \
+  # "details[0].video.ram=256" \
+  # "details[0].nicAdapter=rtl8139" \
+  # "details[0].rootDiskController=scsi"
 
 echo "Registering CKS Kubernetes Versions..."
 
