@@ -264,7 +264,8 @@ kubectl apply -f ./kubernetes/bastion.yaml
 ### n8n
 
 ```sh
-...
+helm dependency update ./charts/n8n
+helm upgrade --install n8n ./charts/n8n --namespace n8n --create-namespace --version 0.0.1
 ```
 
 ### Homepage
