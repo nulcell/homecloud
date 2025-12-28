@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n-task-runner
+  namespace: {{ include "n8n.namespace" . }}
+  labels:
+    {{- include "n8n.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.n8nTaskRunner.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "n8nTaskRunner.selectorLabels" . | nindent 6 }}
+  {{- if .Values.n8nTaskRunner.updateStrategy }}
+  strategy:
+    {{- toYaml .Values.n8nTaskRunner.updateStrategy | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.n8nTaskRunner.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "n8nTaskRunner.selectorLabels" . | nindent 8 }}
+        {{- with .Values.n8nTaskRunner.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.hostNetwork }}
+      hostNetwork: {{ .Values.hostNetwork }}
+      {{- end }}
+      {{- if .Values.dnsPolicy }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      {{- end }}
+      enableServiceLinks: true
+      containers:
+        - env:
+            - name: GENERIC_TIMEZONE
+              value: Europe/Amsterdam
+            - name: N8N_RUNNERS_AUTH_TOKEN
+              value: your-secret-here
+            - name: N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT
+              value: "15"
+            - name: N8N_RUNNERS_EXTERNAL_ALLOW
+              value: '*'
+            - name: N8N_RUNNERS_LAUNCHER_LOG_LEVEL
+              value: debug
+            - name: N8N_RUNNERS_STDLIB_ALLOW
+              value: '*'
+            - name: N8N_RUNNERS_TASK_BROKER_URI
+              # value: http://n8n.n8n.svc.cluster.local:5679
+              value: {{ printf "http://%s.%s.svc.cluster.local:5679" .Values.service.name (include "n8n.namespace" .) }}
+            - name: NODE_FUNCTION_ALLOW_BUILTIN
+              value: '*'
+            - name: NODE_FUNCTION_ALLOW_EXTERNAL
+              value: '*'
+          image: {{ .Values.n8nTaskRunner.image.repository }}:{{ .Values.n8nTaskRunner.image.tag }}
+          imagePullPolicy: {{ .Values.n8nTaskRunner.image.pullPolicy }}
+          name: n8n-task-runner
+          resources:
+            {{- toYaml .Values.n8nTaskRunner.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.n8nTaskRunner.containerSecurityContext | nindent 12 }}
+      restartPolicy: Always

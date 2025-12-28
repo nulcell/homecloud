@@ -1,0 +1,4 @@
+Welcome to n8n!
+
+Access your n8n instance by navigating to the following URL:
+  https://{{ .Values.ingress.host | default "localhost" }}/
