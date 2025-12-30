@@ -591,6 +591,20 @@ cmk -p admin create diskoffering name="acs.disk.local.xlarge"  displaytext="Loca
 ### Compute Offering
 
 ```bash
+# Fixed Compute offerings with Fixed Storage Disks
+cmk -p admin create serviceoffering name="acs.comp.gen.small.fixed"  displaytext="General Purpose Small"    cpunumber=1 cpuspeed=2500 memory=1024  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.medium.fixed" displaytext="General Purpose Medium"   cpunumber=2 cpuspeed=2500 memory=2048  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=20 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.large.fixed"  displaytext="General Purpose Large"    cpunumber=4 cpuspeed=2500 memory=4096  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.xlarge.fixed" displaytext="General Purpose xLarge"   cpunumber=8 cpuspeed=2500 memory=8192  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
+# cmk -p admin create serviceoffering name="acs.comp.mem.small.fixed"  displaytext="Memory Optimized Small"   cpunumber=1 cpuspeed=2500 memory=2048  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=false purgeresources=true
+# cmk -p admin create serviceoffering name="acs.comp.mem.medium.fixed" displaytext="Memory Optimized Medium"  cpunumber=2 cpuspeed=2500 memory=4096  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=20 encryptroot=false purgeresources=true
+# cmk -p admin create serviceoffering name="acs.comp.mem.large.fixed"  displaytext="Memory Optimized Large"   cpunumber=4 cpuspeed=2500 memory=8192  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
+# cmk -p admin create serviceoffering name="acs.comp.mem.xlarge.fixed" displaytext="Memory Optimized xLarge"  cpunumber=8 cpuspeed=2500 memory=16384 networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
+# cmk -p admin create serviceoffering name="acs.comp.ssd.small.fixed"  displaytext="Storage Optimized Small"  cpunumber=1 cpuspeed=2500 memory=1024  networkrate=750 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=false purgeresources=true
+# cmk -p admin create serviceoffering name="acs.comp.ssd.medium.fixed" displaytext="Storage Optimized Medium" cpunumber=2 cpuspeed=2500 memory=2048  networkrate=750 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=20 encryptroot=false purgeresources=true
+# cmk -p admin create serviceoffering name="acs.comp.ssd.large.fixed"  displaytext="Storage Optimized Large"  cpunumber=4 cpuspeed=2500 memory=4096  networkrate=750 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
+# cmk -p admin create serviceoffering name="acs.comp.ssd.xlarge.fixed" displaytext="Storage Optimized xLarge" cpunumber=8 cpuspeed=2500 memory=8192  networkrate=750 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
+
 ACS_DISK_SHARED_CUSTOM_ID=$(cmk -p admin list diskofferings name="acs.disk.shared.custom" | jq -r '.diskoffering[0].id')
 ACS_DISK_LOCAL_CUSTOM_ID=$(cmk -p admin list diskofferings name="acs.disk.local.custom"  | jq -r '.diskoffering[0].id')
 
@@ -1124,7 +1138,7 @@ ZONE_NAME="zone-homecloud"
 ZONE_ID=$(cmk -p admin list zones name="$ZONE_NAME" | jq -r '.zone[0].id')
 HOMECLOUD_DOMAIN_ID=$(cmk -p homecloud-admin list domains name=homecloud | jq -r '.domain[0].id')
 
-SERVICE_OFFERING_NAME="acs.comp.gen.medium"
+SERVICE_OFFERING_NAME="acs.comp.gen.medium.fixed"
 DISK_OFFERING_NAME="acs.disk.shared.custom"
 NETWORK_NAME="homecloud-vpc_pub-net-1"
 
@@ -1157,7 +1171,7 @@ echo "Mount Command: \"mount -t nfs $MEDIA_SERVER_FS_CONFIG_IP:/export [local_mo
 echo ""
 
 # Data File System
-SIZE=300 # Size in GB
+SIZE=500 # Size in GB
 echo "Creating Media Server Data Shared File System ($SIZE GB)..."
 MEDIA_SERVER_FS_DATA_ID=$(cmk -p homecloud-admin createSharedFileSystem \
   name="media-server-fs-data" \

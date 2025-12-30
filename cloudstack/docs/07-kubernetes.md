@@ -80,6 +80,24 @@ parameters:
 EOF
 ```
 
+### NFS StorageClass
+
+For static NFS-backed PersistentVolumes (without dynamic provisioning), create a StorageClass that can be referenced:
+
+```sh
+kubectl apply -f - <<EOF
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+EOF
+```
+
+> **Note:** This StorageClass is for static provisioning only. PersistentVolumes must be manually created with NFS server details and then bound to PVCs. For dynamic NFS provisioning, consider using [nfs-subdir-external-provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner).
+
 ### Verification
 
 ```sh
