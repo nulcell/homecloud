@@ -190,6 +190,10 @@ traefik:
     subPath: ""
 
   deployment:
+    # -- Deployment or DaemonSet
+    kind: Deployment
+    # -- Number of pods of the deployment (only applies when kind == Deployment)
+    replicas: 1
     initContainers:
       # The "volume-permissions" init container is required if you run into permission issues.
       # Related issue: https://github.com/traefik/traefik-helm-chart/issues/396
