@@ -1,23 +1,5 @@
 # CloudStack Cluster API (CKS + Kubeadm)
 
-- [CloudStack Cluster API (CKS + Kubeadm)](#cloudstack-cluster-api-cks-kubeadm)
-  - [Managing Cluster API Image Templates](#managing-cluster-api-image-templates)
-    - [Pre-built Image Templates](#pre-built-image-templates)
-    - [Building Custom Image Templates](#building-custom-image-templates)
-  - [Cluster API Management Cluster Setup with CKS](#cluster-api-management-cluster-setup-with-cks)
-    - [Setup CloudStack Credentials Secret](#setup-cloudstack-credentials-secret)
-    - [Initialize the management cluster](#initialize-the-management-cluster)
-  - [Creating Workload Clusters](#creating-workload-clusters)
-    - [Dev Cluster](#dev-cluster)
-    - [Prod Cluster](#prod-cluster)
-    - [Post-deployment Processes](#post-deployment-processes)
-  - [Updating a Workload Cluster](#updating-a-workload-cluster)
-  - [Updating Workload Cluster Image Templates](#updating-workload-cluster-image-templates)
-    - [Worker Nodes](#worker-nodes)
-    - [Control Plane Nodes](#control-plane-nodes)
-  - [Deleting a Workload Cluster](#deleting-a-workload-cluster)
-  <!--toc:end-->
-
 This directory contains the procedures and configurations necessary to set up a number of CloudStack kubernetes clusters using the Cluster API (CAPI) framework. Ensure that [clusterctl](https://cluster-api.sigs.k8s.io/user/quick-start.html#install-clusterctl) is installed on your local machine.
 
 ## Managing Cluster API Image Templates
@@ -34,28 +16,7 @@ Follow the instructions in the [Cluster API Provider CloudStack documentation](h
 
 ## Cluster API Management Cluster Setup with CKS
 
-Create a management cluster using CKS with CloudStack as the infrastructure provider. This management cluster will be used to create and manage workload clusters for dev and prod environments.
-
-**Note**: Ensure that scheduled volume snapshots are enabled for the instances created by the management cluster to ensure data durability. You can migrate the cluster-api management cluster data to a different cluster later if needed for migrations, backups, disaster recovery, etc.
-
-| Name                               | Description                              | Zone             | Hypervisor | Kubernetes version | Compute Offering    | Node root disk size (in GB) | Network                  | HA enabled | Cluster size (Worker nodes) | SSH key pair   | Show advanced settings | Enable CloudStack CSI Driver | Service Offering for Control Nodes | Template for Control Nodes | Service Offering for Worker Nodes | Template for Worker Nodes | Etcd Nodes | Service Offering for etcd Nodes | Template for etcd Nodes | CNI Configuration | CNI Configuration Parameters |
-| ---------------------------------- | ---------------------------------------- | ---------------- | ---------- | ------------------ | ------------------- | --------------------------- | ------------------------ | ---------- | --------------------------- | -------------- | ---------------------- | ---------------------------- | ---------------------------------- | -------------------------- | --------------------------------- | ------------------------- | ---------- | ------------------------------- | ----------------------- | ----------------- | ---------------------------- |
-| `homecloud-cluster-api-management` | Homecloud Cluster API Management Cluster | `zone-homecloud` | KVM        | 1.34.2             | acs.comp.gen.medium | 30                          | homecloud-iso-net-shared | false      | 1                           | _your-ssh-key_ | true                   | false                        | None                               | None                       | None                              | None                      | None       | null                            | null                    | cilium            | cilium_version: `1.18.4`     |
-
-Download the kubeconfig file for the management cluster after deployment and update the following names for easier access:
-
-- context: `capi-admin@homecloud-cluster-api-management`
-- cluster: `homecloud-cluster-api-management`
-- user: `capi-admin`
-
-Then import it to the existing kubeconfig using:
-
-```sh
-kubectl config delete-context capi-admin@homecloud-cluster-api-management || true
-kubectl config delete-user capi-admin || true
-kubectl config delete-cluster homecloud-cluster-api-management || true
-kubectl konfig import -s ~/Downloads/kube.conf
-```
+Utilise the Operations CKS cluster created during the [CloudStack CKS Setup](./00-CLI.md) to run Cluster API commands.
 
 ### Setup CloudStack Credentials Secret
 
@@ -93,7 +54,7 @@ export CLOUDSTACK_ZONE_NAME=zone-homecloud
 
 # If the referenced network doesn't exist, a new isolated network
 # will be created.
-export CLOUDSTACK_NETWORK_NAME=homecloud-vpc-dev_pub-net-1
+export CLOUDSTACK_NETWORK_NAME=homecloud-vpc_pub-net-1
 
 # The IP you put here must be available as an unused public IP on the network
 # referenced above. If it's not available, the control plane will fail to create.
@@ -107,8 +68,8 @@ export CLUSTER_ENDPOINT_PORT=6443
 
 # Machine offerings must be pre-created. Control plane offering
 # must have have >2GB RAM available
-export CLOUDSTACK_CONTROL_PLANE_MACHINE_OFFERING="acs.comp.gen.medium"
-export CLOUDSTACK_WORKER_MACHINE_OFFERING="acs.comp.gen.medium"
+export CLOUDSTACK_CONTROL_PLANE_MACHINE_OFFERING="acs.comp.mem.medium.fixed"
+export CLOUDSTACK_WORKER_MACHINE_OFFERING="acs.comp.gen.1xlarge.fixed"
 
 # Referring to a prerequisite capi-compatible image you've loaded into Apache CloudStack
 export CLOUDSTACK_TEMPLATE_NAME=capi-v1.32.3-ubuntu-2204-kvm
@@ -122,44 +83,32 @@ export CLOUDSTACK_SSH_KEY_NAME=nulcell
 export CLOUDSTACK_SYNC_WITH_ACS=true
 ```
 
-### Dev Cluster
+### Cluster Creation
+
+Create the cluster manifest if it doesn't already exist:
 
 ```sh
-kubectl config use-context capi-admin@homecloud-cluster-api-management
-clusterctl generate cluster homecloud-cks-dev \
-    --kubernetes-version v1.32.3 \
-    --flavor managed-ssh \
-    --infrastructure cloudstack \
-    --control-plane-machine-count=1 \
-    --worker-machine-count=1 \
-    > cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
-kubectl apply -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
-clusterctl get kubeconfig homecloud-cks-dev > cloudstack/compute/clusterapi/homecloud-cks-dev.kubeconfig
-kubectl config delete-context homecloud-cks-dev-admin@homecloud-cks-dev || true
-kubectl config delete-user homecloud-cks-dev-admin || true
-kubectl config delete-cluster homecloud-cks-dev || true
-kubectl konfig import -s cloudstack/compute/clusterapi/homecloud-cks-dev.kubeconfig
-kubectl config use-context homecloud-cks-dev-admin@homecloud-cks-dev
-```
-
-### Prod Cluster
-
-```sh
-kubectl config use-context capi-admin@homecloud-cluster-api-management
-clusterctl generate cluster homecloud-cks-prod \
+kubectl config use-context admin@homecloud-ops-cks
+clusterctl generate cluster homecloud-cks \
     --kubernetes-version v1.32.3 \
     --flavor managed-ssh \
     --infrastructure cloudstack \
     --control-plane-machine-count=3 \
     --worker-machine-count=3 \
-    > cloudstack/compute/clusterapi/homecloud-cks-prod-cluster-spec.yaml
-kubectl apply -f cloudstack/compute/clusterapi/homecloud-cks-prod-cluster-spec.yaml
-clusterctl get kubeconfig homecloud-cks-prod > cloudstack/compute/clusterapi/homecloud-cks-prod.kubeconfig
-kubectl config delete-context homecloud-cks-prod-admin@homecloud-cks-prod || true
-kubectl config delete-user homecloud-cks-prod-admin || true
-kubectl config delete-cluster homecloud-cks-prod || true
-kubectl konfig import -s cloudstack/compute/clusterapi/homecloud-cks-prod.kubeconfig
-kubectl config use-context homecloud-cks-prod-admin@homecloud-cks-prod
+    > cloudstack/compute/clusterapi/homecloud-cks-cluster-spec.yaml
+```
+
+Modify `cloudstack/compute/clusterapi/homecloud-cks-cluster-spec.yaml` as needed to adjust the cluster configuration, such as changing the number of worker nodes, machine templates, etc.
+
+```sh
+kubectl apply -f cloudstack/compute/clusterapi/homecloud-cks-cluster-spec.yaml
+clusterctl get kubeconfig homecloud-cks > cloudstack/compute/clusterapi/homecloud-cks.kubeconfig
+kubectl config delete-context homecloud-cks-admin@homecloud-cks || true
+kubectl config delete-user homecloud-cks-admin || true
+kubectl config delete-cluster homecloud-cks || true
+kubectl konfig import -s cloudstack/compute/clusterapi/homecloud-cks.kubeconfig
+kubectl config use-context homecloud-cks-admin@homecloud-cks
+rm cloudstack/compute/clusterapi/homecloud-cks.kubeconfig
 ```
 
 ### Post-deployment Processes
@@ -203,9 +152,9 @@ cilium install --version 1.18.4 \
     --set ipam.operator.clusterPoolIPv4MaskSize=24
 cilium status --wait
 
-kubectl config use-context capi-admin@homecloud-cluster-api-management
-clusterctl describe cluster homecloud-cks-dev
-kubectl config use-context homecloud-cks-dev-admin@homecloud-cks-dev
+kubectl config use-context admin@homecloud-ops-cks
+clusterctl describe cluster homecloud-cks
+kubectl config use-context homecloud-cks-admin@homecloud-cks
 ```
 
 ## Updating a Workload Cluster
@@ -218,36 +167,36 @@ WIP
 
 Follow the steps below to update a workload cluster created using the management cluster:
 
-1. Edit the `CloudStackMachineTemplate` resource for the worker nodes yaml file used to create the workload cluster (e.g., `cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml`) with the new name and spec values for template, offering, and/or ssh key pair.
+1. Edit the `CloudStackMachineTemplate` resource for the worker nodes yaml file used to create the workload cluster (e.g., `cloudstack/compute/clusterapi/homecloud-cks-cluster-spec.yaml`) with the new name and spec values for template, offering, and/or ssh key pair.
 2. Update the `CloudStackMachineTemplate` reference in the `MachineDeployment` resource section of the yaml file to point to the new template created in step 1.
 3. Apply the updated yaml file to the management cluster:
 
    ```sh
-   kubectl --context capi-admin@homecloud-cluster-api-management apply -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
+   kubectl --context admin@homecloud-ops-cks apply -f cloudstack/compute/clusterapi/homecloud-cks-cluster-spec.yaml
    ```
 
 4. You can use `k9s` to monitor the rollout of the new worker nodes. Once the new nodes are ready, the cloudstack cloud controller will automatically drain and delete the old nodes.
 
 ```sh
-k9s --context homecloud-cks-dev-admin@homecloud-cks-dev
+k9s --context homecloud-cks-admin@homecloud-cks
 ```
 
 ### Control Plane Nodes
 
 Follow the steps below to update the control plane nodes of a workload cluster created using the management cluster:
 
-1. Edit the `CloudStackMachineTemplate` resource for the control plane nodes in the yaml file used to create the workload cluster (e.g., `cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml`) with the new name and spec valudes for template, offering, and/or ssh key pair.
+1. Edit the `CloudStackMachineTemplate` resource for the control plane nodes in the yaml file used to create the workload cluster (e.g., `cloudstack/compute/clusterapi/homecloud-cks-cluster-spec.yaml`) with the new name and spec valudes for template, offering, and/or ssh key pair.
 2. Update the `CloudStackMachineTemplate` reference in the `KubeadmControlPlane` resource section of the yaml file to point to the new template created in step 1.
 3. Apply the updated yaml file to the management cluster:
 
    ```sh
-   kubectl --context capi-admin@homecloud-cluster-api-management apply -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
+   kubectl --context admin@homecloud-ops-cks apply -f cloudstack/compute/clusterapi/homecloud-cks-cluster-spec.yaml
    ```
 
 4. You can use `k9s` to monitor the rollout of the new control plane nodes. It is very likely that the old control plane will not be automatically drained and deleted, so you may need to manually drain and delete the old control plane nodes once the new nodes are ready. When looking at the `nodes` in `k9s`, the control plane nodes to be drained and deleted can be identified by their red color. Make sure to set the following parameters when draining the nodes to avoid issues, `force=true`, `ignore-daemonsets=true`, and `delete-emptydir-data=true` (the node would have already been drained during the deployment).
 
 ```sh
-k9s --context homecloud-cks-dev-admin@homecloud-cks-dev
+k9s --context homecloud-cks-admin@homecloud-cks
 ```
 
 ## Deleting a Workload Cluster
@@ -255,6 +204,6 @@ k9s --context homecloud-cks-dev-admin@homecloud-cks-dev
 To delete a workload cluster created using the management cluster ensure the management cluster context is set and the yaml file used to create the workload cluster is available, run the following command:
 
 ```sh
-kubectl config use-context capi-admin@homecloud-cluster-api-management
-kubectl delete -f cloudstack/compute/clusterapi/homecloud-cks-dev-cluster-spec.yaml
+kubectl config use-context admin@homecloud-ops-cks
+kubectl delete -f cloudstack/compute/clusterapi/homecloud-cks-cluster-spec.yaml
 ```

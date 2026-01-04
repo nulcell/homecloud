@@ -81,6 +81,10 @@ cloudstack-setup-management
 systemctl status cloudstack-management --no-pager
 echo "-> CloudStack Management Server started."
 
+echo "-> Linking key for CloudStack Usage Server..."
+ln -s /etc/cloudstack/management/key /etc/cloudstack/usage/key
+echo "-> Key linked."
+
 # =============================================================================
 # NFS Server Configuration
 # =============================================================================

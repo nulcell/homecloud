@@ -289,14 +289,20 @@ HOST_2_IP="10.10.17.10"
 HOST_USERNAME="root"
 
 # Primary Storage (NFS)
-PRIMARY_STORAGE_NAME="primary-nfs-zone-homecloud"
-PRIMARY_STORAGE_SERVER="10.10.17.10"
-PRIMARY_STORAGE_PATH="/export/primary"
+PRIMARY_STORAGE_1_NAME="primary-nfs-zone-homecloud"
+PRIMARY_STORAGE_1_SERVER="10.10.17.10"
+PRIMARY_STORAGE_1_PATH="/export/primary"
+PRIMARY_STORAGE_2_NAME="primary-nfs2-zone-homecloud"
+PRIMARY_STORAGE_2_SERVER="10.10.17.5"
+PRIMARY_STORAGE_2_PATH="/export/primary"
 
 # Secondary Storage (NFS)
-SECONDARY_STORAGE_NAME="secondary-nfs-zone-homecloud"
-SECONDARY_STORAGE_SERVER="10.10.17.10"
-SECONDARY_STORAGE_PATH="/export/secondary"
+SECONDARY_STORAGE_1_NAME="secondary-nfs-zone-homecloud"
+SECONDARY_STORAGE_1_SERVER="10.10.17.10"
+SECONDARY_STORAGE_1_PATH="/export/secondary"
+SECONDARY_STORAGE_2_NAME="secondary-nfs2-zone-homecloud"
+SECONDARY_STORAGE_2_SERVER="10.10.17.5"
+SECONDARY_STORAGE_2_PATH="/export/secondary"
 
 echo "Creating Advanced Zone: $ZONE_NAME..."
 ZONE_ID=$(cmk -p admin create zone \
@@ -506,26 +512,44 @@ cmk -p admin add host \
 echo "Host added"
 
 # Create Primary Storage (Zone-wide NFS)
-echo "Creating primary storage: $PRIMARY_STORAGE_NAME..."
-PRIMARY_STORAGE_ID=$(cmk -p admin create storagepool \
-  name="$PRIMARY_STORAGE_NAME" \
+echo "Creating primary storage: $PRIMARY_STORAGE_1_NAME..."
+PRIMARY_STORAGE_1_ID=$(cmk -p admin create storagepool \
+  name="$PRIMARY_STORAGE_1_NAME" \
   scope="ZONE" \
   zoneid="$ZONE_ID" \
   provider="DefaultPrimary" \
   hypervisor="$HYPERVISOR" \
-  url="nfs://$PRIMARY_STORAGE_SERVER$PRIMARY_STORAGE_PATH" \
+  url="nfs://$PRIMARY_STORAGE_1_SERVER$PRIMARY_STORAGE_1_PATH" \
   | jq -r '.storagepool.id')
-echo "Primary storage created with ID: $PRIMARY_STORAGE_ID"
+echo "Primary storage created with ID: $PRIMARY_STORAGE_1_ID"
+echo "Creating primary storage: $PRIMARY_STORAGE_2_NAME..."
+PRIMARY_STORAGE_2_ID=$(cmk -p admin create storagepool \
+  name="$PRIMARY_STORAGE_2_NAME" \
+  scope="ZONE" \
+  zoneid="$ZONE_ID" \
+  provider="DefaultPrimary" \
+  hypervisor="$HYPERVISOR" \
+  url="nfs://$PRIMARY_STORAGE_2_SERVER$PRIMARY_STORAGE_2_PATH" \
+  | jq -r '.storagepool.id')
+echo "Primary storage created with ID: $PRIMARY_STORAGE_2_ID"
 
 # Add Secondary Storage (Image Store)
-echo "Adding secondary storage: $SECONDARY_STORAGE_NAME..."
-SECONDARY_STORAGE_ID=$(cmk -p admin add imagestore \
-  name="$SECONDARY_STORAGE_NAME" \
+echo "Adding secondary storage: $SECONDARY_STORAGE_1_NAME..."
+SECONDARY_STORAGE_1_ID=$(cmk -p admin add imagestore \
+  name="$SECONDARY_STORAGE_1_NAME" \
   provider="NFS" \
   zoneid="$ZONE_ID" \
-  url="nfs://$SECONDARY_STORAGE_SERVER$SECONDARY_STORAGE_PATH" \
+  url="nfs://$SECONDARY_STORAGE_1_SERVER$SECONDARY_STORAGE_1_PATH" \
   | jq -r '.imagestore.id')
-echo "Secondary storage added with ID: $SECONDARY_STORAGE_ID"
+echo "Secondary storage added with ID: $SECONDARY_STORAGE_1_ID"
+echo "Adding secondary storage: $SECONDARY_STORAGE_2_NAME..."
+SECONDARY_STORAGE_2_ID=$(cmk -p admin add imagestore \
+  name="$SECONDARY_STORAGE_2_NAME" \
+  provider="NFS" \
+  zoneid="$ZONE_ID" \
+  url="nfs://$SECONDARY_STORAGE_2_SERVER$SECONDARY_STORAGE_2_PATH" \
+  | jq -r '.imagestore.id')
+echo "Secondary storage added with ID: $SECONDARY_STORAGE_2_ID"
 
 # Enable Zone
 echo "Enabling zone: $ZONE_NAME..."
@@ -592,21 +616,20 @@ cmk -p admin create diskoffering name="acs.disk.local.xlarge"  displaytext="Loca
 
 ```bash
 # Fixed Compute offerings with Fixed Storage Disks
-cmk -p admin delete serviceoffering name="acs.comp.gen.tiny.fixed"   displaytext="General Purpose Tiny"     cpunumber=1  cpuspeed=1000 memory=512   networkrate=500 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=5  encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.small.fixed"  displaytext="General Purpose Small"    cpunumber=1  cpuspeed=2500 memory=1024  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.medium.fixed" displaytext="General Purpose Medium"   cpunumber=2  cpuspeed=2500 memory=2048  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=20 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.large.fixed"  displaytext="General Purpose Large"    cpunumber=4  cpuspeed=2500 memory=4096  networkrate=1024 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.xlarge.fixed" displaytext="General Purpose xLarge"   cpunumber=8  cpuspeed=2500 memory=8192  networkrate=1024 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.1xlarge.fixed" displaytext="General Purpose 1xLarge" cpunumber=12 cpuspeed=2500 memory=12288 networkrate=1024 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=60 encryptroot=false purgeresources=true
-cmk -p admin create serviceoffering name="acs.comp.gen.2xlarge.fixed" displaytext="General Purpose 2xLarge" cpunumber=16 cpuspeed=2500 memory=16384 networkrate=1024 offerha=true dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=75 encryptroot=false purgeresources=true
-# cmk -p admin create serviceoffering name="acs.comp.mem.small.fixed"  displaytext="Memory Optimized Small"   cpunumber=1 cpuspeed=2500 memory=2048  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=false purgeresources=true
-# cmk -p admin create serviceoffering name="acs.comp.mem.medium.fixed" displaytext="Memory Optimized Medium"  cpunumber=2 cpuspeed=2500 memory=4096  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=20 encryptroot=false purgeresources=true
-# cmk -p admin create serviceoffering name="acs.comp.mem.large.fixed"  displaytext="Memory Optimized Large"   cpunumber=4 cpuspeed=2500 memory=8192  networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
-# cmk -p admin create serviceoffering name="acs.comp.mem.xlarge.fixed" displaytext="Memory Optimized xLarge"  cpunumber=8 cpuspeed=2500 memory=16384 networkrate=750 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
-# cmk -p admin create serviceoffering name="acs.comp.ssd.small.fixed"  displaytext="Storage Optimized Small"  cpunumber=1 cpuspeed=2500 memory=1024  networkrate=750 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=false purgeresources=true
-# cmk -p admin create serviceoffering name="acs.comp.ssd.medium.fixed" displaytext="Storage Optimized Medium" cpunumber=2 cpuspeed=2500 memory=2048  networkrate=750 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=20 encryptroot=false purgeresources=true
-# cmk -p admin create serviceoffering name="acs.comp.ssd.large.fixed"  displaytext="Storage Optimized Large"  cpunumber=4 cpuspeed=2500 memory=4096  networkrate=750 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
-# cmk -p admin create serviceoffering name="acs.comp.ssd.xlarge.fixed" displaytext="Storage Optimized xLarge" cpunumber=8 cpuspeed=2500 memory=8192  networkrate=750 offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="local"  provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
+cmk -p admin delete serviceoffering name="acs.comp.gen.tiny.fixed"    displaytext="General Purpose Tiny"     cpunumber=1  cpuspeed=1000 memory=512   networkrate=500  offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=5  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.small.fixed"   displaytext="General Purpose Small"    cpunumber=1  cpuspeed=2500 memory=1024  networkrate=750  offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.medium.fixed"  displaytext="General Purpose Medium"   cpunumber=2  cpuspeed=2500 memory=2048  networkrate=750  offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=20 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.large.fixed"   displaytext="General Purpose Large"    cpunumber=4  cpuspeed=2500 memory=4096  networkrate=1024 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.xlarge.fixed"  displaytext="General Purpose xLarge"   cpunumber=8  cpuspeed=2500 memory=8192  networkrate=1024 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.1xlarge.fixed" displaytext="General Purpose 1xLarge"  cpunumber=12 cpuspeed=2500 memory=12288 networkrate=1024 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=60 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.gen.2xlarge.fixed" displaytext="General Purpose 2xLarge"  cpunumber=16 cpuspeed=2500 memory=16384 networkrate=1024 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=75 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.tiny.fixed"    displaytext="Memory Optimized Tiny"    cpunumber=1  cpuspeed=1000 memory=1024  networkrate=500  offerha=false dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=5  encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.small.fixed"   displaytext="Memory Optimized Small"   cpunumber=1  cpuspeed=2500 memory=2048  networkrate=750  offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=10 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.medium.fixed"  displaytext="Memory Optimized Medium"  cpunumber=2  cpuspeed=2500 memory=4096  networkrate=750  offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=20 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.large.fixed"   displaytext="Memory Optimized Large"   cpunumber=4  cpuspeed=2500 memory=8192  networkrate=1024 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=30 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.xlarge.fixed"  displaytext="Memory Optimized xLarge"  cpunumber=8  cpuspeed=2500 memory=16384 networkrate=1024 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=50 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.1xlarge.fixed" displaytext="Memory Optimized 1xLarge" cpunumber=12 cpuspeed=2500 memory=24576 networkrate=1024 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=60 encryptroot=false purgeresources=true
+cmk -p admin create serviceoffering name="acs.comp.mem.2xlarge.fixed" displaytext="Memory Optimized 2xLarge" cpunumber=16 cpuspeed=2500 memory=32768 networkrate=1024 offerha=true  dynamicscalingenabled=false limitcpuuse=false isvolatile=false deploymentplanner="UserDispersingPlanner" ispublic=true storagetype="shared" provisioningtype="thin" diskofferingstrictness=false rootdisksize=75 encryptroot=false purgeresources=true
 
 ACS_DISK_SHARED_CUSTOM_ID=$(cmk -p admin list diskofferings name="acs.disk.shared.custom" | jq -r '.diskoffering[0].id')
 ACS_DISK_LOCAL_CUSTOM_ID=$(cmk -p admin list diskofferings name="acs.disk.local.custom"  | jq -r '.diskoffering[0].id')
@@ -871,7 +894,7 @@ VPC_ID=$(cmk -p homecloud-admin create vpc \
   domainid="$HOMECLOUD_DOMAIN_ID" \
   | jq -r '.vpc.id')
 
-DEV_PUB_NET_1_ID=$(cmk -p homecloud-admin create network \
+PUB_NET_1_ID=$(cmk -p homecloud-admin create network \
   name="pub-net-1" \
   displaytext="Public Network 1" \
   networkofferingid="$PUBLIC_LB_OFFERING_ID" \
@@ -884,7 +907,7 @@ DEV_PUB_NET_1_ID=$(cmk -p homecloud-admin create network \
   aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$VPC_ID" | jq -r '.networkacllist[0].id') \
   | jq -r '.network.id')
 
-DEV_PRIV_NET_1_ID=$(cmk -p homecloud-admin create network \
+PRIV_NET_1_ID=$(cmk -p homecloud-admin create network \
   name="priv-net-1" \
   displaytext="Private Network 1" \
   networkofferingid="$INTERNAL_LB_OFFERING_ID" \
@@ -897,7 +920,7 @@ DEV_PRIV_NET_1_ID=$(cmk -p homecloud-admin create network \
   aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$VPC_ID" | jq -r '.networkacllist[0].id') \
   | jq -r '.network.id')
 
-DEV_PRIV_NET_2_ID=$(cmk -p homecloud-admin create network \
+PRIV_NET_2_ID=$(cmk -p homecloud-admin create network \
   name="priv-net-2" \
   displaytext="Private Network 2" \
   networkofferingid="$INTERNAL_LB_OFFERING_ID" \
@@ -910,7 +933,7 @@ DEV_PRIV_NET_2_ID=$(cmk -p homecloud-admin create network \
   aclid=$(cmk -p homecloud-admin list networkacllists name="default_allow" vpcid="$VPC_ID" | jq -r '.networkacllist[0].id') \
   | jq -r '.network.id')
 
-DEV_PRIV_NET_3_ID=$(cmk -p homecloud-admin create network \
+PRIV_NET_3_ID=$(cmk -p homecloud-admin create network \
   name="priv-net-3" \
   displaytext="Private Network 3" \
   networkofferingid="$INTERNAL_LB_OFFERING_ID" \
@@ -1080,54 +1103,55 @@ kubectl konfig import -s homecloud-ops-cks-kubeconfig.yaml
 rm homecloud-ops-cks-kubeconfig.yaml
 echo "Operations CKS Cluster ID: $OPS_CKS_ID"
 
-echo "Creating Main CKS Cluster (this takes 15-30 minutes)..."
-PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
-CKS_SERVICE_OFFERING_ID_CONTROL=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.medium" | jq -r '.serviceoffering[0].id')
-CKS_SERVICE_OFFERING_ID_WORKER=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.1_5xlarge" | jq -r '.serviceoffering[0].id')
-CKS_SERVICE_OFFERING_ID=$CKS_SERVICE_OFFERING_ID_CONTROL
-ROOT_DISK_SIZE=50
-CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
-  name="homecloud-cks" \
-  description="Homecloud Kubernetes Cluster" \
-  zoneid="$ZONE_ID" \
-  kubernetesversionid="$CKS_OFFERING_ID" \
-  serviceofferingid="$CKS_SERVICE_OFFERING_ID" \
-  "nodeofferings[0].node=control" \
-  "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
-  "nodeofferings[1].node=worker" \
-  "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER" \
-  noderootdisksize=$ROOT_DISK_SIZE \
-  networkid="$PUB_NET_1_ID" \
-  account="$ACCOUNT_NAME" \
-  domainid="$HOMECLOUD_DOMAIN_ID" \
-  hypervisor="KVM" \
-  controlnodes=3 \
-  size=1 \
-  keypair="nulcell" \
-  enablecsi=true \
-  cniconfigurationid="$CNI_CONFIG_ID" \
-  "cniconfigdetails[0].cilium_version=1.18.4" \
-  | jq -r '.kubernetescluster.id')
-cmk -p homecloud-admin scaleKubernetesCluster id="$CKS_ID" \
-  autoscalingenabled=true \
-  minsize=1 \
-  maxsize=4 \
-  "nodeofferings[0].node=control" \
-  "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
-  "nodeofferings[1].node=worker" \
-  "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER"
+echo "Create workload cluster via Cluster API"
+# echo "Creating Main CKS Cluster (this takes 15-30 minutes)..."
+# PUB_NET_1_ID=$(cmk -p homecloud-admin list networks name="homecloud-vpc_pub-net-1" account="homecloud" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
+# CKS_SERVICE_OFFERING_ID_CONTROL=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.mem.medium" | jq -r '.serviceoffering[0].id')
+# CKS_SERVICE_OFFERING_ID_WORKER=$(cmk -p homecloud-admin list serviceofferings name="acs.comp.gen.1_5xlarge" | jq -r '.serviceoffering[0].id')
+# CKS_SERVICE_OFFERING_ID=$CKS_SERVICE_OFFERING_ID_CONTROL
+# ROOT_DISK_SIZE=50
+# CKS_ID=$(cmk -p homecloud-admin create kubernetescluster \
+#   name="homecloud-cks" \
+#   description="Homecloud Kubernetes Cluster" \
+#   zoneid="$ZONE_ID" \
+#   kubernetesversionid="$CKS_OFFERING_ID" \
+#   serviceofferingid="$CKS_SERVICE_OFFERING_ID" \
+#   "nodeofferings[0].node=control" \
+#   "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
+#   "nodeofferings[1].node=worker" \
+#   "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER" \
+#   noderootdisksize=$ROOT_DISK_SIZE \
+#   networkid="$PUB_NET_1_ID" \
+#   account="$ACCOUNT_NAME" \
+#   domainid="$HOMECLOUD_DOMAIN_ID" \
+#   hypervisor="KVM" \
+#   controlnodes=3 \
+#   size=1 \
+#   keypair="nulcell" \
+#   enablecsi=true \
+#   cniconfigurationid="$CNI_CONFIG_ID" \
+#   "cniconfigdetails[0].cilium_version=1.18.4" \
+#   | jq -r '.kubernetescluster.id')
+# cmk -p homecloud-admin scaleKubernetesCluster id="$CKS_ID" \
+#   autoscalingenabled=true \
+#   minsize=1 \
+#   maxsize=4 \
+#   "nodeofferings[0].node=control" \
+#   "nodeofferings[0].offering=$CKS_SERVICE_OFFERING_ID_CONTROL" \
+#   "nodeofferings[1].node=worker" \
+#   "nodeofferings[1].offering=$CKS_SERVICE_OFFERING_ID_WORKER"
 
-echo "Retrieving kubeconfig for CKS Cluster..."
-cmk -p homecloud-admin getKubernetesClusterConfig id="$CKS_ID" | jq -r .clusterconfig.configdata > homecloud-cks-kubeconfig.yaml
-sed -i '' 's/kubernetes-admin@kubernetes/admin@homecloud-cks/g' homecloud-cks-kubeconfig.yaml
-sed -i '' 's/kubernetes-admin/homecloud-cks-admin/g' homecloud-cks-kubeconfig.yaml
-sed -i '' 's/kubernetes/homecloud-cks/g' homecloud-cks-kubeconfig.yaml
-kubectl config delete-context admin@homecloud-cks || true
-kubectl config delete-user homecloud-cks-admin || true
-kubectl config delete-cluster homecloud-cks || true
-kubectl konfig import -s homecloud-cks-kubeconfig.yaml
-rm homecloud-cks-kubeconfig.yaml
-echo "CKS Cluster ID: $CKS_ID"
+# echo "Retrieving kubeconfig for CKS Cluster..."
+# cmk -p homecloud-admin getKubernetesClusterConfig id="$CKS_ID" | jq -r .clusterconfig.configdata > homecloud-cks-kubeconfig.yaml
+# sed -i '' 's/kubernetes-admin@kubernetes/admin@homecloud-cks/g' homecloud-cks-kubeconfig.yaml
+# sed -i '' 's/kubernetes-admin/homecloud-cks-admin/g' homecloud-cks-kubeconfig.yaml
+# sed -i '' 's/kubernetes/homecloud-cks/g' homecloud-cks-kubeconfig.yaml
+# kubectl config delete-context admin@homecloud-cks || true
+# kubectl config delete-user homecloud-cks-admin || true
+# kubectl config delete-cluster homecloud-cks || true
+# kubectl konfig import -s homecloud-cks-kubeconfig.yaml
+# rm homecloud-cks-kubeconfig.yaml
+# echo "CKS Cluster ID: $CKS_ID"
 ```
 
 ## Shared File System
@@ -1149,7 +1173,7 @@ SERVICE_OFFERING_ID=$(cmk -p homecloud-admin list serviceofferings name="$SERVIC
 DISK_OFFERING_ID=$(cmk -p homecloud-admin list diskofferings name="$DISK_OFFERING_NAME" | jq -r '.diskoffering[0].id')
 NETWORK_ID=$(cmk -p homecloud-admin list networks name="$NETWORK_NAME" account="$ACCOUNT_NAME" domainid="$HOMECLOUD_DOMAIN_ID" | jq -r '.network[0].id')
 
-FILE_SYSTEM="EXT4"
+FILE_SYSTEM="XFS"
 
 # Config File System
 SIZE=10 # Size in GB

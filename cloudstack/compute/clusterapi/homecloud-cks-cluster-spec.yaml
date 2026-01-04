@@ -1,7 +1,7 @@
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
-  name: homecloud-cks-dev
+  name: homecloud-cks
   namespace: default
 spec:
   clusterNetwork:
@@ -12,16 +12,16 @@ spec:
   controlPlaneRef:
     apiVersion: controlplane.cluster.x-k8s.io/v1beta1
     kind: KubeadmControlPlane
-    name: homecloud-cks-dev-control-plane
+    name: homecloud-cks-control-plane
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta3
     kind: CloudStackCluster
-    name: homecloud-cks-dev
+    name: homecloud-cks
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta3
 kind: CloudStackCluster
 metadata:
-  name: homecloud-cks-dev
+  name: homecloud-cks
   namespace: default
 spec:
   controlPlaneEndpoint:
@@ -35,13 +35,13 @@ spec:
       zone:
         name: zone-homecloud
         network:
-          name: homecloud-vpc-dev_pub-net-1
+          name: homecloud-vpc_pub-net-1
   syncWithACS: true
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlane
 metadata:
-  name: homecloud-cks-dev-control-plane
+  name: homecloud-cks-control-plane
   namespace: default
 spec:
   kubeadmConfigSpec:
@@ -61,20 +61,20 @@ spec:
     infrastructureRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta3
       kind: CloudStackMachineTemplate
-      name: homecloud-cks-dev-control-plane-1 # Reference to the CloudStackMachineTemplate. Update as needed.
-  replicas: 1
+      name: homecloud-cks-control-plane-1 # Reference to the CloudStackMachineTemplate. Update as needed.
+  replicas: 3
   version: v1.32.3
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta3
 kind: CloudStackMachineTemplate
 metadata:
-  name: homecloud-cks-dev-control-plane-1
+  name: homecloud-cks-control-plane-1
   namespace: default
 spec:
   template:
     spec:
       offering:
-        name: acs.comp.mem.medium
+        name: acs.comp.mem.medium.fixed
       sshKey: nulcell
       template:
         name: capi-v1.32.3-ubuntu-2204-kvm
@@ -82,11 +82,11 @@ spec:
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
-  name: homecloud-cks-dev-md-0
+  name: homecloud-cks-md-0
   namespace: default
 spec:
-  clusterName: homecloud-cks-dev
-  replicas: 1
+  clusterName: homecloud-cks
+  replicas: 3
   selector:
     matchLabels: null
   template:
@@ -95,24 +95,24 @@ spec:
         configRef:
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: KubeadmConfigTemplate
-          name: homecloud-cks-dev-md-1 # Reference to the KubeadmConfigTemplate for worker nodes. Update as needed.
-      clusterName: homecloud-cks-dev
+          name: homecloud-cks-md-0 # Reference to the KubeadmConfigTemplate for worker nodes. Update as needed.
+      clusterName: homecloud-cks
       infrastructureRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta3
         kind: CloudStackMachineTemplate
-        name: homecloud-cks-dev-md-1 # Reference to the CloudStackMachineTemplate for worker nodes. Update as needed to deploy different instance types.
+        name: homecloud-cks-md-0 # Reference to the CloudStackMachineTemplate for worker nodes. Update as needed to deploy different instance types.
       version: v1.32.3
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta3
 kind: CloudStackMachineTemplate
 metadata:
-  name: homecloud-cks-dev-md-1
+  name: homecloud-cks-md-0
   namespace: default
 spec:
   template:
     spec:
       offering:
-        name: acs.comp.mem.medium
+        name: acs.comp.gen.1xlarge.fixed
       sshKey: nulcell
       template:
         name: capi-v1.32.3-ubuntu-2204-kvm
@@ -120,7 +120,7 @@ spec:
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
 metadata:
-  name: homecloud-cks-dev-md-1
+  name: homecloud-cks-md-0
   namespace: default
 spec:
   template:
