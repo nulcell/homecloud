@@ -3,7 +3,7 @@ traefik:
     - --certificatesresolvers.le.acme.storage=/data/acme.json
     - --certificatesresolvers.le.acme.dnschallenge.provider=cloudflare
     - --certificatesResolvers.le.acme.dnsChallenge.resolvers=1.1.1.1:53
-    - --api=true
+    # - --api=true
   # Traefik experimental features
   experimental:
     # -- Defines whether all plugins must be loaded successfully for Traefik to start

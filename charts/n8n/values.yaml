@@ -156,7 +156,7 @@ ingress:
   # -- Certificate issuer for the ingress
   certIssuer: le
   # -- SSL host for the ingress
-  sslHost: "*.nulcell.com"
+  sslHost: "n8n.nulcell.com"
 
 persistence:
   # -- Enable persistence for n8n files
