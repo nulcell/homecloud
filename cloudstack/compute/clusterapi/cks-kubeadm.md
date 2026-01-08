@@ -68,8 +68,8 @@ export CLUSTER_ENDPOINT_PORT=6443
 
 # Machine offerings must be pre-created. Control plane offering
 # must have have >2GB RAM available
-export CLOUDSTACK_CONTROL_PLANE_MACHINE_OFFERING="acs.comp.mem.medium.fixed"
-export CLOUDSTACK_WORKER_MACHINE_OFFERING="acs.comp.gen.1xlarge.fixed"
+export CLOUDSTACK_CONTROL_PLANE_MACHINE_OFFERING="mem.medium.fixed"
+export CLOUDSTACK_WORKER_MACHINE_OFFERING="gen.1xlarge.fixed"
 
 # Referring to a prerequisite capi-compatible image you've loaded into Apache CloudStack
 export CLOUDSTACK_TEMPLATE_NAME=capi-v1.32.3-ubuntu-2204-kvm

@@ -76,7 +76,7 @@ reclaimPolicy: Delete
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 parameters:
-  csi.cloudstack.apache.org/disk-offering-id: $(cmk list diskofferings state=active name=acs.disk.shared.custom | jq -r ".diskoffering[0].id")
+  csi.cloudstack.apache.org/disk-offering-id: $(cmk list diskofferings state=active name=shared.custom | jq -r ".diskoffering[0].id")
 EOF
 ```
 
