@@ -20,7 +20,7 @@ Self-hosted private cloud infrastructure repository. Layers bottom to top:
 3. **Kubernetes** — CKS clusters via Cluster API on CloudStack VMs
 4. **Workloads** — Helm charts (`charts/`) delivered via ArgoCD (GitOps)
 
-No Terraform is currently in use (`infrastructure/` subdirs are empty placeholders).
+Terragrunt migration in progress. See `infrastructure/PLAN.md`. Tool versions managed by `.mise.toml` at repo root.
 
 ---
 
@@ -134,16 +134,35 @@ charts/<chart-name>/
 ```
 charts/              Helm umbrella charts (cilium, traefik, external-dns, monitoring, n8n)
 cloudstack/
-  docs/              Step-by-step CloudStack setup guides
+  docs/              Step-by-step CloudStack setup guides (00-CLI.md is the authoritative source)
   setup/             Management server + KVM install scripts
   compute/
-    clusterapi/      Cluster API specs for CKS cluster provisioning
-    cni-config/      Cilium CNI config for CKS clusters
-    cloud-init/      cloud-init templates for VM provisioning
+    cni-config/      Cilium CNI config reference
+    cloud-init/      cloud-init templates (cloud-default, tailscale-router-debian)
   scripts/           Utility scripts (GPU SR-IOV check, metadata URL)
 docker-compose/
   media-server/      *arr media stack (Jellyfin, Sonarr, Radarr, qBittorrent, Gluetun)
-infrastructure/      Empty — reserved for future Terraform (baseline/, granular/, live/)
+infrastructure/              Gruntwork catalog + live pattern (BrainIAC model)
+  PLAN.md            Full Terragrunt implementation plan — read this before any infra work
+  catalog/modules/   Granular: smallest reusable Terraform modules (single resource or tightly coupled set)
+  catalog/stacks/    Baseline: full infrastructure components (compose granular modules)
+  live/root.hcl      Terragrunt root config: local state backend, provider version pins, common inputs
+  live/homecloud/    Single live environment: units wire stacks together with explicit dependency graph
 kubernetes/          Ad-hoc manifests and test resources
 maas/                MaaS single-node setup script
 ```
+
+## Infrastructure Conventions (`infrastructure/`)
+
+- **Always read `infrastructure/PLAN.md`** before working on any infrastructure task.
+- Three-layer catalog+live pattern: `catalog/modules/` → `catalog/stacks/` → `live/homecloud/` (Gruntwork / BrainIAC model).
+- State is local (`.tfstate/` gitignored), migrating to S3 later.
+- **Two CloudStack provider aliases**: `cloudstack.admin` (root admin) and `cloudstack.homecloud` (homecloud-admin user).
+- Both providers read credentials from the 1Password Terraform provider at plan/apply time.
+- **`is_enabled` flag** on all optional components (`count = var.is_enabled ? 1 : 0`).
+- Resources not covered by the CloudStack Terraform provider use `null_resource` + `local-exec` calling `cmk`.
+- Kubernetes clusters use **Talos Linux** (not CKS / Cluster API). Talos ISO must include the `siderolabs/tailscale` system extension.
+- Each k8s node joins the Tailscale tailnet via an auth key injected in the Talos machine config.
+- Bootstrap Helm charts (Cilium, CCM, CSI) via Terraform `helm_release`; all application charts managed by ArgoCD GitOps from `charts/`.
+- Generated credentials (talosconfig, kubeconfig) are written back to 1Password via `catalog/modules/onepassword-item`.
+- Tool versions (terraform, terragrunt, kubectl, helm, talosctl, etc.) pinned in `.mise.toml`. Run `mise install` to set up.

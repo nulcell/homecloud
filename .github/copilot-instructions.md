@@ -19,7 +19,16 @@ This is a **home lab infrastructure-as-code repository** for a self-hosted priva
 3. **Kubernetes** — CKS clusters managed via Cluster API (`cloudstack/compute/clusterapi/`) provisioned on CloudStack VMs
 4. **Workloads** — Helm charts (`charts/`) deployed via ArgoCD with GitOps
 
-There is no Terraform in use. Infrastructure is managed through CloudStack APIs, shell scripts, and Kubernetes manifests.
+**A Terragrunt migration is in progress** — see `infrastructure/PLAN.md` for the full plan. Tool versions are managed by `.mise.toml` at repo root; run `mise install` to set up the full toolchain.
+
+## Infrastructure (`infrastructure/`)
+
+Follows the **Gruntwork catalog + live pattern** (BrainIAC model):
+
+- `catalog/modules/` — granular: smallest reusable Terraform modules, one resource type or tightly coupled set
+- `catalog/stacks/` — baseline: full infrastructure components that compose granular modules
+- `live/root.hcl` — Terragrunt root config: local state backend, provider version pins, common inputs
+- `live/homecloud/` — single live environment; units wire stacks together with explicit dependency graph via `dependency {}` blocks and `homecloud.stack.hcl`
 
 ## Architecture
 
@@ -40,7 +49,7 @@ There is no Terraform in use. Infrastructure is managed through CloudStack APIs,
 | `docker-compose/` | Docker Compose stacks (currently: *arr media server stack) — marked TODO for migration to Helm/CKS |
 | `kubernetes/` | Ad-hoc Kubernetes manifests and testing resources |
 | `maas/` | MaaS single-node install script |
-| `infrastructure/` | Reserved for Terraform IaC (`baseline/`, `granular/`, `live/` subdirs — currently empty) |
+| `infrastructure/` | Terragrunt live stacks + Terraform modules (`PLAN.md` is the source of truth) |
 | `infrastructure.drawio` | Architecture diagram |
 
 ## Helm Charts (`charts/`)

@@ -1043,6 +1043,8 @@ VPS_ID=$(cmk -p homecloud-admin deploy virtualmachine \
 
 ## Kubernetes Cluster
 
+(AI Note: Skipt this section as Talos will be used for Kubernetes clusters instead of CKS)
+
 **Note:** If cluster creation fails, check that the account has sufficient resource limits for CPU, RAM, and primary storage.
 
 ```bash
