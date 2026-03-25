@@ -21,8 +21,8 @@ terraform {
   source = "${get_repo_root()}//infrastructure/catalog/stacks/tailscale-vpn"
 }
 
-dependency "cloudstack_platform" {
-  config_path = "../cloudstack-platform"
+dependency "cloudstack_homecloud" {
+  config_path = "../cloudstack-homecloud"
 
   mock_outputs = {
     zone_id             = "mock-zone-id"
@@ -41,19 +41,19 @@ dependency "cloudstack_platform" {
 
 inputs = {
   # CloudStack placement
-  zone_id             = dependency.cloudstack_platform.outputs.zone_id
+  zone_id             = dependency.cloudstack_homecloud.outputs.zone_id
   # VM is connected to all networks to route traffic between tailnet and all CloudStack subnets
   network_ids = [
-    dependency.cloudstack_platform.outputs.pub_net_1_id,
-    dependency.cloudstack_platform.outputs.priv_net_1_id,
-    dependency.cloudstack_platform.outputs.priv_net_2_id,
-    dependency.cloudstack_platform.outputs.priv_net_3_id,
-    dependency.cloudstack_platform.outputs.iso_net_id,
+    dependency.cloudstack_homecloud.outputs.pub_net_1_id,
+    dependency.cloudstack_homecloud.outputs.priv_net_1_id,
+    dependency.cloudstack_homecloud.outputs.priv_net_2_id,
+    dependency.cloudstack_homecloud.outputs.priv_net_3_id,
+    dependency.cloudstack_homecloud.outputs.iso_net_id,
   ]
-  template_id         = dependency.cloudstack_platform.outputs.ubuntu_template_id
-  compute_offering_id = dependency.cloudstack_platform.outputs.tiny_offering_id
-  keypair_name        = dependency.cloudstack_platform.outputs.keypair_name
-  userdata_id         = dependency.cloudstack_platform.outputs.tailscale_userdata_id
+  template_id         = dependency.cloudstack_homecloud.outputs.ubuntu_template_id
+  compute_offering_id = dependency.cloudstack_homecloud.outputs.tiny_offering_id
+  keypair_name        = dependency.cloudstack_homecloud.outputs.keypair_name
+  userdata_id         = dependency.cloudstack_homecloud.outputs.tailscale_userdata_id
 
   # Tailscale auth key read from 1Password
   op_vault            = include.account.locals.op_vault

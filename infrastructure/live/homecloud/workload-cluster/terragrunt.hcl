@@ -23,8 +23,8 @@ terraform {
   source = "${get_repo_root()}//infrastructure/catalog/stacks/talos-cluster"
 }
 
-dependency "cloudstack_platform" {
-  config_path = "../cloudstack-platform"
+dependency "cloudstack_homecloud" {
+  config_path = "../cloudstack-homecloud"
 
   mock_outputs = {
     zone_id             = "mock-zone-id"
@@ -59,13 +59,13 @@ inputs = {
   cluster_name = include.account.locals.workload_cluster_name
   is_ops       = false
 
-  # CloudStack placement
-  zone_id             = dependency.cloudstack_platform.outputs.zone_id
-  vpc_id              = dependency.cloudstack_platform.outputs.vpc_id
-  network_id          = dependency.cloudstack_platform.outputs.priv_net_2_id
-  template_id         = dependency.cloudstack_platform.outputs.talos_template_id
-  keypair_name        = dependency.cloudstack_platform.outputs.keypair_name
-  compute_offering_id = dependency.cloudstack_platform.outputs.compute_offering_id
+  # CloudStack placement — workload cluster runs in pub-net-1 (VPC, public-lb offering)
+  # pub-net-1 is the only VPC public-lb subnet; the ops cluster uses iso-net-shared instead.
+  zone_id             = dependency.cloudstack_homecloud.outputs.zone_id
+  network_id          = dependency.cloudstack_homecloud.outputs.pub_net_1_id
+  template_id         = dependency.cloudstack_homecloud.outputs.talos_template_id
+  keypair_name        = dependency.cloudstack_homecloud.outputs.keypair_name
+  compute_offering_id = dependency.cloudstack_homecloud.outputs.mem_medium_offering_id
 
   # Cluster topology
   controlplane_count = 1
@@ -79,6 +79,7 @@ inputs = {
   enable_cloudstack_ccm = true
   enable_cloudstack_csi = true
   enable_external_dns   = true
+  enable_cert_manager   = true
   cloudflare_zone       = include.account.locals.cloudflare_zone
 
   # ArgoCD registration — ops cluster will manage this cluster

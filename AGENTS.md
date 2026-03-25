@@ -157,16 +157,20 @@ maas/                MaaS single-node setup script
 - **Always read `infrastructure/PLAN.md`** before working on any infrastructure task.
 - Three-layer catalog+live pattern: `catalog/modules/` → `catalog/stacks/` → `live/homecloud/` (Gruntwork / BrainIAC model).
 - State is local (`.tfstate/` gitignored), migrating to S3 later.
-- **Two CloudStack provider aliases**: `cloudstack.admin` (root admin) and `cloudstack.homecloud` (homecloud-admin user).
-- Both providers read credentials from the 1Password Terraform provider at plan/apply time.
+- **Two CloudStack provider aliases**: `cloudstack.admin` (root admin) and `cloudstack.homecloud` (homecloud-admin user). Both read credentials from the 1Password Terraform provider at plan/apply time.
+- **`cloudstack-admin` is the only live unit that uses admin credentials**. Scope follows `00-CLI.md` profile: anything run with `cmk -p admin` → `cloudstack-admin` stack; anything with `cmk -p homecloud-admin` → `cloudstack-homecloud` stack or downstream units.
+- **Stack credential scope**: `cloudstack-admin` (zone, domain, account, offerings, templates); `cloudstack-homecloud` (VPC, networks, isolated net, keypair, userdata, NFS); all other units use `cloudstack.homecloud` only.
+- **Offerings and images are input maps** (`for_each`). Images have `lifecycle { prevent_destroy = true }` — never deleted even if removed from the map.
+- **SSH keypair is domain-scoped** — registered by `homecloud-admin` in the homecloud domain. Lives in `cloudstack-homecloud`, not `cloudstack-admin`.
 - **`is_enabled` flag** on all optional components (`count = var.is_enabled ? 1 : 0`).
 - Resources not covered by the CloudStack Terraform provider use `null_resource` + `local-exec` calling `cmk`.
-- Kubernetes clusters use **Talos Linux** (not CKS / Cluster API). Talos CloudStack `.raw.gz` disk image registered as a template. Machine config passed as base64 `user_data` at VM deploy time.
-- **kube-apiserver endpoint = CloudStack public IP + LB rule (port 6443)**. No Tailscale involved in k8s traffic — Talos nodes communicate over CloudStack VPC private IPs.
-- **Tailscale subnet router VM** (`homecloud-vpn-router`, Ubuntu 24.04) is connected to all CloudStack networks and advertises route `10.0.0.0/15` into the tailnet for operator access. Deployed by the `tailscale-vpn` stack.
-- Bootstrap Helm charts (Cilium, CCM, CSI) via Terraform `helm_release`; all application charts managed by ArgoCD GitOps from `charts/`.
-- **Media server** is an ArgoCD Helm chart (`charts/media-server/`), NOT a Terraform-managed VM. SharedFileSystems (NFS) for its PersistentVolumes are managed in `cloudstack-platform` (`enable_shared_storage = true`).
-- **`cloudstack-platform` is the only unit that uses admin credentials** (`cloudstack.admin` alias). All other units use the homecloud domain user (`cloudstack.homecloud`). Each catalog stack owns its own `providers.tf`.
+- Kubernetes clusters use **Talos Linux** (not CKS / Cluster API). Machine config passed as base64 `user_data` at VM deploy time. kube-apiserver = CloudStack public IP + LB rule (port 6443).
+- **Ops cluster** runs in `iso-net-shared` (isolated network, 10.1.1.0/24). **Workload cluster** runs in VPC `pub-net-1` (10.0.0.0/26). Reason: CloudStack VPCs support only one `public-lb` subnet; two clusters need two separate public-lb endpoints.
+- **Tailscale subnet router VM** (`homecloud-vpn-router`, Ubuntu 24.04) connected to all networks, advertises `10.0.0.0/15` into tailnet for operator access. Not involved in k8s traffic.
+- **ArgoCD** (ops cluster) registers and manages both ops and workload clusters.
+- **Workload cluster** additionally has cert-manager and external-dns (Cloudflare).
+- Bootstrap Helm charts (Cilium, CCM, CSI, ArgoCD, cert-manager) via Terraform `helm_release`; all application charts managed by ArgoCD GitOps from `charts/`.
+- **Media server** is an ArgoCD Helm chart (`charts/media-server/`), NOT a Terraform-managed VM. NFS SharedFileSystems for its PVs are managed in `cloudstack-homecloud` (`enable_shared_storage = true`).
 - All existing CloudStack resources are imported via `import {}` blocks (Terraform 1.5+), not recreated. Run `terragrunt plan` to verify zero unintended replacements.
 - Generated credentials (talosconfig, kubeconfig) are written back to 1Password via `catalog/modules/onepassword-item`.
-- Tool versions (terraform, terragrunt, kubectl, helm, talosctl, etc.) pinned in `.mise.toml`. Run `mise install` to set up.
+- Provider versions pinned in `live/root.hcl`; tool versions in `.mise.toml`. Run `mise install` to set up.

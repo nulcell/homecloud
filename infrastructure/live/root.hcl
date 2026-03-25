@@ -36,38 +36,55 @@ generate "versions" {
   path      = "versions.tf"
   if_exists = "overwrite_terragrunt"
 
+  # Provider versions last verified: 2026-03-25
+  # Sources: registry.terraform.io + GitHub releases (stable only, no pre-releases)
+  #   apache/cloudstack        0.6.0  (github.com/apache/cloudstack-terraform-provider)
+  #   tailscale/tailscale      0.28.0 (registry.terraform.io)
+  #   1Password/onepassword    3.3.1  (registry.terraform.io)
+  #   siderolabs/talos         0.10.1 (latest stable; 0.11.0-beta.1 skipped)
+  #   hashicorp/helm           3.1.1  (registry.terraform.io)
+  #   hashicorp/kubernetes     3.0.1  (registry.terraform.io)
+  #   hashicorp/local          2.7.0  (registry.terraform.io)
+  #   hashicorp/null           3.2.4  (registry.terraform.io)
+  #   hashicorp/random         3.8.1  (registry.terraform.io)
+  #   hashicorp/external       2.3.5  (registry.terraform.io)
+  #   cloudflare/cloudflare    4.52.7 (latest stable; v5.x is still beta)
   contents = <<-EOF
     terraform {
       required_version = ">= 1.14.0"
 
       required_providers {
         cloudstack = {
-          source  = "apache/cloudstack"
-          version = "~> 0.5"
+          source  = "cloudstack/cloudstack"
+          version = "~> 0.6"
         }
         tailscale = {
           source  = "tailscale/tailscale"
-          version = "~> 0.18"
+          version = "~> 0.28"
         }
         onepassword = {
           source  = "1Password/onepassword"
-          version = "~> 2.1"
+          version = "~> 3.3"
         }
         talos = {
           source  = "siderolabs/talos"
-          version = "~> 0.7"
+          version = "~> 0.10.1"
         }
         helm = {
           source  = "hashicorp/helm"
-          version = "~> 2.17"
+          version = "~> 3.1"
         }
         kubernetes = {
           source  = "hashicorp/kubernetes"
-          version = "~> 2.36"
+          version = "~> 3.0"
+        }
+        cloudflare = {
+          source  = "cloudflare/cloudflare"
+          version = "~> 4.52"
         }
         local = {
           source  = "hashicorp/local"
-          version = "~> 2.5"
+          version = "~> 2.7"
         }
         null = {
           source  = "hashicorp/null"
@@ -75,7 +92,11 @@ generate "versions" {
         }
         random = {
           source  = "hashicorp/random"
-          version = "~> 3.7"
+          version = "~> 3.8"
+        }
+        external = {
+          source  = "hashicorp/external"
+          version = "~> 2.3"
         }
       }
     }

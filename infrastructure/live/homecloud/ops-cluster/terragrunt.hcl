@@ -25,8 +25,8 @@ terraform {
   source = "${get_repo_root()}//infrastructure/catalog/stacks/talos-cluster"
 }
 
-dependency "cloudstack_platform" {
-  config_path = "../cloudstack-platform"
+dependency "cloudstack_homecloud" {
+  config_path = "../cloudstack-homecloud"
 
   mock_outputs = {
     zone_id            = "mock-zone-id"
@@ -52,13 +52,14 @@ inputs = {
   cluster_name = include.account.locals.ops_cluster_name
   is_ops       = true
 
-  # CloudStack placement
-  zone_id             = dependency.cloudstack_platform.outputs.zone_id
-  vpc_id              = dependency.cloudstack_platform.outputs.vpc_id
-  network_id          = dependency.cloudstack_platform.outputs.priv_net_1_id
-  template_id         = dependency.cloudstack_platform.outputs.talos_template_id
-  keypair_name        = dependency.cloudstack_platform.outputs.keypair_name
-  compute_offering_id = dependency.cloudstack_platform.outputs.compute_offering_id
+  # CloudStack placement — ops cluster runs in iso-net-shared (isolated network)
+  # This avoids the CloudStack limitation of one public-LB subnet per VPC.
+  # The workload cluster gets pub-net-1 (VPC, public-lb offering).
+  zone_id             = dependency.cloudstack_homecloud.outputs.zone_id
+  network_id          = dependency.cloudstack_homecloud.outputs.iso_net_id
+  template_id         = dependency.cloudstack_homecloud.outputs.talos_template_id
+  keypair_name        = dependency.cloudstack_homecloud.outputs.keypair_name
+  compute_offering_id = dependency.cloudstack_homecloud.outputs.mem_medium_offering_id
 
   # Cluster topology
   controlplane_count = 1
