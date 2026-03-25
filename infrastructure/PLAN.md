@@ -60,16 +60,16 @@ infrastructure/
       cloudstack-network/          ← isolated networks
       cloudstack-keypair/          ← SSH keypair (reads pub key from 1Password)
       cloudstack-userdata/         ← user data script registration
-      cloudstack-vm/               ← generic VM (is_enabled, optional Tailscale)
+      cloudstack-vm/               ← generic VM module (Talos nodes + Ubuntu VMs)
       cloudstack-shared-filesystem/← NFS shared filesystems (is_enabled)
-      tailscale-key/               ← tailnet_key (ephemeral, tagged, reusable)
+      tailscale-key/               ← tailnet_key for the subnet router VM
       talos-config/                ← machine secrets, control-plane + worker configs
       kubernetes-bootstrap/        ← Helm: Cilium, CCM, CSI, external-dns
       onepassword-item/            ← write generated credentials to 1Password
 
     stacks/                        ← baseline: full infrastructure components
       cloudstack-platform/         ← complete admin CloudStack setup (images + shared storage)
-      tailscale-vpn/               ← Tailscale VPN config (ACLs, auth keys)
+      tailscale-vpn/               ← subnet router VM (Ubuntu, homecloud-vpn-router)
       talos-cluster/               ← full Talos k8s cluster (parameterised, is_enabled)
       argocd-setup/                ← ArgoCD + App-of-Apps bootstrap (is_enabled)
 
@@ -96,42 +96,66 @@ infrastructure/
 
 ### No CKS / No Cluster API
 
-Kubernetes clusters are **plain Talos Linux VMs on CloudStack**, connected via
-**Tailscale**. Each node joins the Tailscale tailnet using a dedicated ephemeral
-auth key injected as a Talos machine config extension.
+Kubernetes clusters are **plain Talos Linux VMs on CloudStack**. Inter-node communication
+uses CloudStack VPC private IPs. The kube-apiserver is exposed via a **CloudStack
+LoadBalancer rule** on a public IP (port 6443). The Tailscale subnet router VM
+(`homecloud-vpn-router`) provides operator VPN access to all CloudStack networks — it is
+not involved in k8s cluster traffic.
 
-### Talos + Tailscale Node Topology
+### Talos Node Topology
 
 ```
 CloudStack VPC (10.0.0.0/24)
-  pub-net-1  (10.0.0.0/26)   ← control plane nodes + Tailscale (MagicDNS reachable)
-  priv-net-1 (10.0.0.64/26)  ← worker nodes
-  priv-net-2 (10.0.0.128/26) ← worker nodes (expansion)
+  pub-net-1  (10.0.0.0/26)    ← control plane nodes (CloudStack LB rule → :6443)
+  priv-net-1 (10.0.0.64/26)   ← worker nodes (ops cluster)
+  priv-net-2 (10.0.0.128/26)  ← worker nodes (workload cluster)
+
+Tailscale subnet router VM (homecloud-vpn-router, Ubuntu 24.04):
+  - Connected to ALL networks: pub-net-1, priv-net-1, priv-net-2, priv-net-3, iso-net-shared
+  - Advertises route 10.0.0.0/15 (VPC + isolated net) into tailnet
+  - Allows operators to reach all CloudStack resources over Tailscale
+  - Not involved in k8s inter-node traffic
 
 Each Talos VM:
-  - Boots from Talos ISO registered in CloudStack
-  - Machine config delivered via CloudStack user-data / config drive
-  - Tailscale system extension enabled in machine config
-  - Node joins tailnet as tagged device (tag:k8s-<cluster-name>)
-  - Inter-node communication uses VPC subnet IPs (not Tailscale IPs)
-  - Tailscale provides: external access to kube-apiserver, MagicDNS names
+  - Boots from Talos cloudstack-amd64.raw.gz disk image registered in CloudStack
+  - Talos machine config passed as base64-encoded usersdata at VM deploy time
+  - Uses CloudStack VPC private IP for inter-node (etcd, kubelet) communication
+  - kube-apiserver endpoint = CloudStack public IP acquired & assigned to LB rule
 ```
 
-### Talos ISO Strategy
+### Talos Image
 
-The Talos ISO must be built with the **Tailscale system extension** included using
-the [Talos Image Factory](https://factory.talos.dev). Provide the artifact URL to the
-`cloudstack-templates` module.
+CloudStack uses `.raw.gz` disk images from [Talos Image Factory](https://factory.talos.dev).
 
-**Required extensions:**
-- `siderolabs/tailscale` — Tailscale daemon as a Talos system extension
+> ⚠️ CloudStack may reject compressed images. If registration fails, use the uncompressed
+> URL by dropping `.gz`: `...v1.12.6/cloudstack-amd64.raw`
+
+**Confirmed schematic** (`23ff67af...`):
+- `siderolabs/btrfs`, `siderolabs/nfs-utils`, `siderolabs/nfsd`, `siderolabs/nfsrahead`, `siderolabs/qemu-guest-agent`
+- No Tailscale extension needed — Tailscale runs on a separate router VM, not on Talos nodes
+
+### Talos Cluster Bootstrap Flow (per cluster)
+
+Implemented in `catalog/stacks/talos-cluster` using the `siderolabs/talos` Terraform provider:
+
+1. **Acquire a CloudStack public IP** (`cloudstack_ipaddress`) for the kube-apiserver endpoint
+2. **Create CloudStack LB rule** (`cloudstack_loadbalancer_rule`, `k8s-api`, port 6443) on that IP
+3. **Generate Talos secrets** (`talos_machine_secrets`)
+4. **Generate machine configs** (`talos_machine_configuration`) with endpoint = `https://<LB_IP>:6443`
+5. **Deploy control plane VMs** (`cloudstack_instance`) with machine config as base64 `user_data`
+6. **Assign VMs to LB rule** (`cloudstack_loadbalancer_rule` VM assignment)
+7. **Bootstrap etcd** (`talos_machine_bootstrap`) once control plane VM is reachable
+8. **Deploy worker VMs** with worker machine config as `user_data`
+9. **Retrieve kubeconfig** (`talos_client_configuration`)
+10. **Install Cilium, CCM, CSI** via `helm_release` resources
+11. **Write talosconfig + kubeconfig to 1Password** via `onepassword-item` module
 
 ### Two Clusters
 
-| Cluster | Name | Networks | Workloads |
-|---|---|---|---|
-| Ops | `homecloud-ops` | pub-net-1 (CP), priv-net-1 (workers) | ArgoCD, Prometheus+Grafana, Traefik (ops), n8n |
-| Workload | `homecloud-workload` | pub-net-1 (CP), priv-net-1/2 (workers) | Media server, user apps, all ArgoCD-deployed charts |
+| Cluster | Name | CP Network | Worker Network | kube-apiserver LB |
+|---|---|---|---|---|
+| Ops | `homecloud-ops` | pub-net-1 | priv-net-1 | CloudStack public IP (10.10.20.x) |
+| Workload | `homecloud-workload` | pub-net-1 | priv-net-2 | CloudStack public IP (10.10.20.x) |
 
 The **ops cluster** bootstraps ArgoCD which then manages the workload cluster and
 all application-layer Helm charts via GitOps (pointing at `charts/` in this repo).
@@ -140,7 +164,7 @@ all application-layer Helm charts via GitOps (pointing at `charts/` in this repo
 
 These must exist before ArgoCD can function:
 1. **Cilium** — CNI (kube-proxy replacement, cluster-pool IPAM)
-2. **CloudStack Cloud Controller Manager (CCM)** — node lifecycle, LoadBalancer
+2. **CloudStack Cloud Controller Manager (CCM)** — node lifecycle, manages CloudStack LB rules dynamically for `LoadBalancer` services
 3. **CloudStack CSI Driver** — dynamic PV provisioning (`cloudstack-custom-disk-offering`)
 
 Additionally on the **workload cluster only**:
@@ -149,7 +173,6 @@ Additionally on the **workload cluster only**:
 Additionally on the **ops cluster only**:
 5. **ArgoCD** — then takes over all application charts
 
----
 
 ## CloudStack Provider Resource Coverage
 
@@ -351,11 +374,11 @@ granular module should include an `imports.tf` file with `import` blocks (Terraf
 - [ ] `live/homecloud/tailscale-vpn`
 
 ### Phase 3 — Ops Kubernetes Cluster
-- [ ] `catalog/modules/talos-config` — Talos machine secrets + configs + Tailscale extension
-- [ ] `catalog/modules/cloudstack-vm` — generic VM module
+- [ ] `catalog/modules/talos-config` — Talos machine secrets + configs via `siderolabs/talos` provider
+- [ ] `catalog/modules/cloudstack-vm` — generic VM module (Talos nodes, `user_data` = base64 machine config)
 - [ ] `catalog/modules/kubernetes-bootstrap` — Cilium + CCM + CSI + ArgoCD Helm releases
-- [ ] `catalog/modules/onepassword-item` — write cluster credentials to 1Password
-- [ ] `catalog/stacks/talos-cluster` — full parameterised Talos cluster (homecloud provider)
+- [ ] `catalog/modules/onepassword-item` — write talosconfig + kubeconfig to 1Password
+- [ ] `catalog/stacks/talos-cluster` — full parameterised cluster: public IP + LB rule + VMs + bootstrap
 - [ ] `catalog/stacks/argocd-setup` — ArgoCD + App-of-Apps (homecloud provider)
 - [ ] `live/homecloud/ops-cluster`
 
@@ -388,9 +411,11 @@ infrastructure/
 
 ## Notes & Open Items
 
-- **Talos images** (CloudStack `.raw.gz` disk images via [Talos Image Factory](https://factory.talos.dev)):
-  - **Base image** (schematic `23ff67af...`): btrfs, nfs-utils, nfsd, nfsrahead, qemu-guest-agent — registered in `cloudstack-platform`
-  - **K8s node image** (TODO): same as base + `siderolabs/tailscale` — needed for ops/workload cluster nodes; generate schematic and update `talos_k8s_image_url` in `live/homecloud/cloudstack-platform/terragrunt.hcl`
+- **Talos image** (CloudStack `.raw.gz` disk image via [Talos Image Factory](https://factory.talos.dev)):
+  - **Single image** for all Talos VMs (no Tailscale extension required)
+  - Schematic `23ff67af...`: btrfs, nfs-utils, nfsd, nfsrahead, qemu-guest-agent
+  - URL: `https://factory.talos.dev/image/23ff67af.../v1.12.6/cloudstack-amd64.raw.gz`
+  - ⚠️ If CloudStack rejects the compressed image, use the uncompressed variant (drop `.gz`)
   - See `cloudstack/docs/00-CLI.md § Talos Linux Images` for full schematic YAML
 - **Media server**: ArgoCD Helm chart in `charts/media-server/` (code currently in git
   stash; hardcoded VPN credentials must be replaced with 1Password references before

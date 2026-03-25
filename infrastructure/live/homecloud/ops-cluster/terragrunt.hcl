@@ -1,12 +1,16 @@
 # ops-cluster unit
 # Deploys the Talos Linux ops Kubernetes cluster:
-#   - Talos machine config (controlplane + workers)
-#   - CloudStack VMs (Talos ISO) with Tailscale extension config injected
-#   - Cluster bootstrap via talos provider
-#   - Cilium CNI (via Helm)
-#   - ArgoCD (via Helm) — manages workload cluster apps
-#   - Core monitoring: Prometheus, Grafana, Loki, Alertmanager
-#   - talosconfig + kubeconfig written to 1Password
+#   Bootstrap flow (per Talos v1.12 CloudStack docs):
+#   1. Acquire CloudStack public IP for kube-apiserver LB endpoint
+#   2. Create CloudStack LB rule (k8s-api, port 6443) on that IP
+#   3. Generate Talos machine secrets + controlplane/worker configs
+#      with endpoint = https://<LB_IP>:6443
+#   4. Deploy Talos VMs with machine config as base64 user_data
+#   5. Assign control plane VMs to LB rule
+#   6. Bootstrap etcd via talos provider
+#   7. Install Cilium CNI + CloudStack CCM + CSI via helm_release
+#   8. Install ArgoCD (ops cluster only) — manages workload cluster apps via GitOps
+#   9. Write talosconfig + kubeconfig to 1Password
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -39,7 +43,7 @@ dependency "tailscale_vpn" {
   config_path = "../tailscale-vpn"
 
   mock_outputs = {
-    ops_auth_key = "tskey-auth-mock"
+    router_vm_id = "mock-router-id"
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
@@ -60,8 +64,9 @@ inputs = {
   controlplane_count = 1
   worker_count       = 2
 
-  # Tailscale extension config (injected into Talos machine config)
-  tailscale_auth_key = dependency.tailscale_vpn.outputs.ops_auth_key
+  # kube-apiserver endpoint: a CloudStack public IP is acquired and fronted
+  # by a CloudStack LB rule (port 6443). The Talos machine config is generated
+  # with this IP as the endpoint, then passed as base64 user_data to each VM.
 
   # ArgoCD bootstrap (ops cluster only)
   enable_argocd = true

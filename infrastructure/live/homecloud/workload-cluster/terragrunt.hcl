@@ -1,13 +1,14 @@
 # workload-cluster unit
 # Deploys the Talos Linux workload Kubernetes cluster:
-#   - Talos machine config (controlplane + workers) with Tailscale extension
-#   - CloudStack VMs (Talos ISO)
-#   - Cluster bootstrap
-#   - Cilium CNI (via Helm)
-#   - CloudStack Cloud Controller Manager (CCM) — node lifecycle
-#   - CloudStack CSI driver — PersistentVolume provisioning
-#   - external-dns — Cloudflare DNS record management
-#   - talosconfig + kubeconfig written to 1Password
+#   Bootstrap flow (per Talos v1.12 CloudStack docs):
+#   1. Acquire CloudStack public IP for kube-apiserver LB endpoint
+#   2. Create CloudStack LB rule (k8s-api, port 6443) on that IP
+#   3. Generate Talos machine secrets + configs with endpoint = https://<LB_IP>:6443
+#   4. Deploy Talos VMs with machine config as base64 user_data
+#   5. Assign control plane VMs to LB rule
+#   6. Bootstrap etcd, install Cilium + CloudStack CCM + CSI + external-dns
+#   7. Register cluster with ArgoCD on ops cluster
+#   8. Write talosconfig + kubeconfig to 1Password
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -40,7 +41,7 @@ dependency "tailscale_vpn" {
   config_path = "../tailscale-vpn"
 
   mock_outputs = {
-    workload_auth_key = "tskey-auth-mock"
+    router_vm_id = "mock-router-id"
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
@@ -70,8 +71,9 @@ inputs = {
   controlplane_count = 1
   worker_count       = 3
 
-  # Tailscale extension config
-  tailscale_auth_key = dependency.tailscale_vpn.outputs.workload_auth_key
+  # kube-apiserver endpoint: a CloudStack public IP is acquired and fronted
+  # by a CloudStack LB rule (port 6443). Machine config is generated with this
+  # IP as the endpoint, then passed as base64 user_data to each VM.
 
   # Workload-cluster-specific add-ons
   enable_cloudstack_ccm = true

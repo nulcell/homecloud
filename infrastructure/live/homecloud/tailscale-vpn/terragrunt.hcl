@@ -1,8 +1,12 @@
 # tailscale-vpn unit
-# Deploys Tailscale tailnet configuration:
-#   - Auth keys (reusable, tagged) for ops and workload cluster nodes
-#   - ACL policy (node-to-node within VPC CIDR)
-#   - MagicDNS / split-DNS for homecloud.internal
+# Deploys the Tailscale subnet router VM (homecloud-vpn-router):
+#   - Ubuntu 24.04 VM connected to ALL CloudStack networks
+#     (pub-net-1, priv-net-1, priv-net-2, priv-net-3, iso-net-shared)
+#   - Cloud-init: cloudstack/compute/cloud-init/tailscale-router-debian.yaml
+#     (registered as CloudStack user-data with params: tailscale_auth_key, network_router_cidr)
+#   - Advertises route 10.0.0.0/15 into Tailscale tailnet (covers VPC + isolated net)
+#   - Allows operators on the tailnet to reach all CloudStack private networks
+#   - NOT involved in k8s inter-node traffic — Talos nodes use CloudStack VPC IPs directly
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -21,21 +25,43 @@ dependency "cloudstack_platform" {
   config_path = "../cloudstack-platform"
 
   mock_outputs = {
-    vpc_cidr = "10.0.0.0/24"
+    zone_id             = "mock-zone-id"
+    pub_net_1_id        = "mock-net-id"
+    priv_net_1_id       = "mock-net-id"
+    priv_net_2_id       = "mock-net-id"
+    priv_net_3_id       = "mock-net-id"
+    iso_net_id          = "mock-net-id"
+    ubuntu_template_id  = "mock-template-id"
+    tiny_offering_id    = "mock-offering-id"
+    keypair_name        = "homecloud-key"
+    tailscale_userdata_id = "mock-userdata-id"
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
 
 inputs = {
-  tailnet   = include.account.locals.tailscale_tailnet
-  vpc_cidr  = dependency.cloudstack_platform.outputs.vpc_cidr
+  # CloudStack placement
+  zone_id             = dependency.cloudstack_platform.outputs.zone_id
+  # VM is connected to all networks to route traffic between tailnet and all CloudStack subnets
+  network_ids = [
+    dependency.cloudstack_platform.outputs.pub_net_1_id,
+    dependency.cloudstack_platform.outputs.priv_net_1_id,
+    dependency.cloudstack_platform.outputs.priv_net_2_id,
+    dependency.cloudstack_platform.outputs.priv_net_3_id,
+    dependency.cloudstack_platform.outputs.iso_net_id,
+  ]
+  template_id         = dependency.cloudstack_platform.outputs.ubuntu_template_id
+  compute_offering_id = dependency.cloudstack_platform.outputs.tiny_offering_id
+  keypair_name        = dependency.cloudstack_platform.outputs.keypair_name
+  userdata_id         = dependency.cloudstack_platform.outputs.tailscale_userdata_id
 
-  # Reusable tagged auth keys written to 1Password after creation
-  auth_keys = {
-    ops_nodes      = { tags = ["tag:ops-node"],      reusable = true, ephemeral = false }
-    workload_nodes = { tags = ["tag:workload-node"], reusable = true, ephemeral = false }
-    vps_node       = { tags = ["tag:vps"],           reusable = true, ephemeral = false }
-  }
+  # Tailscale auth key read from 1Password
+  op_vault            = include.account.locals.op_vault
+  op_tailscale_ref    = "op://homecloud/Tailscale Token/credential"
 
-  op_vault = include.account.locals.op_vault
+  # Advertised route covers VPC (10.0.0.0/24) + isolated net (10.1.1.0/24) = 10.0.0.0/15
+  vpn_cidr            = "10.0.0.0/15"
+
+  vm_name             = "homecloud-vpn-router"
+  root_disk_size_gb   = 10
 }

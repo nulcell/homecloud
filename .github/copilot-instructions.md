@@ -16,7 +16,7 @@ This is a **home lab infrastructure-as-code repository** for a self-hosted priva
 
 1. **MaaS** (`maas/`) — bare-metal provisioning of physical servers
 2. **Apache CloudStack** (`cloudstack/`) — IaaS layer running on KVM hypervisors (Ubuntu 24.04, CloudStack 4.20.1)
-3. **Kubernetes** — CKS clusters managed via Cluster API (`cloudstack/compute/clusterapi/`) provisioned on CloudStack VMs
+3. **Kubernetes** — **Talos Linux** clusters on CloudStack VMs (replacing CKS/Cluster API). Machine config passed as base64 `user_data`. kube-apiserver exposed via CloudStack LB rule. Tailscale subnet router VM provides operator VPN access to all CloudStack networks.
 4. **Workloads** — Helm charts (`charts/`) deployed via ArgoCD with GitOps
 
 **A Terragrunt migration is in progress** — see `infrastructure/PLAN.md` for the full plan. Tool versions are managed by `.mise.toml` at repo root; run `mise install` to set up the full toolchain.
@@ -76,11 +76,13 @@ To install/upgrade a chart:
 helm upgrade --install <release-name> charts/<chart-name>/ -n <namespace> -f charts/<chart-name>/values.yaml
 ```
 
-## CloudStack / Cluster API
+## CloudStack / Talos Kubernetes
 
-- Kubernetes clusters are provisioned via **Cluster API with CloudStack provider** (`cluster.x-k8s.io/v1beta1`, `infrastructure.cluster.x-k8s.io/v1beta3`)
-- Cluster spec is at `cloudstack/compute/clusterapi/homecloud-cks-cluster-spec.yaml`
-- The CKS cluster uses Cilium as CNI (config at `cloudstack/compute/cni-config/cilium.yaml`)
+- Kubernetes clusters are provisioned as **Talos Linux VMs on CloudStack** (not CKS / Cluster API)
+- Talos CloudStack `.raw.gz` disk image registered as a template; machine config passed as base64 `user_data` at VM deploy time
+- **kube-apiserver endpoint** = CloudStack public IP + LB rule (port 6443) managed by `siderolabs/talos` Terraform provider
+- Talos nodes communicate over CloudStack VPC private IPs; **Tailscale subnet router VM** (`homecloud-vpn-router`) provides operator access by advertising `10.0.0.0/15` into the tailnet
+- Cilium is the CNI (config at `cloudstack/compute/cni-config/cilium.yaml`)
 - KVM hosts use Linux bridge networking (`cbr0`, `cbr1`, etc.)
 - CloudStack management server setup: `cloudstack/setup/management-single-node.sh`
 

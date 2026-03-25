@@ -57,21 +57,15 @@ inputs = {
   }
 
   # ── Cloud Images ─────────────────────────────────────────────────────────
-  # Two Talos images are needed — schematic IDs differ by the tailscale extension:
+  # One Talos image is needed. Talos nodes use their CloudStack VPC IPs for
+  # inter-node communication. Tailscale runs on a separate subnet router VM
+  # (homecloud-vpn-router), not as a Talos extension.
   #
-  # IMAGE 1 — General Talos VMs (no tailscale extension):
-  #   schematic: 23ff67af89fd08e5703f919f9b58c5a4a6de2540b1f8ca83379e19321560b1bf
-  #   extensions: btrfs, nfs-utils, nfsd, nfsrahead, qemu-guest-agent
+  # Schematic ID: 23ff67af89fd08e5703f919f9b58c5a4a6de2540b1f8ca83379e19321560b1bf
+  # Extensions:   btrfs, nfs-utils, nfsd, nfsrahead, qemu-guest-agent
   talos_image_url      = "https://factory.talos.dev/image/23ff67af89fd08e5703f919f9b58c5a4a6de2540b1f8ca83379e19321560b1bf/v1.12.6/cloudstack-amd64.raw.gz"
   talos_image_version  = "v1.12.6"
-  talos_schematic_base = "23ff67af89fd08e5703f919f9b58c5a4a6de2540b1f8ca83379e19321560b1bf"
-
-  # IMAGE 2 — Kubernetes node Talos VMs (with siderolabs/tailscale extension):
-  #   TODO: generate schematic at https://factory.talos.dev by adding
-  #         siderolabs/tailscale to the base schematic above, then update below.
-  #   extensions: btrfs, nfs-utils, nfsd, nfsrahead, qemu-guest-agent, tailscale
-  talos_k8s_image_url      = "https://factory.talos.dev/image/<tailscale-schematic-id>/v1.12.6/cloudstack-amd64.raw.gz" # TODO
-  talos_k8s_schematic_id   = "<tailscale-schematic-id>" # TODO
+  talos_schematic_id   = "23ff67af89fd08e5703f919f9b58c5a4a6de2540b1f8ca83379e19321560b1bf"
 
   ubuntu_image_url     = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
   ubuntu_image_version = "24.04"

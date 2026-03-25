@@ -161,8 +161,9 @@ maas/                MaaS single-node setup script
 - Both providers read credentials from the 1Password Terraform provider at plan/apply time.
 - **`is_enabled` flag** on all optional components (`count = var.is_enabled ? 1 : 0`).
 - Resources not covered by the CloudStack Terraform provider use `null_resource` + `local-exec` calling `cmk`.
-- Kubernetes clusters use **Talos Linux** (not CKS / Cluster API). Talos ISO must include the `siderolabs/tailscale` system extension.
-- Each k8s node joins the Tailscale tailnet via an auth key injected in the Talos machine config.
+- Kubernetes clusters use **Talos Linux** (not CKS / Cluster API). Talos CloudStack `.raw.gz` disk image registered as a template. Machine config passed as base64 `user_data` at VM deploy time.
+- **kube-apiserver endpoint = CloudStack public IP + LB rule (port 6443)**. No Tailscale involved in k8s traffic — Talos nodes communicate over CloudStack VPC private IPs.
+- **Tailscale subnet router VM** (`homecloud-vpn-router`, Ubuntu 24.04) is connected to all CloudStack networks and advertises route `10.0.0.0/15` into the tailnet for operator access. Deployed by the `tailscale-vpn` stack.
 - Bootstrap Helm charts (Cilium, CCM, CSI) via Terraform `helm_release`; all application charts managed by ArgoCD GitOps from `charts/`.
 - **Media server** is an ArgoCD Helm chart (`charts/media-server/`), NOT a Terraform-managed VM. SharedFileSystems (NFS) for its PersistentVolumes are managed in `cloudstack-platform` (`enable_shared_storage = true`).
 - **`cloudstack-platform` is the only unit that uses admin credentials** (`cloudstack.admin` alias). All other units use the homecloud domain user (`cloudstack.homecloud`). Each catalog stack owns its own `providers.tf`.
