@@ -1220,3 +1220,49 @@ echo "Media Server Data File System ID: $MEDIA_SERVER_FS_DATA_ID"
 echo "Media Server Data File System IP Address: $MEDIA_SERVER_FS_DATA_IP"
 echo "Mount Command: \"mount -t nfs $MEDIA_SERVER_FS_DATA_IP:/export [local_mount_path]\""
 ```
+
+## Talos Linux Images
+
+CloudStack uses raw disk images (`.raw.gz`). Images are built via the
+[Talos Image Factory](https://factory.talos.dev).
+
+### Image 1 — Base (no Tailscale) — for general VMs
+
+```
+https://factory.talos.dev/image/23ff67af89fd08e5703f919f9b58c5a4a6de2540b1f8ca83379e19321560b1bf/v1.12.6/cloudstack-amd64.raw.gz
+```
+
+**Schematic ID:** `23ff67af89fd08e5703f919f9b58c5a4a6de2540b1f8ca83379e19321560b1bf`
+
+```yaml
+customization:
+    systemExtensions:
+        officialExtensions:
+            - siderolabs/btrfs
+            - siderolabs/nfs-utils
+            - siderolabs/nfsd
+            - siderolabs/nfsrahead
+            - siderolabs/qemu-guest-agent
+```
+
+### Image 2 — Kubernetes Nodes (with Tailscale) — TODO
+
+Generate a second schematic at https://factory.talos.dev by adding
+`siderolabs/tailscale` to the base schematic above. Required for k8s cluster
+nodes so each node can join the Tailscale tailnet via the auth key injected
+in the Talos machine config.
+
+```yaml
+customization:
+    systemExtensions:
+        officialExtensions:
+            - siderolabs/btrfs
+            - siderolabs/nfs-utils
+            - siderolabs/nfsd
+            - siderolabs/nfsrahead
+            - siderolabs/qemu-guest-agent
+            - siderolabs/tailscale
+```
+
+Update `talos_k8s_image_url` and `talos_k8s_schematic_id` in
+`infrastructure/live/homecloud/cloudstack-platform/terragrunt.hcl` once generated.

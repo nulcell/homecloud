@@ -388,10 +388,10 @@ infrastructure/
 
 ## Notes & Open Items
 
-- **Talos ISO URL**: To be provided. Use [Talos Image Factory](https://factory.talos.dev)
-  with `siderolabs/tailscale` extension enabled. Register resulting ISO URL in
-  `catalog/modules/cloudstack-templates` and set `talos_iso_url` in
-  `live/homecloud/cloudstack-platform/terragrunt.hcl`.
+- **Talos images** (CloudStack `.raw.gz` disk images via [Talos Image Factory](https://factory.talos.dev)):
+  - **Base image** (schematic `23ff67af...`): btrfs, nfs-utils, nfsd, nfsrahead, qemu-guest-agent — registered in `cloudstack-platform`
+  - **K8s node image** (TODO): same as base + `siderolabs/tailscale` — needed for ops/workload cluster nodes; generate schematic and update `talos_k8s_image_url` in `live/homecloud/cloudstack-platform/terragrunt.hcl`
+  - See `cloudstack/docs/00-CLI.md § Talos Linux Images` for full schematic YAML
 - **Media server**: ArgoCD Helm chart in `charts/media-server/` (code currently in git
   stash; hardcoded VPN credentials must be replaced with 1Password references before
   deploying via ArgoCD).

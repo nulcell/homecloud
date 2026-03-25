@@ -22,11 +22,11 @@ talhelper = "3.1.7"
 
 # ── Tailscale ────────────────────────────────────────────────────────────────
 # CLI for interacting with the Tailscale control plane during debugging.
-aqua:tailscale/tailscale = "latest"
+"aqua:tailscale/tailscale" = "1.96.2"
 
 # ── CloudStack ───────────────────────────────────────────────────────────────
-# cloudmonkey: Python-based CloudStack CLI (installed via pipx backend).
-"pipx:cloudmonkey" = "latest"
+# cloudmonkey: CloudStack CLI.
+"github:apache/cloudstack-cloudmonkey" = "6.5.0"
 
 # ── Cloud / Secrets ──────────────────────────────────────────────────────────
 # 1Password CLI: used by Terraform 1Password provider at plan/apply time.
