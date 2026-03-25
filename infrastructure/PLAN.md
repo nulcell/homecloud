@@ -7,9 +7,8 @@ deterministic Terragrunt + Terraform stack under `infrastructure/`. The only man
 prerequisite is a running CloudStack management server with admin credentials in
 1Password (`op://homecloud/CloudStack - admin/...`).
 
-**Scope excludes:** CloudStack zone/physical network/host setup (already live — these
-are imported, not recreated), and the CKS Kubernetes section (replaced entirely by the
-Talos + Tailscale router approach below).
+**Scope excludes:** The CKS Kubernetes section from `00-CLI.md` (replaced entirely by the
+Talos Linux VM approach below — CKS and Cluster API are not used).
 
 ---
 

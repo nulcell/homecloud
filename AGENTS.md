@@ -17,7 +17,7 @@ Self-hosted private cloud infrastructure repository. Layers bottom to top:
 
 1. **MaaS** (`maas/`) — bare-metal OS provisioning
 2. **Apache CloudStack** (`cloudstack/`) — IaaS/KVM hypervisor layer (Ubuntu 24.04, CloudStack 4.20.1)
-3. **Kubernetes** — CKS clusters via Cluster API on CloudStack VMs
+3. **Kubernetes** — **Talos Linux** clusters on CloudStack VMs (not CKS / Cluster API)
 4. **Workloads** — Helm charts (`charts/`) delivered via ArgoCD (GitOps)
 
 Terragrunt migration in progress. See `infrastructure/PLAN.md`. Tool versions managed by `.mise.toml` at repo root.

@@ -2,13 +2,20 @@
 # homecloud domain-scope resources (cloudstack.homecloud provider ONLY).
 # Depends on cloudstack-admin (domain + account + offerings must exist first).
 #
+# Optionality convention:
+#   - for_each map inputs: empty map = nothing created; remove entry = resource deleted
+#   - Single optional resources: `enable_X = false` → not created; set true → created/managed
+#   - Images/templates in cloudstack-admin: lifecycle prevent_destroy (never auto-deleted)
+#   - VMs: can be safely deleted when disabled; data is on NFS/external storage
+#
 # Manages:
 #   - VPC (homecloud-vpc, 10.0.0.0/24) + 4 network tiers      (IMPORTED)
 #   - Isolated network (iso-net-shared, 10.1.1.0/24)           (IMPORTED)
-#   - SSH keypair (nulcell) — domain-scoped to homecloud        (IMPORTED)
-#   - User-data scripts: cloud-default, tailscale-router-debian (REGISTERED)
-#   - NFS SharedFileSystems for media server PVs               (CREATED, enable_shared_storage)
-#   - Generates homecloud-admin CloudStack API key → writes to 1Password
+#   - SSH keypair (nulcell) — domain-scoped to homecloud        (IMPORTED, optional)
+#   - User-data scripts — for_each map (empty = none)           (REGISTERED)
+#   - NFS SharedFileSystems — for_each map (empty = none)       (CREATED/IMPORTED, optional)
+#   - General-purpose VPS VM (homecloud-vps)                    (CREATED, optional)
+#   - Generates homecloud-admin CloudStack API key → 1Password
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -68,11 +75,11 @@ inputs = {
   isolated_net_gateway    = "10.1.1.1"
   isolated_net_offering_id = dependency.cloudstack_admin.outputs.isolated_core_offering_id
 
-  # ── SSH Keypair (domain-scoped to homecloud) ──────────────────────────────
+  # ── SSH Keypair (optional — omit keypair_name to skip) ──────────────────
   keypair_name   = "nulcell"
   op_ssh_pub_key = "op://homecloud/nulcell/public key"
 
-  # ── User Data Scripts ────────────────────────────────────────────────────
+  # ── User Data Scripts (for_each map — empty map = nothing registered) ────
   userdata_scripts = {
     "cloud-default" = {
       file   = "${get_repo_root()}/cloudstack/compute/cloud-init/cloud-default.yaml"
@@ -84,21 +91,36 @@ inputs = {
     }
   }
 
-  # ── NFS Shared Filesystems (optional, for media server PVs) ──────────────
+  # ── NFS Shared Filesystems (for_each map — empty map = none created) ─────
+  # Remove an entry to delete that filesystem (data loss — do deliberately).
+  # Use enable_shared_storage = false to disable ALL without removing entries.
   enable_shared_storage = true
   shared_filesystems = {
     "media-server-fs-config" = {
-      size_gb         = 10
+      size_gb          = 10
       service_offering = "mem.small"
       disk_offering    = "shared.custom"
       network_name     = "pub-net-1"
     }
     "media-server-fs-data" = {
-      size_gb         = 500
+      size_gb          = 500
       service_offering = "mem.small"
       disk_offering    = "shared.custom"
       network_name     = "pub-net-1"
     }
+  }
+
+  # ── General-Purpose VPS VM (optional) ────────────────────────────────────
+  # Ubuntu 24.04 VM on priv-net-1, general workloads, cloud-default userdata.
+  # Set enable_vps = false to skip creation without removing the config.
+  enable_vps = true
+  vps = {
+    name             = "homecloud-vps"
+    compute_offering = "gen.xlarge"
+    root_disk_size   = 30
+    network_name     = "priv-net-1"
+    userdata_name    = "cloud-default"
+    template_name    = "Ubuntu 24.04 - Noble"
   }
 
   # ── 1Password: write generated API key here ──────────────────────────────
