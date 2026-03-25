@@ -1,14 +1,16 @@
 # root.hcl — Terragrunt root configuration
 # Inherited by all units in live/. Place this file at the top of infrastructure/live/.
 # Each unit includes it via: find_in_parent_folders("root.hcl")
+#
+# PROVIDER CREDENTIALS ARE NOT GENERATED HERE.
+# Each catalog stack module owns its own providers.tf because credential scope differs:
+#   - catalog/stacks/cloudstack-platform → uses cloudstack.admin provider alias
+#   - all other stacks                   → uses cloudstack.homecloud domain user
+# Only terraform version + required_providers are injected centrally.
 
 locals {
   # Read account-level config from the nearest account.hcl
   account_vars = read_terragrunt_config(find_in_parent_folders("account.hcl"))
-
-  # Derived locals
-  environment = local.account_vars.locals.environment
-  stack_name  = local.account_vars.locals.stack_name
 }
 
 # ─── Remote State ────────────────────────────────────────────────────────────
@@ -26,15 +28,17 @@ remote_state {
   }
 }
 
-# ─── Provider Generation ─────────────────────────────────────────────────────
-# Inject provider version constraints into every unit from a single source.
+# ─── Provider Version Constraints ────────────────────────────────────────────
+# Injects ONLY required_providers into every unit. No provider configs here.
+# Actual provider configuration (API keys, endpoints) lives in each catalog
+# stack's providers.tf so that admin vs. domain-user scope is explicit.
 generate "versions" {
   path      = "versions.tf"
   if_exists = "overwrite_terragrunt"
 
   contents = <<-EOF
     terraform {
-      required_version = ">= 1.11.0"
+      required_version = ">= 1.14.0"
 
       required_providers {
         cloudstack = {

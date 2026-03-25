@@ -27,8 +27,11 @@ Follows the **Gruntwork catalog + live pattern** (BrainIAC model):
 
 - `catalog/modules/` — granular: smallest reusable Terraform modules, one resource type or tightly coupled set
 - `catalog/stacks/` — baseline: full infrastructure components that compose granular modules
-- `live/root.hcl` — Terragrunt root config: local state backend, provider version pins, common inputs
+- `live/root.hcl` — Terragrunt root config: local state backend, provider version constraints only (no credentials)
 - `live/homecloud/` — single live environment; units wire stacks together with explicit dependency graph via `dependency {}` blocks and `homecloud.stack.hcl`
+- **`cloudstack-platform` is the only unit that uses the admin provider alias.** All other units use the homecloud domain user. Each catalog stack defines its own `providers.tf`.
+- **Media server** is an ArgoCD Helm chart (`charts/media-server/`), not a Terraform VM. Its CloudStack NFS volumes (`enable_shared_storage`) are managed inside `cloudstack-platform`.
+- All existing CloudStack resources are **imported** (not recreated) using `import {}` blocks.
 
 ## Architecture
 
@@ -46,7 +49,7 @@ Follows the **Gruntwork catalog + live pattern** (BrainIAC model):
 |---|---|
 | `charts/` | Helm umbrella charts wrapping upstream charts (cilium, traefik, external-dns, monitoring) plus a custom n8n chart |
 | `cloudstack/` | Setup scripts, cloud-init templates, Cluster API specs, CloudStack docs |
-| `docker-compose/` | Docker Compose stacks (currently: *arr media server stack) — marked TODO for migration to Helm/CKS |
+| `docker-compose/` | Docker Compose stacks (currently: *arr media server stack) — migrating to ArgoCD Helm chart (`charts/media-server/`); code in git stash pending VPN credential cleanup |
 | `kubernetes/` | Ad-hoc Kubernetes manifests and testing resources |
 | `maas/` | MaaS single-node install script |
 | `infrastructure/` | Terragrunt live stacks + Terraform modules (`PLAN.md` is the source of truth) |

@@ -164,5 +164,8 @@ maas/                MaaS single-node setup script
 - Kubernetes clusters use **Talos Linux** (not CKS / Cluster API). Talos ISO must include the `siderolabs/tailscale` system extension.
 - Each k8s node joins the Tailscale tailnet via an auth key injected in the Talos machine config.
 - Bootstrap Helm charts (Cilium, CCM, CSI) via Terraform `helm_release`; all application charts managed by ArgoCD GitOps from `charts/`.
+- **Media server** is an ArgoCD Helm chart (`charts/media-server/`), NOT a Terraform-managed VM. SharedFileSystems (NFS) for its PersistentVolumes are managed in `cloudstack-platform` (`enable_shared_storage = true`).
+- **`cloudstack-platform` is the only unit that uses admin credentials** (`cloudstack.admin` alias). All other units use the homecloud domain user (`cloudstack.homecloud`). Each catalog stack owns its own `providers.tf`.
+- All existing CloudStack resources are imported via `import {}` blocks (Terraform 1.5+), not recreated. Run `terragrunt plan` to verify zero unintended replacements.
 - Generated credentials (talosconfig, kubeconfig) are written back to 1Password via `catalog/modules/onepassword-item`.
 - Tool versions (terraform, terragrunt, kubectl, helm, talosctl, etc.) pinned in `.mise.toml`. Run `mise install` to set up.

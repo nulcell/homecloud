@@ -34,11 +34,9 @@ stack {
     depends_on = [unit.cloudstack-platform, unit.tailscale-vpn, unit.ops-cluster]
   }
 
-  # ── 5. Media Server (optional) ──────────────────────────────────────────
-  # Creates: shared filesystems, media-server VM.
-  # Toggle via inputs: is_enabled = false to skip.
-  unit "media-server" {
-    source = "./media-server"
-    depends_on = [unit.cloudstack-platform]
-  }
+  # ── 5. Note: Media Server ────────────────────────────────────────────────
+  # The media server is a Helm chart deployed by ArgoCD from charts/media-server/.
+  # SharedFileSystem NFS volumes (media-server-fs-config, media-server-fs-data)
+  # are optional resources managed inside cloudstack-platform (enable_shared_storage).
+  # No separate Terragrunt unit is needed for the media server itself.
 }

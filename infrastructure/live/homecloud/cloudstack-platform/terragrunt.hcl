@@ -1,13 +1,19 @@
 # cloudstack-platform unit
 # Deploys the full CloudStack platform component:
 #   - Domain + Account + resource limits
-#   - Zone configuration + global settings
+#   - Zone configuration + global settings  (admin scope)
 #   - Compute, disk, network, and VPC offerings
-#   - Templates (Ubuntu, Talos ISO)
+#   - Cloud images: Ubuntu 24.04, Talos ISO (with Tailscale extension)
 #   - VPC + pub/priv subnets
 #   - Isolated network (iso-net-shared)
 #   - SSH keypair
 #   - User-data scripts (tailscale-router cloud-init)
+#   - SharedFileSystems (NFS, optional: enable_shared_storage)
+#
+# PROVIDER SCOPE:
+#   This unit is the ONLY one that runs with CloudStack admin credentials.
+#   Resources created under the homecloud domain use the cloudstack.homecloud alias.
+#   All other live units use the homecloud-admin domain user credentials only.
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -50,7 +56,18 @@ inputs = {
     "priv-net-3" = { cidr = "10.0.0.192/26",gateway = "10.0.0.193", vlan = 203 }
   }
 
-  # ── SSH keypair ──────────────────────────────────────────────────────────
-  keypair_name     = "homecloud-key"
-  op_keypair_ref   = "op://homecloud/SSH - homecloud/public key"
+  # ── Cloud Images ─────────────────────────────────────────────────────────
+  # Provide the Talos Image Factory URL with the siderolabs/tailscale extension.
+  # Build at: https://factory.talos.dev — enable siderolabs/tailscale extension.
+  talos_iso_url       = "https://factory.talos.dev/image/<schematic-id>/v1.12.6/nocloud-amd64.iso" # replace <schematic-id>
+  talos_iso_version   = "v1.12.6"
+  ubuntu_image_url    = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  ubuntu_image_version = "24.04"
+
+  # ── Shared Storage (optional NFS volumes used by ArgoCD workloads) ───────
+  enable_shared_storage  = true
+  fs_config_name         = "media-server-fs-config"
+  fs_config_size_gb      = 10
+  fs_data_name           = "media-server-fs-data"
+  fs_data_size_gb        = 500
 }
