@@ -6,9 +6,12 @@ terraform {
       source  = "siderolabs/talos"
       version = "~> 0.10"
     }
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.2"
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 3.1"
+      # Configured in the calling stack (talos-cluster/providers.tf) with the
+      # cluster's kubeconfig path. No alias needed — one helm provider per
+      # terragrunt live unit (ops-cluster, workload-cluster).
     }
     local = {
       source  = "hashicorp/local"

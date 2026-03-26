@@ -4,9 +4,8 @@
 # clusters (ops) omit vpc_id and allocate a zone-level public IP.
 # ---------------------------------------------------------------------------
 resource "cloudstack_ipaddress" "lb" {
-  vpc_id  = var.vpc_id != "" ? var.vpc_id : null
-  zone    = var.zone_name
-  account = var.account_name
+  vpc_id = var.vpc_id != "" ? var.vpc_id : null
+  zone   = var.zone_name
 }
 
 # ---------------------------------------------------------------------------
@@ -66,6 +65,10 @@ resource "cloudstack_loadbalancer_rule" "apiserver" {
 # ---------------------------------------------------------------------------
 module "bootstrap" {
   source = "../../modules/kubernetes-bootstrap"
+
+  providers = {
+    helm = helm.cluster
+  }
 
   cluster_name         = var.cluster_name
   cluster_endpoint     = "https://${cloudstack_ipaddress.lb.ip_address}:6443"

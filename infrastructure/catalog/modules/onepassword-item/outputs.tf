@@ -5,7 +5,7 @@ output "item" {
 }
 
 output "fields" {
-  description = "All fields from the 1Password item."
-  value       = data.onepassword_item.this.fields
+  description = "Map of section label → field label → value from the 1Password item."
+  value       = data.onepassword_item.this.section_map
   sensitive   = true
 }

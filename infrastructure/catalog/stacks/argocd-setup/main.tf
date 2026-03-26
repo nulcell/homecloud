@@ -1,4 +1,4 @@
-resource "kubernetes_secret" "workload_cluster" {
+resource "kubernetes_secret_v1" "workload_cluster" {
   metadata {
     name      = var.workload_cluster_name
     namespace = "argocd"

@@ -28,6 +28,17 @@ provider "cloudstack" {
 
 provider "talos" {}
 
+# The helm provider is configured per-cluster using the kubeconfig written
+# to disk by the kubernetes-bootstrap module (Step 4).
+# On initial cluster setup, two applies are required: the first bootstraps
+# the cluster and writes the kubeconfig; the second installs Helm charts.
+provider "helm" {
+  alias = "cluster"
+  kubernetes = {
+    config_path = "${path.root}/.kube/${var.cluster_name}.kubeconfig"
+  }
+}
+
 provider "onepassword" {
   # Authenticates via OP_SERVICE_ACCOUNT_TOKEN or an active op CLI session.
 }

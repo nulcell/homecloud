@@ -16,12 +16,16 @@ resource "onepassword_item" "this" {
   vault = var.vault
   title = var.title
 
-  dynamic "field" {
-    for_each = var.fields
-    content {
-      label = field.key
-      value = field.value
-      type  = "STRING"
+  section {
+    label = "Fields"
+
+    dynamic "field" {
+      for_each = var.fields
+      content {
+        label = field.key
+        value = field.value
+        type  = "STRING"
+      }
     }
   }
 }
