@@ -1,0 +1,219 @@
+# ---------------------------------------------------------------------------
+# Zone (data source — zone already exists, we only look it up)
+# ---------------------------------------------------------------------------
+data "cloudstack_zone" "this" {
+  filter {
+    name  = "name"
+    value = var.zone_name
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Physical Networks
+# Import: set existing_physical_network_ids[name] = UUID to import.
+#   cmk -p admin list physicalnetworks zoneid=<zone_id> --output text --filter id,name
+# ---------------------------------------------------------------------------
+
+resource "cloudstack_physical_network" "this" {
+  for_each = var.physical_networks
+
+  name                   = each.key
+  zone_id                = data.cloudstack_zone.this.id
+  isolation_methods      = each.value.isolation_method
+  broadcast_domain_range = "ZONE"
+  network_speed          = lookup(each.value, "network_speed", "10G")
+  tags                   = lookup(each.value, "tags", null)
+  vlan                   = lookup(each.value, "vlan_range", null)
+}
+
+# ---------------------------------------------------------------------------
+# Traffic Types — one per (physical_network, traffic_type) pair
+# Import: set existing_traffic_type_ids["<net>/<type>"] = UUID to import.
+#   cmk -p admin list traffictypes physicalnetworkid=<id>
+# ---------------------------------------------------------------------------
+locals {
+  traffic_type_pairs = merge([
+    for net_name, net in var.physical_networks : {
+      for tt in net.traffic_types :
+      "${net_name}/${tt}" => {
+        physical_network_id = cloudstack_physical_network.this[net_name].id
+        traffic_type        = tt
+        kvm_label           = lookup(lookup(net, "kvm_labels", {}), tt, null)
+      }
+    }
+  ]...)
+}
+
+resource "cloudstack_traffic_type" "this" {
+  for_each = local.traffic_type_pairs
+
+  physical_network_id = each.value.physical_network_id
+  traffic_type        = each.value.type
+  kvm_network_label   = each.value.kvm_label
+
+  depends_on = [cloudstack_physical_network.this]
+}
+
+# ---------------------------------------------------------------------------
+# Network Service Providers — VirtualRouter, VpcVirtualRouter, SecurityGroupProvider
+# Import: set existing_nsp_ids["<net>/<provider>"] = UUID to import.
+#   cmk -p admin list networkserviceproviders physicalnetworkid=<id>
+# ---------------------------------------------------------------------------
+locals {
+  nsp_pairs = merge([
+    for net_name, net in var.physical_networks : {
+      for prov in net.service_providers :
+      "${net_name}/${prov.name}" => {
+        physical_network_id = cloudstack_physical_network.this[net_name].id
+        name                = prov.name
+        service_list        = lookup(prov, "service_list", null)
+      }
+    }
+  ]...)
+}
+
+resource "cloudstack_network_service_provider" "this" {
+  for_each = local.nsp_pairs
+
+  name                = each.value.name
+  physical_network_id = each.value.physical_network_id
+  service_list        = each.value.service_list
+  state               = "Enabled"
+
+  depends_on = [cloudstack_traffic_type.this]
+}
+
+# ---------------------------------------------------------------------------
+# Public IP (VLAN) ranges
+# Import: set existing_vlan_ip_range_ids["<net>/<vlan>"] = UUID to import.
+#   cmk -p admin list vlanipranges zoneid=<zone_id>
+# ---------------------------------------------------------------------------
+locals {
+  vlan_ip_ranges = merge([
+    for net_name, net in var.physical_networks : net.public_ip_range != null ? {
+      "${net_name}" = {
+        physical_network_id = cloudstack_physical_network.this[net_name].id
+        gateway             = net.public_ip_range.gateway
+        netmask             = net.public_ip_range.netmask
+        start_ip            = net.public_ip_range.start_ip
+        end_ip              = net.public_ip_range.end_ip
+        vlan                = net.public_ip_range.vlan
+      }
+    } : {}
+  ]...)
+}
+
+resource "cloudstack_vlan_ip_range" "this" {
+  for_each = local.vlan_ip_ranges
+
+  physical_network_id = each.value.physical_network_id
+  zone_id             = data.cloudstack_zone.this.id
+  gateway             = each.value.gateway
+  netmask             = each.value.netmask
+  start_ip            = each.value.start_ip
+  end_ip              = each.value.end_ip
+  vlan                = each.value.vlan
+  for_virtual_network = false
+
+  depends_on = [cloudstack_physical_network.this]
+}
+
+# ---------------------------------------------------------------------------
+# Pod
+# Import: set existing_pod_id = UUID to import.
+#   cmk -p admin list pods zoneid=<zone_id> name=<name> --output text --filter id
+# ---------------------------------------------------------------------------
+resource "cloudstack_pod" "this" {
+  name      = var.pod.name
+  zone_id   = data.cloudstack_zone.this.id
+  gateway   = var.pod.gateway
+  netmask   = var.pod.netmask
+  start_ip  = var.pod.start_ip
+  end_ip    = var.pod.end_ip
+
+  depends_on = [cloudstack_physical_network.this]
+}
+
+# ---------------------------------------------------------------------------
+# KVM Cluster
+# Import: set existing_cluster_id = UUID to import.
+#   cmk -p admin list clusters zoneid=<zone_id> clustername=<name> --output text --filter id
+# ---------------------------------------------------------------------------
+resource "cloudstack_cluster" "this" {
+  cluster_name = var.cluster.name
+  cluster_type = "CloudManaged"
+  hypervisor   = var.cluster.hypervisor
+  pod_id       = cloudstack_pod.this.id
+  zone_id      = data.cloudstack_zone.this.id
+
+  depends_on = [cloudstack_pod.this]
+}
+
+# ---------------------------------------------------------------------------
+# KVM Hosts — no native cloudstack_host resource in provider v0.6.
+# Use null_resource + cmk with stable triggers (re-runs only if host config changes).
+# ---------------------------------------------------------------------------
+resource "null_resource" "host" {
+  for_each = var.hosts
+
+  triggers = {
+    host_ip    = each.key
+    cluster_id = cloudstack_cluster.this.id
+    username   = each.value.username
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      EXISTING=$(cmk -p ${var.cmk_profile} list hosts \
+        zoneid='${data.cloudstack_zone.this.id}' \
+        --output text --filter name 2>/dev/null | grep -c '${each.key}' || true)
+      if [ "$EXISTING" -eq 0 ]; then
+        cmk -p ${var.cmk_profile} add host \
+          zoneid='${data.cloudstack_zone.this.id}' \
+          clusterid='${cloudstack_cluster.this.id}' \
+          podid='${cloudstack_pod.this.id}' \
+          hypervisor='${var.cluster.hypervisor}' \
+          url='http://${each.key}' \
+          username='${each.value.username}'
+      else
+        echo "Host ${each.key} already present, skipping."
+      fi
+    EOT
+  }
+
+  depends_on = [cloudstack_cluster.this]
+}
+
+# ---------------------------------------------------------------------------
+# Primary Storage Pools (NFS)
+# Import: set existing_storage_pool_ids[name] = UUID to import.
+#   cmk -p admin list storagepools zoneid=<zone_id> --output text --filter id,name
+# ---------------------------------------------------------------------------
+
+resource "cloudstack_storage_pool" "primary" {
+  for_each = var.primary_storage_pools
+
+  name    = each.key
+  url     = "nfs://${each.value.server}${each.value.path}"
+  zone_id = data.cloudstack_zone.this.id
+  scope   = "ZONE"
+
+  depends_on = [null_resource.host]
+}
+
+# ---------------------------------------------------------------------------
+# Secondary Storage (Image Stores)
+# Import: set existing_secondary_storage_ids[name] = UUID to import.
+#   cmk -p admin list imageStores zoneid=<zone_id>
+# ---------------------------------------------------------------------------
+
+resource "cloudstack_secondary_storage" "this" {
+  for_each = var.secondary_storage
+
+  name             = each.key
+  storage_provider = "NFS"
+  url              = "nfs://${each.value.server}${each.value.path}"
+  zone_id          = data.cloudstack_zone.this.id
+
+  depends_on = [null_resource.host]
+}

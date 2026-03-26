@@ -41,6 +41,9 @@ dependency "cloudstack_admin" {
     internal_lb_offering_id    = "mock-net-offering-id"
     isolated_core_offering_id  = "mock-net-offering-id"
     ubuntu_template_id         = "mock-template-id"
+    talos_template_id          = "mock-template-id"
+    compute_offering_ids       = { "gen.tiny" = "mock-id", "mem.medium" = "mock-id", "gen.1xlarge" = "mock-id" }
+    disk_offering_ids          = { "shared.custom" = "mock-id" }
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
@@ -51,6 +54,13 @@ inputs = {
   zone_id            = dependency.cloudstack_admin.outputs.zone_id
   domain_id          = dependency.cloudstack_admin.outputs.domain_id
   account_name       = "homecloud"
+
+  # Pass-through: offering/template IDs from admin that downstream units (tailscale-vpn,
+  # ops-cluster, workload-cluster) need. The cloudstack-homecloud stack outputs these as-is.
+  ubuntu_template_id   = dependency.cloudstack_admin.outputs.ubuntu_template_id
+  talos_template_id    = dependency.cloudstack_admin.outputs.talos_template_id
+  compute_offering_ids = dependency.cloudstack_admin.outputs.compute_offering_ids
+  disk_offering_ids    = dependency.cloudstack_admin.outputs.disk_offering_ids
 
   # ── VPC ───────────────────────────────────────────────────────────────────
   vpc_name          = "homecloud-vpc"
@@ -98,13 +108,13 @@ inputs = {
   shared_filesystems = {
     "media-server-fs-config" = {
       size_gb          = 10
-      service_offering = "mem.small"
+      service_offering = "gen.medium.fixed"
       disk_offering    = "shared.custom"
       network_name     = "pub-net-1"
     }
     "media-server-fs-data" = {
       size_gb          = 500
-      service_offering = "mem.small"
+      service_offering = "gen.medium.fixed"
       disk_offering    = "shared.custom"
       network_name     = "pub-net-1"
     }
