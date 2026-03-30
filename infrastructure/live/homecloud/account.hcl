@@ -9,7 +9,7 @@ locals {
   cloudstack_api_url = "http://cloudstack.nulcell.com:8080/client/api"
 
   # 1Password vault where homecloud secrets live
-  op_vault   = "homecloud"
+  op_vault   = "4aq5ny2tv62njcpup22ptx5ptm" # homecloud vault UUID
   op_account = "my.1password.com"
 
   # CloudStack admin credentials (read from 1Password at plan/apply time)

@@ -36,14 +36,14 @@ dependency "tailscale_vpn" {
 }
 
 inputs = {
-  is_enabled         = false
+  is_enabled         = true
   cloudstack_api_url = include.account.locals.cloudstack_api_url
   op_vault           = include.account.locals.op_vault
   op_account         = include.account.locals.op_account
   cluster_name       = include.account.locals.ops_cluster_name
 
   # Network: iso-net-shared isolated network (its own virtual router + public IP)
-  network_id = dependency.cloudstack_homecloud.outputs.pub_net_1_id
+  network_id = ""
   vpc_id     = dependency.cloudstack_homecloud.outputs.vpc_id # no VPC — isolated network
 
   template_name         = "Talos v1.12.6 - CloudStack"

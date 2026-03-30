@@ -4,9 +4,10 @@
 # clusters (ops) omit vpc_id and allocate a zone-level public IP.
 # ---------------------------------------------------------------------------
 resource "cloudstack_ipaddress" "lb" {
-  count  = var.is_enabled ? 1 : 0
-  vpc_id = var.vpc_id != "" ? var.vpc_id : null
-  zone   = var.zone_name
+  count      = var.is_enabled ? 1 : 0
+  vpc_id     = var.vpc_id != "" ? var.vpc_id : null
+  network_id = var.network_id != "" ? var.network_id : null
+  zone       = var.zone_name
 }
 
 # ---------------------------------------------------------------------------
@@ -128,22 +129,21 @@ module "op_talosconfig" {
   count  = var.is_enabled ? 1 : 0
   source = "../../modules/onepassword-item"
 
-  vault = var.op_vault
-  title = "Talosconfig - ${var.cluster_name}"
+  vault    = var.op_vault
+  title    = "Talosconfig - ${var.cluster_name}"
+  category = "secure_note"
   fields = {
     config = module.talos_config[0].talosconfig
   }
 }
 
-# ---------------------------------------------------------------------------
-# Step 8 – Store kubeconfig in 1Password
-# ---------------------------------------------------------------------------
 module "op_kubeconfig" {
   count  = var.is_enabled ? 1 : 0
   source = "../../modules/onepassword-item"
 
-  vault = var.op_vault
-  title = "Kubeconfig - ${var.cluster_name}"
+  vault    = var.op_vault
+  title    = "Kubeconfig - ${var.cluster_name}"
+  category = "secure_note"
   fields = {
     config = module.bootstrap[0].kubeconfig
   }

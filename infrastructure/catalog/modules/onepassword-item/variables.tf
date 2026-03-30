@@ -1,16 +1,29 @@
 variable "vault" {
   type        = string
-  description = "Name or UUID of the 1Password vault containing the item."
+  description = "UUID of the 1Password vault containing the item."
 }
 
 variable "title" {
   type        = string
-  description = "Title of the 1Password item to read (and optionally update)."
+  description = "Title of the 1Password item."
+}
+
+variable "category" {
+  type        = string
+  default     = "secure_note"
+  description = "1Password item category. One of: login, password, database, secure_note."
+}
+
+variable "note_value" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Secure note body. Required when category = secure_note."
 }
 
 variable "fields" {
   type        = map(string)
   default     = {}
   sensitive   = true
-  description = "Fields to write to the 1Password item (field label → value). Empty map = read-only mode; no resource is created."
+  description = "Section fields to write (label → value). Empty map = read-only mode."
 }
