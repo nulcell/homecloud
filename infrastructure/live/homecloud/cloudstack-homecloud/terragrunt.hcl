@@ -90,40 +90,43 @@ inputs = {
   isolated_net_gateway      = "10.1.1.1"
   isolated_net_offering_name = "isolated.core-redundant"
 
-  # ── SSH Keypair (optional — omit keypair_name to skip) ──────────────────
+  # ── SSH Keypair ───────────────────────────────────────────────────────────
+  # NOTE: cloudstack_ssh_keypair does not support import in provider v0.6.
+  # enable_keypair = false on existing infra; keypair_name still passed to VMs.
   keypair_name   = "nulcell"
+  enable_keypair = false
   op_ssh_pub_key = "op://homecloud/nulcell/public key"
 
-  # ── User Data Scripts (for_each map — empty map = nothing registered) ────
-  userdata_scripts = {
-    "cloud-default" = {
-      file   = "${get_repo_root()}/cloudstack/compute/cloud-init/cloud-default.yaml"
-      params = []
-    }
-    "tailscale-router-debian" = {
-      file   = "${get_repo_root()}/cloudstack/compute/cloud-init/tailscale-router-debian.yaml"
-      params = ["tailscale_auth_key", "network_router_cidr"]
-    }
-  }
+  # # ── User Data Scripts (for_each map — empty map = nothing registered) ────
+  # userdata_scripts = {
+  #   "cloud-default" = {
+  #     file   = "${get_repo_root()}/cloudstack/compute/cloud-init/cloud-default.yaml"
+  #     params = []
+  #   }
+  #   "tailscale-router-debian" = {
+  #     file   = "${get_repo_root()}/cloudstack/compute/cloud-init/tailscale-router-debian.yaml"
+  #     params = ["tailscale_auth_key", "network_router_cidr"]
+  #   }
+  # }
 
-  # ── NFS Shared Filesystems (for_each map — empty map = none created) ─────
-  # Remove an entry to delete that filesystem (data loss — do deliberately).
-  # Use enable_shared_storage = false to disable ALL without removing entries.
-  enable_shared_storage = true
-  shared_filesystems = {
-    "media-server-fs-config" = {
-      size_gb          = 10
-      service_offering = "gen.medium.fixed"
-      disk_offering    = "shared.custom"
-      network_name     = "pub-net-1"
-    }
-    "media-server-fs-data" = {
-      size_gb          = 500
-      service_offering = "gen.medium.fixed"
-      disk_offering    = "shared.custom"
-      network_name     = "pub-net-1"
-    }
-  }
+  # # ── NFS Shared Filesystems (for_each map — empty map = none created) ─────
+  # # Remove an entry to delete that filesystem (data loss — do deliberately).
+  # # Use enable_shared_storage = false to disable ALL without removing entries.
+  # enable_shared_storage = true
+  # shared_filesystems = {
+  #   "media-server-fs-config" = {
+  #     size_gb          = 10
+  #     service_offering = "gen.medium.fixed"
+  #     disk_offering    = "shared.custom"
+  #     network_name     = "homecloud-vpc_pub-net-1"
+  #   }
+  #   "media-server-fs-data" = {
+  #     size_gb          = 500
+  #     service_offering = "gen.medium.fixed"
+  #     disk_offering    = "shared.custom"
+  #     network_name     = "homecloud-vpc_pub-net-1"
+  #   }
+  # }
 
   # ── General-Purpose VPS VM (optional) ────────────────────────────────────
   # Ubuntu 24.04 VM on priv-net-1, general workloads, cloud-default userdata.

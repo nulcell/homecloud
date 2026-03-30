@@ -97,7 +97,7 @@ module "isolated_network" {
 # SSH keypair (nulcell)
 # ---------------------------------------------------------------------------
 module "keypair" {
-  count  = var.keypair_name != "" ? 1 : 0
+  count  = (var.enable_keypair && var.keypair_name != "") ? 1 : 0
   source = "../../modules/cloudstack-keypair"
 
   name         = var.keypair_name

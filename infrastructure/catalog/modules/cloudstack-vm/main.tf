@@ -40,7 +40,7 @@ resource "cloudstack_instance" "this" {
     # for imported VMs (keypair is set at creation time for new VMs).
     # disk_offering — CloudStack reports back the offering name in a different
     # format than the API accepts; ignore to prevent spurious diffs on import.
-    ignore_changes = [user_data, service_offering, keypair, disk_offering]
+    ignore_changes = [user_data, userdata_id, userdata_details, service_offering, keypair, disk_offering]
   }
 }
 

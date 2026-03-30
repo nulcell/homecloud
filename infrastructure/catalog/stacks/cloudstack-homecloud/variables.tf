@@ -136,7 +136,13 @@ variable "disk_offering_ids" {
 variable "keypair_name" {
   type        = string
   default     = ""
-  description = "Name of the SSH keypair to register. Leave empty to skip keypair management."
+  description = "Name of the SSH keypair to register and reference on VMs."
+}
+
+variable "enable_keypair" {
+  type        = bool
+  default     = true
+  description = "Set to false to skip keypair creation (e.g. keypair already exists and provider does not support import). The keypair_name is still passed to VMs."
 }
 
 variable "op_ssh_pub_key" {
