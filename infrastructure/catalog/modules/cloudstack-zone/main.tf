@@ -19,11 +19,16 @@ resource "cloudstack_physical_network" "this" {
 
   name                   = each.key
   zone_id                = data.cloudstack_zone.this.id
-  isolation_methods      = each.value.isolation_method
+  isolation_methods      = [each.value.isolation_method]
   broadcast_domain_range = "ZONE"
   network_speed          = lookup(each.value, "network_speed", "10G")
   tags                   = lookup(each.value, "tags", null)
   vlan                   = lookup(each.value, "vlan_range", null)
+
+  lifecycle {
+    # network_speed is not tracked by CloudStack API after creation
+    ignore_changes = [network_speed]
+  }
 }
 
 # ---------------------------------------------------------------------------
@@ -48,10 +53,17 @@ resource "cloudstack_traffic_type" "this" {
   for_each = local.traffic_type_pairs
 
   physical_network_id = each.value.physical_network_id
-  traffic_type        = each.value.type
+  traffic_type        = each.value.traffic_type
   kvm_network_label   = each.value.kvm_label
 
   depends_on = [cloudstack_physical_network.this]
+
+  lifecycle {
+    # The provider's read function may return stale data for traffic_type after
+    # import (returns the first traffic type for the network). Also, KVM/XEN
+    # labels may drift if not explicitly managed. Ignore to prevent replacements.
+    ignore_changes = [traffic_type, kvm_network_label, xen_network_label]
+  }
 }
 
 # ---------------------------------------------------------------------------
@@ -113,7 +125,7 @@ resource "cloudstack_vlan_ip_range" "this" {
   start_ip            = each.value.start_ip
   end_ip              = each.value.end_ip
   vlan                = each.value.vlan
-  for_virtual_network = false
+  for_virtual_network = true
 
   depends_on = [cloudstack_physical_network.this]
 }
@@ -132,6 +144,11 @@ resource "cloudstack_pod" "this" {
   end_ip    = var.pod.end_ip
 
   depends_on = [cloudstack_physical_network.this]
+
+  lifecycle {
+    # allocation_state is managed by CloudStack and changes based on host availability
+    ignore_changes = [allocation_state]
+  }
 }
 
 # ---------------------------------------------------------------------------
@@ -199,6 +216,13 @@ resource "cloudstack_storage_pool" "primary" {
   scope   = "ZONE"
 
   depends_on = [null_resource.host]
+
+  lifecycle {
+    # The provider reads back hypervisor from CloudStack (KVM) but it's not a
+    # writable config attribute. The url field is ForceNew and may not be read
+    # back correctly after import; ignore both to prevent spurious replacements.
+    ignore_changes = [url, hypervisor]
+  }
 }
 
 # ---------------------------------------------------------------------------

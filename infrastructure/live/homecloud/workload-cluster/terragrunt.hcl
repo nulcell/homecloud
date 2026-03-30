@@ -67,6 +67,7 @@ dependency "ops_cluster" {
 inputs = {
   cloudstack_api_url = include.account.locals.cloudstack_api_url
   op_vault           = include.account.locals.op_vault
+  op_account         = include.account.locals.op_account
   cluster_name       = include.account.locals.workload_cluster_name
 
   # Network: pub-net-1 (VPC public-lb subnet) for CloudStack LB rule support

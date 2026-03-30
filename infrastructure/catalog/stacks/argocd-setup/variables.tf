@@ -4,6 +4,11 @@ variable "op_vault" {
   description = "1Password vault name or UUID."
 }
 
+variable "op_account" {
+  type        = string
+  description = "1Password account URL (e.g. my.1password.com) for CLI-based provider auth."
+}
+
 variable "ops_cluster_name" {
   type        = string
   default     = "ops"

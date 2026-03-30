@@ -28,11 +28,7 @@ import {
 }
 
 # SSH keypair
-import {
-  for_each = (var.keypair_name != "" && var.existing_keypair_id != "") ? { this = var.existing_keypair_id } : {}
-  to       = module.keypair[0].cloudstack_ssh_keypair.this
-  id       = each.value
-}
+# NOTE: cloudstack_ssh_keypair does not support import in provider v0.6.
 
 # VPS VM
 import {
@@ -50,19 +46,28 @@ import {
 
 
 # ---------------------------------------------------------------------------
+# Zone data source — used by modules that need zone_id (e.g. shared_filesystems)
+# ---------------------------------------------------------------------------
+data "cloudstack_zone" "this" {
+  filter {
+    name  = "name"
+    value = var.zone_name
+  }
+}
+
+# ---------------------------------------------------------------------------
 # VPC + network tiers
 # ---------------------------------------------------------------------------
 module "vpc" {
   source = "../../modules/cloudstack-vpc"
 
-  zone_id         = var.zone_id
   zone_name       = var.zone_name
   account_name    = var.account_name
   domain_id       = var.domain_id
   domain_name     = var.domain_name
   vpc_name        = var.vpc_name
   vpc_cidr        = var.vpc_cidr
-  vpc_offering_id = var.vpc_offering_id
+  vpc_offering_name = var.vpc_offering_name
   vpc_networks    = var.vpc_networks
   default_acl_id  = var.default_acl_id
 
@@ -76,15 +81,14 @@ module "vpc" {
 module "isolated_network" {
   source = "../../modules/cloudstack-network"
 
-  zone_id             = var.zone_id
-  zone_name           = var.zone_name
-  account_name        = var.account_name
-  domain_id           = var.domain_id
-  name                = var.isolated_net_name
-  display_text        = "Homecloud Shared Isolated Network"
-  cidr                = var.isolated_net_cidr
-  gateway             = var.isolated_net_gateway
-  network_offering_id = var.isolated_net_offering_id
+  zone_name               = var.zone_name
+  account_name            = var.account_name
+  domain_id               = var.domain_id
+  name                    = var.isolated_net_name
+  display_text            = "Homecloud Shared Isolated Network"
+  cidr                    = var.isolated_net_cidr
+  gateway                 = var.isolated_net_gateway
+  network_offering_name   = var.isolated_net_offering_name
 
   existing_network_id = var.existing_isolated_net_id
 }
@@ -123,7 +127,7 @@ module "shared_filesystems" {
 
   account_name = var.account_name
   domain_id    = var.domain_id
-  zone_id      = var.zone_id
+  zone_id      = data.cloudstack_zone.this.id
   zone_name    = var.zone_name
   enable       = var.enable_shared_storage
   filesystems  = var.shared_filesystems
@@ -137,19 +141,14 @@ module "vps" {
   source = "../../modules/cloudstack-vm"
 
   name           = var.vps.name
-  zone_id        = var.zone_id
   zone_name      = var.zone_name
   account_name   = var.account_name
   domain_id      = var.domain_id
-  template_id    = var.ubuntu_template_id
-  offering_id    = lookup(var.compute_offering_ids, var.vps.compute_offering, var.vps.compute_offering)
+  template_name  = var.ubuntu_template_name
+  offering_name  = var.vps.compute_offering
   root_disk_size = var.vps.root_disk_size
   network_ids    = [module.vpc.network_ids[var.vps.network_name]]
   keypair_name   = var.keypair_name
-  # userdata_ids returns empty strings (null_resource limitation); the VM
-  # will deploy without a pre-registered userdata reference.  To wire in
-  # the userdata UUID, look it up manually and pass it via existing_vps_id
-  # or use user_data_base64 for raw cloud-init content.
   userdata_id    = lookup(module.userdata.userdata_ids, var.vps.userdata_name, "")
   enable         = var.enable_vps
 

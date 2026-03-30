@@ -10,9 +10,14 @@ variable "op_vault" {
   description = "1Password vault name holding CloudStack credentials."
 }
 
+variable "op_account" {
+  type        = string
+  description = "1Password account URL (e.g. my.1password.com) for CLI-based provider auth."
+}
+
 variable "op_cs_homecloud_item" {
   type        = string
-  default     = "CloudStack - homecloud"
+  default     = "CloudStack - homecloud-admin"
   description = "Title of the 1Password item containing homecloud account credentials."
 }
 
@@ -331,4 +336,10 @@ variable "existing_account_id" {
   type        = string
   default     = ""
   description = "Existing CloudStack account UUID for import."
+}
+
+variable "custom_disk_offering_ids" {
+  type        = map(string)
+  default     = {}
+  description = "Map of customized disk offering name → CloudStack UUID (e.g. shared.custom, local.custom). Needed for unconstrained compute offerings that reference them."
 }

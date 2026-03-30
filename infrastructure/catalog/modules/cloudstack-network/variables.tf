@@ -1,8 +1,3 @@
-variable "zone_id" {
-  type        = string
-  description = "UUID of the CloudStack zone."
-}
-
 variable "zone_name" {
   type        = string
   description = "Name of the CloudStack zone."
@@ -44,9 +39,9 @@ variable "netmask" {
   description = "Netmask for the isolated network."
 }
 
-variable "network_offering_id" {
+variable "network_offering_name" {
   type        = string
-  description = "UUID of the network offering to use (e.g. isolated.core-redundant)."
+  description = "Name of the network offering (e.g. 'isolated.core-redundant'). Looked up via data source."
 }
 
 variable "existing_network_id" {

@@ -44,6 +44,7 @@ dependency "cloudstack_homecloud" {
 inputs = {
   cloudstack_api_url = include.account.locals.cloudstack_api_url
   op_vault           = include.account.locals.op_vault
+  op_account         = include.account.locals.op_account
 
   vm_name        = "homecloud-vpn-router"
   root_disk_size = 10

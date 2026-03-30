@@ -88,3 +88,6 @@ charts/*/charts/
 
 # drawio
 *.bkp
+
+# Terragrunt
+.terragrunt-cache/

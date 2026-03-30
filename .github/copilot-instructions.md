@@ -32,6 +32,9 @@ Follows the **Gruntwork catalog + live pattern** (BrainIAC model):
 - **`cloudstack-platform` is the only unit that uses the admin provider alias.** All other units use the homecloud domain user. Each catalog stack defines its own `providers.tf`.
 - **Media server** is an ArgoCD Helm chart (`charts/media-server/`), not a Terraform VM. Its CloudStack NFS volumes (`enable_shared_storage`) are managed inside `cloudstack-platform`.
 - All existing CloudStack resources are **imported** (not recreated) using `import {}` blocks.
+- **Pass resource names, not UUIDs** to CloudStack resource fields that accept names (`network_offering`, `service_offering`, `template`, `vpc_offering`). The API returns names; passing names avoids UUID↔name drift. No data sources needed for these fields.
+- **`cloudstack_disk_offering` has no data source** in provider v0.6 — pass disk offering IDs as explicit UUIDs.
+- **Lifecycle `ignore_changes` conventions** for imported resources: VPC `[display_text]`; VPC network tiers `[display_text, name]` (CloudStack prepends VPC name); isolated network `[display_text]`; instances `[user_data, service_offering, keypair, disk_offering]`; physical network `[network_speed]`; traffic type `[traffic_type, kvm_network_label, xen_network_label]`; pod `[allocation_state]`; storage pool `[url, hypervisor]`.
 
 ## Architecture
 

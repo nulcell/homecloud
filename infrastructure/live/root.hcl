@@ -34,7 +34,7 @@ remote_state {
 # stack's providers.tf so that admin vs. domain-user scope is explicit.
 generate "versions" {
   path      = "versions.tf"
-  if_exists = "overwrite_terragrunt"
+  if_exists = "skip"
 
   # Provider versions last verified: 2026-03-25
   # Sources: registry.terraform.io + GitHub releases (stable only, no pre-releases)

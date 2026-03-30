@@ -55,5 +55,5 @@ provider "tailscale" {
 }
 
 provider "onepassword" {
-  # Authenticates via OP_SERVICE_ACCOUNT_TOKEN or an active op CLI session.
+  account = var.op_account
 }

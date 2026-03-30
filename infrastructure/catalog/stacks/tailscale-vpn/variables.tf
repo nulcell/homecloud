@@ -3,11 +3,6 @@ variable "cloudstack_api_url" {
   description = "CloudStack API endpoint URL."
 }
 
-variable "zone_id" {
-  type        = string
-  description = "UUID of the CloudStack zone."
-}
-
 variable "zone_name" {
   type        = string
   default     = "zone-homecloud"
@@ -31,14 +26,14 @@ variable "network_ids" {
   description = "Ordered list of network UUIDs to attach to the VPN router VM (all 5 networks)."
 }
 
-variable "template_id" {
+variable "template_name" {
   type        = string
-  description = "UUID of the Ubuntu VM template for the VPN router."
+  description = "Name of the Ubuntu VM template for the VPN router (e.g. 'Ubuntu 24.04 - Noble')."
 }
 
-variable "compute_offering_id" {
+variable "compute_offering_name" {
   type        = string
-  description = "UUID of the CloudStack service offering for the VPN router VM."
+  description = "Name of the CloudStack service offering for the VPN router VM (e.g. 'gen.medium')."
 }
 
 variable "keypair_name" {
@@ -55,6 +50,11 @@ variable "op_vault" {
   type        = string
   default     = "homecloud"
   description = "1Password vault name or UUID."
+}
+
+variable "op_account" {
+  type        = string
+  description = "1Password account URL (e.g. my.1password.com) for CLI-based provider auth."
 }
 
 variable "op_tailscale_ref" {

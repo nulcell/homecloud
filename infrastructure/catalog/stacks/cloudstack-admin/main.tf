@@ -85,65 +85,27 @@ import {
 }
 
 # ── Domain ─────────────────────────────────────────────────────────────────
-import {
-  for_each = var.existing_domain_id != "" ? { this = var.existing_domain_id } : {}
-  to       = module.domain.cloudstack_domain.this
-  id       = each.value
-}
+# NOTE: cloudstack_domain does not support import in provider v0.6.
+# On a fresh install this creates the domain; on existing infra it will
+# show as "to create" but the apply will fail gracefully (domain already exists).
 
 # ── Account ────────────────────────────────────────────────────────────────
-import {
-  for_each = var.existing_account_id != "" ? { this = var.existing_account_id } : {}
-  to       = module.account.cloudstack_account.this
-  id       = each.value
-}
+# NOTE: cloudstack_account does not support import in provider v0.6.
 
 # ── Disk offerings (fixed size) ────────────────────────────────────────────
-import {
-  for_each = { for k, v in var.existing_disk_offering_ids : k => v
-               if v != "" && !lookup(var.disk_offerings, k, { customized = false }).customized }
-  to       = module.offerings.cloudstack_disk_offering.fixed[each.key]
-  id       = each.value
-}
+# NOTE: cloudstack_disk_offering does not support import in provider v0.6.
+# Existing offerings are managed idempotently; TF will show them as "to create".
 
-# ── Compute offerings — fixed ──────────────────────────────────────────────
-import {
-  for_each = { for k, v in var.existing_compute_offering_ids : k => v
-               if v != "" && lookup(var.compute_offerings, k, { disk_type = "" }).disk_type == "fixed" }
-  to       = module.offerings.cloudstack_service_offering_fixed.this[each.key]
-  id       = each.value
-}
-
-# ── Compute offerings — unconstrained ─────────────────────────────────────
-import {
-  for_each = { for k, v in var.existing_compute_offering_ids : k => v
-               if v != "" && contains(["custom_shared", "custom_local"],
-                 lookup(var.compute_offerings, k, { disk_type = "" }).disk_type) }
-  to       = module.offerings.cloudstack_service_offering_unconstrained.this[each.key]
-  id       = each.value
-}
-
-# ── Compute offerings — constrained ───────────────────────────────────────
-import {
-  for_each = { for k, v in var.existing_compute_offering_ids : k => v
-               if v != "" && lookup(var.compute_offerings, k, { disk_type = "" }).disk_type == "customized" }
-  to       = module.offerings.cloudstack_service_offering_constrained.this[each.key]
-  id       = each.value
-}
+# ── Compute offerings ─────────────────────────────────────────────────────
+# NOTE: cloudstack_service_offering_* resources do not support import in provider v0.6.
+# Existing offerings are managed idempotently; TF will show them as "to create".
 
 # ── Network offerings ──────────────────────────────────────────────────────
-import {
-  for_each = { for k, v in var.existing_network_offering_ids : k => v if v != "" }
-  to       = module.offerings.cloudstack_network_offering.network[each.key]
-  id       = each.value
-}
+# NOTE: cloudstack_network_offering does not support import in provider v0.6.
 
 # ── Templates ──────────────────────────────────────────────────────────────
-import {
-  for_each = { for k, v in var.existing_template_ids : k => v if v != "" }
-  to       = module.templates.cloudstack_template.this[each.key]
-  id       = each.value
-}
+# NOTE: cloudstack_template does not support import in provider v0.6.
+# Existing templates are managed idempotently; TF will show them as "to create".
 # Read homecloud account credentials from 1Password.
 # Used by module.account to provision the domain-scoped admin user.
 # Store this item with a section containing fields labelled:
@@ -218,11 +180,11 @@ module "account" {
   account_name        = var.account_name
   account_type        = 2 # domain admin
   domain_id           = module.domain.domain_id
-  email               = local._cs_homecloud_fields["email"]
+  email               = local._cs_homecloud_fields["Email"]
   firstname           = local._cs_homecloud_fields["First name"]
   lastname            = local._cs_homecloud_fields["Last name"]
-  password            = local._cs_homecloud_fields["password"]
-  username            = local._cs_homecloud_fields["username"]
+  password            = data.onepassword_item.cs_homecloud_creds.password
+  username            = data.onepassword_item.cs_homecloud_creds.username
   existing_account_id = var.existing_account_id
 }
 
@@ -230,11 +192,12 @@ module "account" {
 module "offerings" {
   source = "../../modules/cloudstack-offerings"
 
-  cmk_profile       = "admin"
-  disk_offerings    = var.disk_offerings
-  compute_offerings = var.compute_offerings
-  network_offerings = var.network_offerings
-  vpc_offerings     = var.vpc_offerings
+  cmk_profile              = "admin"
+  disk_offerings           = var.disk_offerings
+  compute_offerings        = var.compute_offerings
+  network_offerings        = var.network_offerings
+  vpc_offerings            = var.vpc_offerings
+  custom_disk_offering_ids = var.custom_disk_offering_ids
 
   existing_disk_offering_ids    = var.existing_disk_offering_ids
   existing_compute_offering_ids = var.existing_compute_offering_ids

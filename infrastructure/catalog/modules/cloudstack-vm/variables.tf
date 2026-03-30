@@ -9,11 +9,6 @@ variable "display_name" {
   description = "Display name for the VM. Defaults to name if empty."
 }
 
-variable "zone_id" {
-  type        = string
-  description = "UUID of the CloudStack zone."
-}
-
 variable "zone_name" {
   type        = string
   description = "Name of the CloudStack zone."
@@ -29,14 +24,14 @@ variable "domain_id" {
   description = "UUID of the CloudStack domain."
 }
 
-variable "template_id" {
+variable "template_name" {
   type        = string
-  description = "UUID of the VM template (e.g. Ubuntu 24.04)."
+  description = "Name of the VM template (e.g. 'Ubuntu 24.04 - Noble'). Looked up via data source."
 }
 
-variable "offering_id" {
+variable "offering_name" {
   type        = string
-  description = "UUID or name of the service offering (e.g. gen.xlarge)."
+  description = "Name of the service offering (e.g. 'gen.xlarge'). Looked up via data source."
 }
 
 variable "root_disk_size" {

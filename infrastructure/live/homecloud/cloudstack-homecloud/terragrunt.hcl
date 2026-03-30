@@ -34,16 +34,8 @@ dependency "cloudstack_admin" {
   config_path = "../cloudstack-admin"
 
   mock_outputs = {
-    zone_id                    = "mock-zone-id"
-    domain_id                  = "mock-domain-id"
-    vpc_offering_id            = "mock-vpc-offering-id"
-    public_lb_offering_id      = "mock-net-offering-id"
-    internal_lb_offering_id    = "mock-net-offering-id"
-    isolated_core_offering_id  = "mock-net-offering-id"
-    ubuntu_template_id         = "mock-template-id"
-    talos_template_id          = "mock-template-id"
-    compute_offering_ids       = { "gen.tiny" = "mock-id", "mem.medium" = "mock-id", "gen.1xlarge" = "mock-id" }
-    disk_offering_ids          = { "shared.custom" = "mock-id" }
+    domain_id         = "mock-domain-id"
+    disk_offering_ids = { "shared.custom" = "mock-id" }
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
@@ -51,39 +43,52 @@ dependency "cloudstack_admin" {
 inputs = {
   cloudstack_api_url = include.account.locals.cloudstack_api_url
   op_vault           = include.account.locals.op_vault
-  zone_id            = dependency.cloudstack_admin.outputs.zone_id
+  op_account         = include.account.locals.op_account
+  zone_name          = include.account.locals.zone_name
   domain_id          = dependency.cloudstack_admin.outputs.domain_id
+  domain_name        = "homecloud"
   account_name       = "homecloud"
 
-  # Pass-through: offering/template IDs from admin that downstream units (tailscale-vpn,
-  # ops-cluster, workload-cluster) need. The cloudstack-homecloud stack outputs these as-is.
-  ubuntu_template_id   = dependency.cloudstack_admin.outputs.ubuntu_template_id
-  talos_template_id    = dependency.cloudstack_admin.outputs.talos_template_id
-  compute_offering_ids = dependency.cloudstack_admin.outputs.compute_offering_ids
-  disk_offering_ids    = dependency.cloudstack_admin.outputs.disk_offering_ids
+  disk_offering_ids = dependency.cloudstack_admin.outputs.disk_offering_ids
+
+  # ── Existing resource import IDs ─────────────────────────────────────────
+  existing_vpc_id          = "7c508ae5-0d94-4956-a648-c714796d966a"
+  existing_network_ids = {
+    "pub-net-1"  = "a0e592ee-0367-4217-9b07-ab3069ed312a"
+    "priv-net-1" = "03f0e6d4-2aa1-4fc5-87fb-5978b6a9496e"
+    "priv-net-2" = "b7e04452-49ed-4756-841e-46fac7ebe942"
+    "priv-net-3" = "fc919529-8f7d-46a3-ae5a-a06c0f562f49"
+  }
+  existing_isolated_net_id = "96796c3f-84f8-46aa-99fc-0904e4054509"
+  existing_keypair_id      = "06f891df-e322-4b5c-af4f-003d965e6e8f"
+  existing_vps_id          = "47827b6e-1e96-4c45-be96-d1457ed6cd0b"
+  existing_userdata_ids    = {}
+
+  # Default ACL for VPC networks (default_allow list)
+  default_acl_id = "1299e2f2-e8a9-11f0-a9d5-b0416f175a55"
 
   # ── VPC ───────────────────────────────────────────────────────────────────
   vpc_name          = "homecloud-vpc"
   vpc_cidr          = include.account.locals.vpc_cidr
-  vpc_offering_id   = dependency.cloudstack_admin.outputs.vpc_offering_id
+  vpc_offering_name = "acs.vpc.natted.redundant-core"
 
   # ── VPC Network Tiers ────────────────────────────────────────────────────
   # pub-net-1 uses vpc.core-public-lb offering (CloudStack LB rule target)
   # priv-net-1/2/3 use vpc.core-internal-lb offering
   vpc_networks = {
-    "pub-net-1"  = { cidr = "10.0.0.0/26",   gateway = "10.0.0.1",   offering_id = dependency.cloudstack_admin.outputs.public_lb_offering_id }
-    "priv-net-1" = { cidr = "10.0.0.64/26",  gateway = "10.0.0.65",  offering_id = dependency.cloudstack_admin.outputs.internal_lb_offering_id }
-    "priv-net-2" = { cidr = "10.0.0.128/26", gateway = "10.0.0.129", offering_id = dependency.cloudstack_admin.outputs.internal_lb_offering_id }
-    "priv-net-3" = { cidr = "10.0.0.192/26", gateway = "10.0.0.193", offering_id = dependency.cloudstack_admin.outputs.internal_lb_offering_id }
+    "pub-net-1"  = { cidr = "10.0.0.0/26",   gateway = "10.0.0.1",   offering_name = "vpc.core-public-lb" }
+    "priv-net-1" = { cidr = "10.0.0.64/26",  gateway = "10.0.0.65",  offering_name = "vpc.core-internal-lb" }
+    "priv-net-2" = { cidr = "10.0.0.128/26", gateway = "10.0.0.129", offering_name = "vpc.core-internal-lb" }
+    "priv-net-3" = { cidr = "10.0.0.192/26", gateway = "10.0.0.193", offering_name = "vpc.core-internal-lb" }
   }
 
   # ── Isolated Network ────────────────────────────────────────────────────
   # Used by the ops Talos cluster. Separate from the VPC to work around the
   # CloudStack limitation of only one public-LB subnet per VPC.
-  isolated_net_name       = "iso-net-shared"
-  isolated_net_cidr       = include.account.locals.isolated_net_cidr
-  isolated_net_gateway    = "10.1.1.1"
-  isolated_net_offering_id = dependency.cloudstack_admin.outputs.isolated_core_offering_id
+  isolated_net_name         = "iso-net-shared"
+  isolated_net_cidr         = include.account.locals.isolated_net_cidr
+  isolated_net_gateway      = "10.1.1.1"
+  isolated_net_offering_name = "isolated.core-redundant"
 
   # ── SSH Keypair (optional — omit keypair_name to skip) ──────────────────
   keypair_name   = "nulcell"
@@ -130,7 +135,6 @@ inputs = {
     root_disk_size   = 30
     network_name     = "priv-net-1"
     userdata_name    = "cloud-default"
-    template_name    = "Ubuntu 24.04 - Noble"
   }
 
   # ── 1Password: write generated API key here ──────────────────────────────

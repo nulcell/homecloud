@@ -40,6 +40,5 @@ provider "cloudstack" {
 }
 
 provider "onepassword" {
-  # Authenticates via OP_SERVICE_ACCOUNT_TOKEN environment variable or an
-  # active `op` CLI session.  No static credentials are stored here.
+  account = var.op_account
 }

@@ -19,12 +19,11 @@ module "router_vm" {
   source = "../../modules/cloudstack-vm"
 
   name           = var.vm_name
-  zone_id        = var.zone_id
   zone_name      = var.zone_name
   account_name   = var.account_name
   domain_id      = var.domain_id
-  template_id    = var.template_id
-  offering_id    = var.compute_offering_id
+  template_name  = var.template_name
+  offering_name  = var.compute_offering_name
   root_disk_size = var.root_disk_size_gb
   network_ids    = var.network_ids
   keypair_name   = var.keypair_name

@@ -174,3 +174,18 @@ maas/                MaaS single-node setup script
 - All existing CloudStack resources are imported via `import {}` blocks (Terraform 1.5+), not recreated. Run `terragrunt plan` to verify zero unintended replacements.
 - Generated credentials (talosconfig, kubeconfig) are written back to 1Password via `catalog/modules/onepassword-item`.
 - Provider versions pinned in `live/root.hcl`; tool versions in `.mise.toml`. Run `mise install` to set up.
+
+### CloudStack Provider Conventions
+
+- **Pass resource names, not UUIDs**, to all CloudStack resource fields that accept names (`network_offering`, `service_offering`, `template`, `vpc_offering`). The API returns names when reading back; passing names avoids UUID↔name drift between plan runs.
+- **No data sources needed** for `cloudstack_network_offering`, `cloudstack_service_offering`, or `cloudstack_template` — pass names directly to the resource fields.
+- **`cloudstack_disk_offering` has no data source** in provider v0.6. Disk offering IDs must be passed as explicit UUIDs.
+- **Lifecycle `ignore_changes` conventions** for imported resources:
+  - `cloudstack_vpc`: `[display_text]`
+  - `cloudstack_network` (VPC tier): `[display_text, name]` — CloudStack prepends VPC name when `vpc.tier.name.prepend = true`
+  - `cloudstack_network` (isolated): `[display_text]`
+  - `cloudstack_instance`: `[user_data, service_offering, keypair, disk_offering]` — API may return scoped names; keypair changes require stop/reimage
+  - `cloudstack_physical_network`: `[network_speed]`
+  - `cloudstack_traffic_type`: `[traffic_type, kvm_network_label, xen_network_label]`
+  - `cloudstack_pod`: `[allocation_state]`
+  - `cloudstack_storage_pool`: `[url, hypervisor]`

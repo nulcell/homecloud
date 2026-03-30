@@ -1,6 +1,10 @@
 # ---------------------------------------------------------------------------
 # VM Instance
 #
+# service_offering and template both accept names directly — we pass
+# var.offering_name / var.template_name to avoid UUID↔name drift (the
+# CloudStack API returns names, not IDs, when reading resources back).
+#
 # Import blocks must be placed in the root module (stack); see stack main.tf.
 # ---------------------------------------------------------------------------
 resource "cloudstack_instance" "this" {
@@ -8,8 +12,8 @@ resource "cloudstack_instance" "this" {
 
   name             = var.name
   display_name     = var.display_name != "" ? var.display_name : var.name
-  service_offering = var.offering_id
-  template         = var.template_id
+  service_offering = var.offering_name
+  template         = var.template_name
   zone             = var.zone_name
   network_id       = var.network_ids[0]
   root_disk_size   = var.root_disk_size
@@ -30,7 +34,13 @@ resource "cloudstack_instance" "this" {
 
   lifecycle {
     # Ignore changes to user_data after initial creation.
-    ignore_changes = [user_data]
+    # service_offering — CloudStack may report a different alias for the same
+    # offering (e.g. "acs.comp.gen.xlarge" vs "gen.xlarge") on imported VMs.
+    # keypair — adding a keypair to a running VM requires stop/reimage; ignore
+    # for imported VMs (keypair is set at creation time for new VMs).
+    # disk_offering — CloudStack reports back the offering name in a different
+    # format than the API accepts; ignore to prevent spurious diffs on import.
+    ignore_changes = [user_data, service_offering, keypair, disk_offering]
   }
 }
 

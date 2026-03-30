@@ -10,6 +10,11 @@ variable "op_vault" {
   description = "1Password vault name where homecloud secrets live."
 }
 
+variable "op_account" {
+  type        = string
+  description = "1Password account URL (e.g. my.1password.com) for CLI-based provider auth."
+}
+
 variable "op_cs_homecloud_item" {
   type        = string
   default     = "CloudStack - homecloud-admin"
@@ -17,11 +22,6 @@ variable "op_cs_homecloud_item" {
 }
 
 # ── Zone / Domain / Account ───────────────────────────────────────────────
-
-variable "zone_id" {
-  type        = string
-  description = "UUID of the CloudStack zone (from cloudstack-admin outputs)."
-}
 
 variable "zone_name" {
   type        = string
@@ -57,16 +57,16 @@ variable "vpc_cidr" {
   description = "CIDR block for the VPC (e.g. 10.0.0.0/24)."
 }
 
-variable "vpc_offering_id" {
+variable "vpc_offering_name" {
   type        = string
-  description = "UUID of the VPC offering (from cloudstack-admin outputs)."
+  description = "Name of the VPC offering (e.g. 'acs.vpc.natted.redundant-core')."
 }
 
 variable "vpc_networks" {
   type = map(object({
-    cidr        = string
-    gateway     = string
-    offering_id = string
+    cidr          = string
+    gateway       = string
+    offering_name = string
   }))
   description = "VPC network tier name → config map."
 }
@@ -106,9 +106,9 @@ variable "isolated_net_gateway" {
   description = "Gateway IP for the isolated network."
 }
 
-variable "isolated_net_offering_id" {
+variable "isolated_net_offering_name" {
   type        = string
-  description = "UUID of the network offering for the isolated network (from cloudstack-admin outputs)."
+  description = "Name of the network offering for the isolated network (e.g. 'isolated.core-redundant')."
 }
 
 variable "existing_isolated_net_id" {
@@ -117,32 +117,18 @@ variable "existing_isolated_net_id" {
   description = "Existing isolated network UUID for import."
 }
 
-# ── Offering / Template IDs (from cloudstack-admin outputs) ──────────────
+# ── Offering / Template names ─────────────────────────────────────────────
 
-variable "public_lb_offering_id" {
+variable "ubuntu_template_name" {
   type        = string
-  description = "UUID of the vpc.core-public-lb network offering."
+  default     = "Ubuntu 24.04 - Noble"
+  description = "Name of the Ubuntu 24.04 template. Resolved by the VM module via data source."
 }
 
-variable "internal_lb_offering_id" {
-  type        = string
-  description = "UUID of the vpc.core-internal-lb network offering."
-}
-
-variable "isolated_core_offering_id" {
-  type        = string
-  description = "UUID of the isolated.core-redundant network offering."
-}
-
-variable "ubuntu_template_id" {
-  type        = string
-  description = "UUID of the Ubuntu 24.04 template (from cloudstack-admin outputs)."
-}
-
-variable "compute_offering_ids" {
+variable "disk_offering_ids" {
   type        = map(string)
   default     = {}
-  description = "Map of compute offering name → UUID (from cloudstack-admin outputs). Used to resolve offering names to UUIDs. If empty, offering names are passed directly."
+  description = "Map of disk offering key → UUID (from cloudstack-admin outputs). No data source exists for disk offerings; IDs must be passed explicitly."
 }
 
 # ── SSH Keypair ───────────────────────────────────────────────────────────
@@ -218,7 +204,6 @@ variable "vps" {
     root_disk_size   = number
     network_name     = string
     userdata_name    = string
-    template_name    = optional(string, "Ubuntu 24.04 - Noble")
   })
   default = {
     name             = "homecloud-vps"

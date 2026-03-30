@@ -1,8 +1,3 @@
-variable "zone_id" {
-  type        = string
-  description = "UUID of the CloudStack zone."
-}
-
 variable "zone_name" {
   type        = string
   description = "Name of the CloudStack zone."
@@ -33,18 +28,18 @@ variable "vpc_cidr" {
   description = "CIDR block for the VPC (e.g. 10.0.0.0/24)."
 }
 
-variable "vpc_offering_id" {
+variable "vpc_offering_name" {
   type        = string
-  description = "UUID of the VPC offering to use."
+  description = "Name of the VPC offering (e.g. 'acs.vpc.natted.redundant-core'). CloudStack accepts names directly for vpc_offering."
 }
 
 variable "vpc_networks" {
   type = map(object({
-    cidr        = string
-    gateway     = string
-    offering_id = string
+    cidr          = string
+    gateway       = string
+    offering_name = string
   }))
-  description = "Map of network tier name → config. Keys become CloudStack network names. CloudStack prepends the VPC name when vpc.tier.name.prepend = true (e.g. homecloud-vpc_pub-net-1)."
+  description = "Map of network tier name → config. offering_name is resolved via data source. Keys become CloudStack network names (CloudStack prepends the VPC name when vpc.tier.name.prepend = true)."
 }
 
 variable "default_acl_id" {

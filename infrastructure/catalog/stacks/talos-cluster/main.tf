@@ -31,12 +31,11 @@ module "control_plane_vms" {
   source = "../../modules/cloudstack-vm"
 
   name             = "${var.cluster_name}-cp-${count.index}"
-  zone_id          = var.zone_id
   zone_name        = var.zone_name
   account_name     = var.account_name
   domain_id        = var.domain_id
-  template_id      = var.template_id
-  offering_id      = var.compute_offering_id
+  template_name    = var.template_name
+  offering_name    = var.compute_offering_name
   root_disk_size   = var.control_plane_disk_size
   network_ids      = [var.network_id]
   keypair_name     = var.keypair_name
@@ -105,12 +104,11 @@ module "worker_vms" {
   source = "../../modules/cloudstack-vm"
 
   name             = "${var.cluster_name}-worker-${count.index}"
-  zone_id          = var.zone_id
   zone_name        = var.zone_name
   account_name     = var.account_name
   domain_id        = var.domain_id
-  template_id      = var.template_id
-  offering_id      = var.compute_offering_id
+  template_name    = var.template_name
+  offering_name    = var.compute_offering_name
   root_disk_size   = var.worker_disk_size
   network_ids      = [var.network_id]
   keypair_name     = var.keypair_name

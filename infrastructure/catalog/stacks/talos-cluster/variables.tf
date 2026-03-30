@@ -3,11 +3,6 @@ variable "cloudstack_api_url" {
   description = "CloudStack API endpoint URL."
 }
 
-variable "zone_id" {
-  type        = string
-  description = "UUID of the CloudStack zone."
-}
-
 variable "zone_name" {
   type        = string
   default     = "zone-homecloud"
@@ -37,9 +32,9 @@ variable "vpc_id" {
   description = "VPC UUID for public IP allocation. Leave empty for isolated-network clusters."
 }
 
-variable "template_id" {
+variable "template_name" {
   type        = string
-  description = "UUID of the Talos Linux VM template."
+  description = "Name of the Talos Linux VM template (e.g. 'talos-v1.12.6')."
 }
 
 variable "keypair_name" {
@@ -47,9 +42,9 @@ variable "keypair_name" {
   description = "Name of the SSH keypair to inject into VMs."
 }
 
-variable "compute_offering_id" {
+variable "compute_offering_name" {
   type        = string
-  description = "UUID of the CloudStack service offering for control plane and worker VMs."
+  description = "Name of the CloudStack service offering for control plane and worker VMs (e.g. 'gen.large')."
 }
 
 variable "cluster_name" {
@@ -151,6 +146,11 @@ variable "op_vault" {
   type        = string
   default     = "homecloud"
   description = "1Password vault name or UUID where cluster credentials are stored."
+}
+
+variable "op_account" {
+  type        = string
+  description = "1Password account URL (e.g. my.1password.com) for CLI-based provider auth."
 }
 
 variable "cilium_version" {
