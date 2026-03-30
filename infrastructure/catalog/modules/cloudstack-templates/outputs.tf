@@ -1,5 +1,5 @@
 output "template_ids" {
-  description = "Map of template key → UUID."
+  description = "Map of template key → UUID for templates registered via cloudstack_template resource."
   value       = { for k, v in cloudstack_template.this : k => v.id }
 }
 

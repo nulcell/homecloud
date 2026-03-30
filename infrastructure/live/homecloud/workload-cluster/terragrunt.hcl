@@ -32,15 +32,9 @@ dependency "cloudstack_homecloud" {
   config_path = "../cloudstack-homecloud"
 
   mock_outputs = {
-    zone_id              = "mock-zone-id"
-    vpc_id               = "mock-vpc-id"
-    pub_net_1_id         = "mock-net-id"
-    talos_template_id    = "mock-template-id"
-    keypair_name         = "nulcell"
-    compute_offering_ids = {
-      "mem.medium"  = "mock-offering-id"
-      "gen.1xlarge" = "mock-offering-id"
-    }
+    vpc_id       = "mock-vpc-id"
+    pub_net_1_id = "mock-net-id"
+    keypair_name = "nulcell"
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
@@ -71,36 +65,30 @@ inputs = {
   cluster_name       = include.account.locals.workload_cluster_name
 
   # Network: pub-net-1 (VPC public-lb subnet) for CloudStack LB rule support
-  zone_id    = dependency.cloudstack_homecloud.outputs.zone_id
   network_id = dependency.cloudstack_homecloud.outputs.pub_net_1_id
   vpc_id     = dependency.cloudstack_homecloud.outputs.vpc_id
 
-  talos_template_id = dependency.cloudstack_homecloud.outputs.talos_template_id
-  keypair_name      = dependency.cloudstack_homecloud.outputs.keypair_name
+  template_name         = "Talos v1.12.6 - CloudStack"
+  compute_offering_name = "mem.medium"
+  keypair_name          = dependency.cloudstack_homecloud.outputs.keypair_name
 
-  # Control plane: 1 node × mem.medium (2vCPU, 4GiB, 30GB)
-  control_plane_count       = 1
-  control_plane_offering_id = dependency.cloudstack_homecloud.outputs.compute_offering_ids["mem.medium"]
-  control_plane_disk_size   = 30
-
-  # Workers: 3 nodes × gen.1xlarge (12vCPU, 12GiB, 60GB)
-  worker_count       = 3
-  worker_offering_id = dependency.cloudstack_homecloud.outputs.compute_offering_ids["gen.1xlarge"]
-  worker_disk_size   = 50
+  # Control plane: 1 node, workers: 3 nodes (gen.1xlarge)
+  controlplane_count      = 1
+  control_plane_disk_size = 30
+  worker_count            = 3
+  worker_disk_size        = 50
 
   kubernetes_version = "1.32.0"
   talos_version      = "v1.12.6"
 
   # Workload cluster add-ons
-  enable_argocd       = false  # ArgoCD runs on ops cluster only
-  enable_cert_manager = true
-  enable_external_dns = true
-  enable_csi          = true
+  enable_argocd         = false  # ArgoCD runs on ops cluster only
+  enable_cloudstack_ccm = true
+  enable_cloudstack_csi = true
+  enable_cert_manager   = true
+  enable_external_dns   = true
 
-  # external-dns: Cloudflare integration for DNS record management
   cloudflare_zone = include.account.locals.cloudflare_zone
 
-  # ArgoCD registration — ops cluster kubeconfig used to register this cluster
-  argocd_server_url  = dependency.ops_cluster.outputs.argocd_server_url
-  ops_kubeconfig     = dependency.ops_cluster.outputs.kubeconfig
+  argocd_server_url = dependency.ops_cluster.outputs.argocd_server_url
 }

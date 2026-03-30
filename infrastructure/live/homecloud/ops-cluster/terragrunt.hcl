@@ -34,14 +34,9 @@ dependency "cloudstack_homecloud" {
   config_path = "../cloudstack-homecloud"
 
   mock_outputs = {
-    zone_id              = "mock-zone-id"
-    vpc_id               = "mock-vpc-id"
-    iso_net_id           = "mock-net-id"
-    talos_template_id    = "mock-template-id"
-    keypair_name         = "nulcell"
-    compute_offering_ids = {
-      "mem.medium" = "mock-offering-id"
-    }
+    zone_id      = "mock-zone-id"
+    iso_net_id   = "mock-net-id"
+    keypair_name = "nulcell"
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
@@ -62,29 +57,26 @@ inputs = {
   cluster_name       = include.account.locals.ops_cluster_name
 
   # Network: iso-net-shared isolated network (its own virtual router + public IP)
-  zone_id    = dependency.cloudstack_homecloud.outputs.zone_id
   network_id = dependency.cloudstack_homecloud.outputs.iso_net_id
   vpc_id     = ""   # no VPC — isolated network
 
-  talos_template_id = dependency.cloudstack_homecloud.outputs.talos_template_id
-  keypair_name      = dependency.cloudstack_homecloud.outputs.keypair_name
+  template_name         = "Talos v1.12.6 - CloudStack"
+  compute_offering_name = "mem.medium"
+  keypair_name          = dependency.cloudstack_homecloud.outputs.keypair_name
 
-  # Control plane: 1 node × mem.medium (2vCPU, 4GiB, 30GB)
-  control_plane_count       = 1
-  control_plane_offering_id = dependency.cloudstack_homecloud.outputs.compute_offering_ids["mem.medium"]
-  control_plane_disk_size   = 30
-
-  # Workers: 2 nodes × mem.medium
-  worker_count       = 2
-  worker_offering_id = dependency.cloudstack_homecloud.outputs.compute_offering_ids["mem.medium"]
-  worker_disk_size   = 30
+  # Control plane: 1 node, workers: 2 nodes
+  controlplane_count      = 1
+  control_plane_disk_size = 30
+  worker_count            = 2
+  worker_disk_size        = 30
 
   kubernetes_version = "1.32.0"
   talos_version      = "v1.12.6"
 
   # ArgoCD on ops cluster — manages both clusters via GitOps
-  enable_argocd       = true
-  enable_cert_manager = false
-  enable_external_dns = false
-  enable_csi          = true
+  enable_argocd         = true
+  enable_cloudstack_ccm = true
+  enable_cloudstack_csi = true
+  enable_cert_manager   = false
+  enable_external_dns   = false
 }
