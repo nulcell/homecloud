@@ -5,7 +5,12 @@ output "zone_id" {
 
 output "domain_id" {
   description = "UUID of the CloudStack domain."
-  value       = try(module.domain[0].domain_id, "")
+  value       = local.resolved_domain_id
+}
+
+output "account_id" {
+  description = "UUID of the homecloud account."
+  value       = local.resolved_account_id
 }
 
 output "disk_offering_ids" {

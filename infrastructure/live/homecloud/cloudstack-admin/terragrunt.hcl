@@ -20,6 +20,9 @@ inputs = {
   op_account         = include.account.locals.op_account
   zone_name          = include.account.locals.zone_name
 
+  account_id = "5059e8e4-2b22-4cff-9f20-8e7714f8aae2"
+  domain_id  = "0988c278-9ced-4232-9d3f-ab6399509ac3"
+
   # ── Global Settings (map: config_name → value) ───────────────────────────
   global_settings = {
     # Access
@@ -227,87 +230,87 @@ inputs = {
     "custom.local"  = { display_text = "Custom Compute with Local Custom Disk", is_customized = true, cpu_speed = 2500, min_cpu = 1, max_cpu = 16, min_memory = 1024, max_memory = 32768, network_rate = 1024, offer_ha = false, disk_type = "custom_local" }
   }
 
-  network_offerings = {
-    "shared.core-redundant" = {
-      display_text     = "Shared Network with Redundant Virtual Router"
-      guest_ip_type    = "Shared"
-      for_vpc          = false
-      is_persistent    = false
-      specify_vlan     = false
-      redundant_router = true
-      lb_type          = "publicLb"
-      lb_provider      = "VirtualRouter"
-      services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
-    }
-    "shared.core-redundant-vlan" = {
-      display_text     = "Shared Network with Redundant Virtual Router and VLAN specified"
-      guest_ip_type    = "Shared"
-      for_vpc          = false
-      is_persistent    = false
-      specify_vlan     = true
-      redundant_router = true
-      lb_type          = "publicLb"
-      lb_provider      = "VirtualRouter"
-      services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
-    }
-    "isolated.core" = {
-      display_text     = "Isolated Network with Virtual Router"
-      guest_ip_type    = "Isolated"
-      for_vpc          = false
-      is_persistent    = true
-      specify_vlan     = false
-      redundant_router = false
-      lb_type          = "publicLb"
-      lb_provider      = "VirtualRouter"
-      services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
-    }
-    "isolated.core-redundant" = {
-      display_text     = "Isolated Network with Redundant Virtual Router"
-      guest_ip_type    = "Isolated"
-      for_vpc          = false
-      is_persistent    = true
-      specify_vlan     = false
-      redundant_router = true
-      lb_type          = "publicLb"
-      lb_provider      = "VirtualRouter"
-      services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
-    }
-    "vpc.core-internal-lb" = {
-      display_text     = "VPC Network with VpcVirtualRouter and Internal LB VM"
-      guest_ip_type    = "Isolated"
-      for_vpc          = true
-      is_persistent    = true
-      specify_vlan     = false
-      redundant_router = false
-      lb_type          = "internalLb"
-      lb_provider      = "InternalLbVm"
-      services         = ["Vpn", "Dhcp", "Dns", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
-    }
-    "vpc.core-public-lb" = {
-      display_text     = "VPC Network with VpcVirtualRouter and Public LB"
-      guest_ip_type    = "Isolated"
-      for_vpc          = true
-      is_persistent    = true
-      specify_vlan     = false
-      redundant_router = false
-      lb_type          = "publicLb"
-      lb_provider      = "VpcVirtualRouter"
-      services         = ["Vpn", "Dhcp", "Dns", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
-    }
-  }
-
-  vpc_offerings = {
-    "natted.core" = {
-      display_text     = "NATTED Single Virtual Router VPC with VpcVirtualRouter, ConfigDrive, InternalLbVm"
-      redundant_router = false
-      services         = ["Vpn", "Dhcp", "Dns", "Lb", "Gateway", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
-    }
-    "natted.redundant-core" = {
-      display_text     = "NATTED Redundant Virtual Router VPC with VpcVirtualRouter, ConfigDrive, InternalLbVm"
-      redundant_router = true
-      services         = ["Vpn", "Dhcp", "Dns", "Lb", "Gateway", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
-    }
-  }
+  # network_offerings = {
+  #   "shared.core-redundant" = {
+  #     display_text     = "Shared Network with Redundant Virtual Router"
+  #     guest_ip_type    = "Shared"
+  #     for_vpc          = false
+  #     is_persistent    = false
+  #     specify_vlan     = false
+  #     redundant_router = true
+  #     lb_type          = "publicLb"
+  #     lb_provider      = "VirtualRouter"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
+  #   }
+  #   "shared.core-redundant-vlan" = {
+  #     display_text     = "Shared Network with Redundant Virtual Router and VLAN specified"
+  #     guest_ip_type    = "Shared"
+  #     for_vpc          = false
+  #     is_persistent    = false
+  #     specify_vlan     = true
+  #     redundant_router = true
+  #     lb_type          = "publicLb"
+  #     lb_provider      = "VirtualRouter"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
+  #   }
+  #   "isolated.core" = {
+  #     display_text     = "Isolated Network with Virtual Router"
+  #     guest_ip_type    = "Isolated"
+  #     for_vpc          = false
+  #     is_persistent    = true
+  #     specify_vlan     = false
+  #     redundant_router = false
+  #     lb_type          = "publicLb"
+  #     lb_provider      = "VirtualRouter"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
+  #   }
+  #   "isolated.core-redundant" = {
+  #     display_text     = "Isolated Network with Redundant Virtual Router"
+  #     guest_ip_type    = "Isolated"
+  #     for_vpc          = false
+  #     is_persistent    = true
+  #     specify_vlan     = false
+  #     redundant_router = true
+  #     lb_type          = "publicLb"
+  #     lb_provider      = "VirtualRouter"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
+  #   }
+  #   "vpc.core-internal-lb" = {
+  #     display_text     = "VPC Network with VpcVirtualRouter and Internal LB VM"
+  #     guest_ip_type    = "Isolated"
+  #     for_vpc          = true
+  #     is_persistent    = true
+  #     specify_vlan     = false
+  #     redundant_router = false
+  #     lb_type          = "internalLb"
+  #     lb_provider      = "InternalLbVm"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
+  #   }
+  #   "vpc.core-public-lb" = {
+  #     display_text     = "VPC Network with VpcVirtualRouter and Public LB"
+  #     guest_ip_type    = "Isolated"
+  #     for_vpc          = true
+  #     is_persistent    = true
+  #     specify_vlan     = false
+  #     redundant_router = false
+  #     lb_type          = "publicLb"
+  #     lb_provider      = "VpcVirtualRouter"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
+  #   }
+  # }
+  # 
+  # vpc_offerings = {
+  #   "natted.core" = {
+  #     display_text     = "NATTED Single Virtual Router VPC with VpcVirtualRouter, ConfigDrive, InternalLbVm"
+  #     redundant_router = false
+  #     services         = ["Vpn", "Dhcp", "Dns", "Lb", "Gateway", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
+  #   }
+  #   "natted.redundant-core" = {
+  #     display_text     = "NATTED Redundant Virtual Router VPC with VpcVirtualRouter, ConfigDrive, InternalLbVm"
+  #     redundant_router = true
+  #     services         = ["Vpn", "Dhcp", "Dns", "Lb", "Gateway", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
+  #   }
+  # }
 
   # Templates use lifecycle { prevent_destroy = true } — never auto-deleted.
   templates = {

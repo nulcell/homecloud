@@ -45,7 +45,17 @@ variable "account_name" {
   description = "CloudStack account name (e.g. homecloud)."
 }
 
-# ── VPC ───────────────────────────────────────────────────────────────────
+variable "vpc_id" {
+  type        = string
+  default     = ""
+  description = "Pre-existing VPC UUID. When non-empty, VPC creation is skipped and this ID is used."
+}
+
+variable "network_ids" {
+  type        = map(string)
+  default     = {}
+  description = "Pre-existing VPC network tier IDs (name → UUID). Required when vpc_id is provided."
+}
 
 variable "vpc_name" {
   type        = string
@@ -77,7 +87,11 @@ variable "default_acl_id" {
   description = "UUID of the default_allow network ACL. Look up after VPC creation with cmk list networkacllists name=default_allow vpcid=<VPC_ID>."
 }
 
-# ── Isolated Network ─────────────────────────────────────────────────────
+variable "isolated_net_id" {
+  type        = string
+  default     = ""
+  description = "Pre-existing isolated network UUID. When non-empty, network creation is skipped and this ID is used."
+}
 
 variable "isolated_net_name" {
   type        = string

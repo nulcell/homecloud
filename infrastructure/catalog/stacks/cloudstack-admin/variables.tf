@@ -115,19 +115,17 @@ variable "secondary_storage" {
   description = "Map of image store name → NFS secondary storage configuration."
 }
 
-variable "enable_domain" {
-  type        = bool
-  default     = true
-  description = "Set false when the domain already exists and should not be managed by Terraform."
+variable "domain_id" {
+  type        = string
+  default     = ""
+  description = "Pre-existing domain UUID. When non-empty, domain creation is skipped and this ID is used."
 }
 
-variable "enable_account" {
-  type        = bool
-  default     = true
-  description = "Set false when the account already exists and should not be managed by Terraform."
+variable "account_id" {
+  type        = string
+  default     = ""
+  description = "Pre-existing account UUID. When non-empty, account creation is skipped and this ID is used."
 }
-
-# ── Domain / Account ──────────────────────────────────────────────────────────
 
 variable "domain_name" {
   type        = string

@@ -53,24 +53,23 @@ inputs = {
   isolated_net_gateway       = "10.1.1.1"
   isolated_net_offering_name = "isolated.core-redundant"
 
-  keypair_name   = "nulcell"
-  enable_keypair = false
+  # keypair_name   = "nulcell"
   op_ssh_pub_key = "op://homecloud/nulcell/public key"
 
-  userdata_scripts = {
-    "cloud-default" = {
-      file   = "${get_repo_root()}/cloudstack/compute/cloud-init/cloud-default.yaml"
-      params = []
-    }
-    "tailscale-router-debian" = {
-      file   = "${get_repo_root()}/cloudstack/compute/cloud-init/tailscale-router-debian.yaml"
-      params = ["tailscale_auth_key", "network_router_cidr"]
-    }
-  }
+  # userdata_scripts = {
+  #   "cloud-default" = {
+  #     file   = "${get_repo_root()}/cloudstack/compute/cloud-init/cloud-default.yaml"
+  #     params = []
+  #   }
+  #   "tailscale-router-debian" = {
+  #     file   = "${get_repo_root()}/cloudstack/compute/cloud-init/tailscale-router-debian.yaml"
+  #     params = ["tailscale_auth_key", "network_router_cidr"]
+  #   }
+  # }
 
   # Remove an entry to delete that filesystem (data loss — do deliberately).
   # Use enable_shared_storage = false to disable ALL without removing entries.
-  enable_shared_storage = true
+  enable_shared_storage = false
   shared_filesystems = {
     "media-server-fs-config" = {
       size_gb          = 10

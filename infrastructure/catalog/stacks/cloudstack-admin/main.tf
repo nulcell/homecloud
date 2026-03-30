@@ -20,7 +20,7 @@ module "zone" {
 }
 
 module "domain" {
-  count  = var.enable_domain ? 1 : 0
+  count  = var.domain_id == "" ? 1 : 0
   source = "../../modules/cloudstack-domain"
 
   domain_name        = var.domain_name
@@ -30,17 +30,45 @@ module "domain" {
 }
 
 module "account" {
-  count  = var.enable_account ? 1 : 0
+  count  = var.account_id == "" ? 1 : 0
   source = "../../modules/cloudstack-account"
 
   account_name        = var.account_name
   account_type        = 2 # domain admin
-  domain_id           = try(module.domain[0].domain_id, "")
+  domain_id           = local.resolved_domain_id
   email               = local._cs_homecloud_fields["Email"]
   firstname           = local._cs_homecloud_fields["First name"]
   lastname            = local._cs_homecloud_fields["Last name"]
   password            = data.onepassword_item.cs_homecloud_creds.password
   username            = data.onepassword_item.cs_homecloud_creds.username
+}
+
+# When the account is freshly created, generate its API key and write to 1Password
+# so downstream units can configure their cloudstack provider on the next apply.
+resource "null_resource" "homecloud_api_key" {
+  count = var.account_id == "" ? 1 : 0
+
+  triggers = {
+    account_id = module.account[0].account_id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      USER_ID=$(cmk -p admin list users \
+        account='${var.account_name}' \
+        domainid='${local.resolved_domain_id}' \
+        --output text --filter id | head -1)
+
+      RESULT=$(cmk -p admin createApiKey id="$USER_ID")
+      API_KEY=$(echo "$RESULT"    | jq -r '.apikeys.apikey')
+      SECRET_KEY=$(echo "$RESULT" | jq -r '.apikeys.secretkey')
+
+      op item edit '${var.op_cs_homecloud_item}' \
+        --vault '${var.op_vault}' \
+        "api-key=$API_KEY" \
+        "secret-key=$SECRET_KEY"
+    EOT
+  }
 }
 
 module "offerings" {
