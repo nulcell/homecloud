@@ -115,12 +115,6 @@ variable "secondary_storage" {
   description = "Map of image store name → NFS secondary storage configuration."
 }
 
-variable "existing_storage_pool_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Map of storage pool name → UUID for import."
-}
-
 # ── Domain / Account ──────────────────────────────────────────────────────────
 
 variable "domain_name" {
@@ -131,18 +125,6 @@ variable "domain_name" {
 variable "domain_network" {
   type        = string
   description = "Network domain suffix for the CloudStack domain (e.g. homecloud.internal)."
-}
-
-variable "enable_domain" {
-  type        = bool
-  default     = true
-  description = "Set to false to skip domain/limits creation (e.g. domain already exists and provider does not support import)."
-}
-
-variable "enable_account" {
-  type        = bool
-  default     = true
-  description = "Set to false to skip account creation (e.g. account already exists and provider does not support import)."
 }
 
 variable "account_name" {
@@ -162,12 +144,6 @@ variable "resource_limits" {
   description = "Map of resource type integer (string key) → maximum value for the domain account."
 }
 
-variable "existing_domain_id" {
-  type        = string
-  default     = ""
-  description = "Existing domain UUID for import. Leave empty to create."
-}
-
 # ── Disk Offerings ────────────────────────────────────────────────────────────
 
 variable "disk_offerings" {
@@ -179,12 +155,6 @@ variable "disk_offerings" {
   }))
   default     = {}
   description = "Disk offerings to manage."
-}
-
-variable "existing_disk_offering_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Disk offering name → UUID for import."
 }
 
 # ── Compute Offerings ─────────────────────────────────────────────────────────
@@ -210,12 +180,6 @@ variable "compute_offerings" {
   description = "Compute (service) offerings to manage."
 }
 
-variable "existing_compute_offering_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Compute offering name → UUID for import."
-}
-
 # ── Network Offerings ─────────────────────────────────────────────────────────
 
 variable "network_offerings" {
@@ -234,12 +198,6 @@ variable "network_offerings" {
   description = "Network offerings to manage."
 }
 
-variable "existing_network_offering_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Network offering name → UUID for import."
-}
-
 # ── VPC Offerings ─────────────────────────────────────────────────────────────
 
 variable "vpc_offerings" {
@@ -250,12 +208,6 @@ variable "vpc_offerings" {
   }))
   default     = {}
   description = "VPC offerings to manage."
-}
-
-variable "existing_vpc_offering_ids" {
-  type        = map(string)
-  default     = {}
-  description = "VPC offering name → UUID for import."
 }
 
 # ── Templates / ISOs ──────────────────────────────────────────────────────────
@@ -296,66 +248,4 @@ variable "enable_isos" {
   type        = bool
   default     = true
   description = "Set to false to skip ISO registration."
-}
-
-variable "existing_template_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Template key → UUID for import."
-}
-
-# ── Zone import IDs ───────────────────────────────────────────────────────────
-
-variable "existing_pod_id" {
-  type        = string
-  default     = ""
-  description = "Existing pod UUID for import."
-}
-
-variable "existing_cluster_id" {
-  type        = string
-  default     = ""
-  description = "Existing cluster UUID for import."
-}
-
-variable "existing_physical_network_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Map of physical network name → UUID for import."
-}
-
-variable "existing_traffic_type_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Map of '<net>/<type>' → UUID for traffic type import."
-}
-
-variable "existing_nsp_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Map of '<net>/<provider>' → UUID for network service provider import."
-}
-
-variable "existing_vlan_ip_range_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Map of physical network name → VLAN IP range UUID for import."
-}
-
-variable "existing_secondary_storage_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Map of image store name → UUID for secondary storage import."
-}
-
-variable "existing_account_id" {
-  type        = string
-  default     = ""
-  description = "Existing CloudStack account UUID for import."
-}
-
-variable "custom_disk_offering_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Map of customized disk offering name → CloudStack UUID (e.g. shared.custom, local.custom). Needed for unconstrained compute offerings that reference them."
 }

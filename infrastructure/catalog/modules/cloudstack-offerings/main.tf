@@ -44,25 +44,6 @@ resource "null_resource" "custom_disk_offering" {
   }
 }
 
-# ---------------------------------------------------------------------------
-# Compute Offerings — fixed (baked-in CPU/RAM, storage via disk_offering block)
-#   disk_type = "fixed": e.g. gen.*.fixed, mem.*.fixed, ssd.*
-# ---------------------------------------------------------------------------
-locals {
-  fixed_compute = {
-    for k, v in var.compute_offerings : k => v
-    if v.disk_type == "fixed"
-  }
-  unconstrained_compute = {
-    for k, v in var.compute_offerings : k => v
-    if contains(["custom_shared", "custom_local"], v.disk_type)
-  }
-  constrained_compute = {
-    for k, v in var.compute_offerings : k => v
-    if v.disk_type == "customized"
-  }
-}
-
 resource "cloudstack_service_offering_fixed" "this" {
   for_each = local.fixed_compute
 

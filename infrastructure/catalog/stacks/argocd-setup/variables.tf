@@ -41,3 +41,9 @@ variable "workload_cluster_key" {
   sensitive   = true
   description = "Base64-encoded client key for the workload cluster."
 }
+
+variable "is_enabled" {
+  type        = bool
+  default     = true
+  description = "Master switch. Set to false to skip all resource creation without removing the unit config."
+}

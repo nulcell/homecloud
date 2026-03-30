@@ -4,6 +4,7 @@
 # clusters (ops) omit vpc_id and allocate a zone-level public IP.
 # ---------------------------------------------------------------------------
 resource "cloudstack_ipaddress" "lb" {
+  count  = var.is_enabled ? 1 : 0
   vpc_id = var.vpc_id != "" ? var.vpc_id : null
   zone   = var.zone_name
 }
@@ -12,10 +13,11 @@ resource "cloudstack_ipaddress" "lb" {
 # Step 2 – Generate Talos machine secrets and render machine configs
 # ---------------------------------------------------------------------------
 module "talos_config" {
+  count  = var.is_enabled ? 1 : 0
   source = "../../modules/talos-config"
 
   cluster_name         = var.cluster_name
-  cluster_endpoint     = "https://${cloudstack_ipaddress.lb.ip_address}:6443"
+  cluster_endpoint     = "https://${cloudstack_ipaddress.lb[0].ip_address}:6443"
   kubernetes_version   = var.kubernetes_version
   talos_version        = var.talos_version
   control_plane_count  = var.controlplane_count
@@ -27,7 +29,7 @@ module "talos_config" {
 # Step 3 – Deploy control plane VMs
 # ---------------------------------------------------------------------------
 module "control_plane_vms" {
-  count  = var.controlplane_count
+  count  = var.is_enabled ? var.controlplane_count : 0
   source = "../../modules/cloudstack-vm"
 
   name             = "${var.cluster_name}-cp-${count.index}"
@@ -39,7 +41,7 @@ module "control_plane_vms" {
   root_disk_size   = var.control_plane_disk_size
   network_ids      = [var.network_id]
   keypair_name     = var.keypair_name
-  user_data_base64 = module.talos_config.controlplane_config_base64
+  user_data_base64 = module.talos_config[0].controlplane_config_base64
 }
 
 # ---------------------------------------------------------------------------
@@ -47,8 +49,9 @@ module "control_plane_vms" {
 # member_ids is set after VMs exist via depends_on
 # ---------------------------------------------------------------------------
 resource "cloudstack_loadbalancer_rule" "apiserver" {
+  count         = var.is_enabled ? 1 : 0
   name          = "${var.cluster_name}-apiserver"
-  ip_address_id = cloudstack_ipaddress.lb.id
+  ip_address_id = cloudstack_ipaddress.lb[0].id
   algorithm     = "roundrobin"
   private_port  = 6443
   public_port   = 6443
@@ -63,6 +66,7 @@ resource "cloudstack_loadbalancer_rule" "apiserver" {
 # Depends on LB rule so that the API endpoint is reachable before bootstrap
 # ---------------------------------------------------------------------------
 module "bootstrap" {
+  count  = var.is_enabled ? 1 : 0
   source = "../../modules/kubernetes-bootstrap"
 
   providers = {
@@ -70,8 +74,8 @@ module "bootstrap" {
   }
 
   cluster_name         = var.cluster_name
-  cluster_endpoint     = "https://${cloudstack_ipaddress.lb.ip_address}:6443"
-  client_configuration = module.talos_config.client_configuration
+  cluster_endpoint     = "https://${cloudstack_ipaddress.lb[0].ip_address}:6443"
+  client_configuration = module.talos_config[0].client_configuration
   controlplane_ips     = [for vm in module.control_plane_vms : vm.private_ip]
 
   enable_argocd       = var.enable_argocd
@@ -100,7 +104,7 @@ module "bootstrap" {
 # Step 6 – Deploy worker VMs (after bootstrap so kubelet can join immediately)
 # ---------------------------------------------------------------------------
 module "worker_vms" {
-  count  = var.worker_count
+  count  = var.is_enabled ? var.worker_count : 0
   source = "../../modules/cloudstack-vm"
 
   name             = "${var.cluster_name}-worker-${count.index}"
@@ -112,7 +116,7 @@ module "worker_vms" {
   root_disk_size   = var.worker_disk_size
   network_ids      = [var.network_id]
   keypair_name     = var.keypair_name
-  user_data_base64 = module.talos_config.worker_config_base64
+  user_data_base64 = module.talos_config[0].worker_config_base64
 
   depends_on = [module.bootstrap]
 }
@@ -121,12 +125,13 @@ module "worker_vms" {
 # Step 7 – Store talosconfig in 1Password
 # ---------------------------------------------------------------------------
 module "op_talosconfig" {
+  count  = var.is_enabled ? 1 : 0
   source = "../../modules/onepassword-item"
 
   vault = var.op_vault
   title = "Talosconfig - ${var.cluster_name}"
   fields = {
-    config = module.talos_config.talosconfig
+    config = module.talos_config[0].talosconfig
   }
 }
 
@@ -134,11 +139,12 @@ module "op_talosconfig" {
 # Step 8 – Store kubeconfig in 1Password
 # ---------------------------------------------------------------------------
 module "op_kubeconfig" {
+  count  = var.is_enabled ? 1 : 0
   source = "../../modules/onepassword-item"
 
   vault = var.op_vault
   title = "Kubeconfig - ${var.cluster_name}"
   fields = {
-    config = module.bootstrap.kubeconfig
+    config = module.bootstrap[0].kubeconfig
   }
 }

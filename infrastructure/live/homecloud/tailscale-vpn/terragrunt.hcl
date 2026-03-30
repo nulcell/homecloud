@@ -1,12 +1,4 @@
-# tailscale-vpn unit
-# Deploys the Tailscale subnet router VM (homecloud-vpn-router):
-#   - Ubuntu 24.04 VM connected to ALL CloudStack networks
-#     (pub-net-1, priv-net-1, priv-net-2, priv-net-3, iso-net-shared)
-#   - Cloud-init: tailscale-router-debian userdata (registered in cloudstack-homecloud)
-#     params: tailscale_auth_key, network_router_cidr
-#   - Advertises route 10.0.0.0/15 into Tailscale tailnet (covers VPC + isolated net)
-#   - Allows operators on the tailnet to reach all CloudStack private networks
-#   - NOT involved in k8s inter-node traffic — Talos nodes use CloudStack VPC IPs directly
+# tailscale-vpn — VPN subnet router VM connecting all 5 CloudStack networks
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -25,37 +17,32 @@ dependency "cloudstack_homecloud" {
   config_path = "../cloudstack-homecloud"
 
   mock_outputs = {
-    zone_id              = "mock-zone-id"
-    pub_net_1_id         = "mock-net-id"
-    priv_net_1_id        = "mock-net-id"
-    priv_net_2_id        = "mock-net-id"
-    priv_net_3_id        = "mock-net-id"
-    iso_net_id           = "mock-net-id"
-    ubuntu_template_id   = "mock-template-id"
-    keypair_name         = "nulcell"
-    tailscale_userdata_id = "mock-userdata-id"
-    compute_offering_ids = {
-      "gen.tiny" = "mock-offering-id"
-    }
+    pub_net_1_id  = "mock-pub-net-1-id"
+    priv_net_1_id = "mock-priv-net-1-id"
+    priv_net_2_id = "mock-priv-net-2-id"
+    priv_net_3_id = "mock-priv-net-3-id"
+    iso_net_id    = "mock-iso-net-id"
+    keypair_name  = "nulcell"
+    userdata_ids  = { "tailscale-router-debian" = "mock-userdata-id" }
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
 
 inputs = {
+  is_enabled         = false
   cloudstack_api_url = include.account.locals.cloudstack_api_url
   op_vault           = include.account.locals.op_vault
   op_account         = include.account.locals.op_account
+  zone_name          = include.account.locals.zone_name
 
-  vm_name        = "homecloud-vpn-router"
-  root_disk_size = 10
+  vm_name               = "homecloud-vpn-router"
+  template_name         = "Ubuntu 24.04 - Noble"
+  compute_offering_name = "acs.comp.gen.tiny"
+  root_disk_size_gb     = 10
+  keypair_name          = dependency.cloudstack_homecloud.outputs.keypair_name
 
-  zone_id             = dependency.cloudstack_homecloud.outputs.zone_id
-  template_id         = dependency.cloudstack_homecloud.outputs.ubuntu_template_id
-  compute_offering_id = dependency.cloudstack_homecloud.outputs.compute_offering_ids["gen.tiny"]
-  keypair_name        = dependency.cloudstack_homecloud.outputs.keypair_name
-  userdata_id         = dependency.cloudstack_homecloud.outputs.tailscale_userdata_id
-
-  # VM is connected to all 5 networks so it can route between tailnet and every subnet
+  # Network NICs in attachment order (NIC0 is pub-net-1).
+  # All 5 networks are attached so the router can reach every CloudStack segment.
   network_ids = [
     dependency.cloudstack_homecloud.outputs.pub_net_1_id,
     dependency.cloudstack_homecloud.outputs.priv_net_1_id,
@@ -64,12 +51,18 @@ inputs = {
     dependency.cloudstack_homecloud.outputs.iso_net_id,
   ]
 
-  # Tailscale: auth key read from 1Password at apply time via tailscale-key module
-  op_tailscale_item = "Tailscale Token"
+  # Userdata script that bootstraps Tailscale on first boot.
+  # Template substitution parameters: tailscale_auth_key, network_router_cidr.
+  userdata_id = lookup(
+    dependency.cloudstack_homecloud.outputs.userdata_ids,
+    "tailscale-router-debian",
+    "c48a7c09-4255-4881-9802-8cd9548c6114" # fallback to known ID on mock plan
+  )
 
-  # Advertised route: covers VPC (10.0.0.0/24) + isolated net (10.1.1.0/24) = /15
+  # VPN CIDR advertised to tailnet — covers VPC (10.0.0.0/24) + isolated net (10.1.1.0/24).
   vpn_cidr = "10.0.0.0/15"
 
-  # Import existing VM (set to actual UUID to import; "" = create new)
-  existing_vm_id = ""
+  # Set to a 1Password item title whose `password` field holds an existing Tailscale auth key.
+  # Leave empty to generate a fresh ephemeral key via the Tailscale API.
+  op_tailscale_ref = ""
 }

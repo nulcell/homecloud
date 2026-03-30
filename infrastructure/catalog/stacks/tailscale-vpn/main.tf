@@ -1,8 +1,5 @@
-# ---------------------------------------------------------------------------
-# Tailscale auth key (only generated when op_tailscale_ref is empty)
-# ---------------------------------------------------------------------------
 module "tailscale_key" {
-  count  = var.op_tailscale_ref == "" ? 1 : 0
+  count  = (var.is_enabled && var.op_tailscale_ref == "") ? 1 : 0
   source = "../../modules/tailscale-key"
 
   description    = var.vm_name
@@ -12,12 +9,10 @@ module "tailscale_key" {
   expiry_seconds = 3600
 }
 
-# ---------------------------------------------------------------------------
-# VPN router VM
-# ---------------------------------------------------------------------------
 module "router_vm" {
   source = "../../modules/cloudstack-vm"
 
+  enable         = var.is_enabled
   name           = var.vm_name
   zone_name      = var.zone_name
   account_name   = var.account_name
@@ -32,5 +27,4 @@ module "router_vm" {
     tailscale_auth_key  = local.tailscale_auth_key
     network_router_cidr = var.vpn_cidr
   }
-  existing_vm_id = var.existing_vm_id
 }

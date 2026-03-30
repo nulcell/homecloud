@@ -1,25 +1,3 @@
-# ---------------------------------------------------------------------------
-# 1Password data sources
-# ---------------------------------------------------------------------------
-
-data "onepassword_item" "cs_homecloud" {
-  vault = var.op_vault
-  title = "CloudStack - homecloud-admin"
-}
-
-# ---------------------------------------------------------------------------
-# Locals — field lookups
-# ---------------------------------------------------------------------------
-locals {
-  _cs_fields    = merge([for s in data.onepassword_item.cs_homecloud.section : { for f in s.field : f.label => f.value }]...)
-  cs_api_key    = local._cs_fields["api-key"]
-  cs_secret_key = local._cs_fields["secret-key"]
-}
-
-# ---------------------------------------------------------------------------
-# Providers
-# ---------------------------------------------------------------------------
-
 provider "cloudstack" {
   api_url    = var.cloudstack_api_url
   api_key    = local.cs_api_key

@@ -81,8 +81,8 @@ variable "root_disk_size_gb" {
   description = "Root disk size for the VPN router VM in GB."
 }
 
-variable "existing_vm_id" {
-  type        = string
-  default     = ""
-  description = "Existing VM UUID to import into state. Leave empty to create a new VM."
+variable "is_enabled" {
+  type        = bool
+  default     = true
+  description = "Master switch. Set to false to skip all resource creation without removing the unit config."
 }

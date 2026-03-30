@@ -1,19 +1,3 @@
-# ---------------------------------------------------------------------------
-# Zone (data source — zone already exists, we only look it up)
-# ---------------------------------------------------------------------------
-data "cloudstack_zone" "this" {
-  filter {
-    name  = "name"
-    value = var.zone_name
-  }
-}
-
-# ---------------------------------------------------------------------------
-# Physical Networks
-# Import: set existing_physical_network_ids[name] = UUID to import.
-#   cmk -p admin list physicalnetworks zoneid=<zone_id> --output text --filter id,name
-# ---------------------------------------------------------------------------
-
 resource "cloudstack_physical_network" "this" {
   for_each = var.physical_networks
 
@@ -29,24 +13,6 @@ resource "cloudstack_physical_network" "this" {
     # network_speed is not tracked by CloudStack API after creation
     ignore_changes = [network_speed]
   }
-}
-
-# ---------------------------------------------------------------------------
-# Traffic Types — one per (physical_network, traffic_type) pair
-# Import: set existing_traffic_type_ids["<net>/<type>"] = UUID to import.
-#   cmk -p admin list traffictypes physicalnetworkid=<id>
-# ---------------------------------------------------------------------------
-locals {
-  traffic_type_pairs = merge([
-    for net_name, net in var.physical_networks : {
-      for tt in net.traffic_types :
-      "${net_name}/${tt}" => {
-        physical_network_id = cloudstack_physical_network.this[net_name].id
-        traffic_type        = tt
-        kvm_label           = lookup(lookup(net, "kvm_labels", {}), tt, null)
-      }
-    }
-  ]...)
 }
 
 resource "cloudstack_traffic_type" "this" {
@@ -66,24 +32,6 @@ resource "cloudstack_traffic_type" "this" {
   }
 }
 
-# ---------------------------------------------------------------------------
-# Network Service Providers — VirtualRouter, VpcVirtualRouter, SecurityGroupProvider
-# Import: set existing_nsp_ids["<net>/<provider>"] = UUID to import.
-#   cmk -p admin list networkserviceproviders physicalnetworkid=<id>
-# ---------------------------------------------------------------------------
-locals {
-  nsp_pairs = merge([
-    for net_name, net in var.physical_networks : {
-      for prov in net.service_providers :
-      "${net_name}/${prov.name}" => {
-        physical_network_id = cloudstack_physical_network.this[net_name].id
-        name                = prov.name
-        service_list        = lookup(prov, "service_list", null)
-      }
-    }
-  ]...)
-}
-
 resource "cloudstack_network_service_provider" "this" {
   for_each = local.nsp_pairs
 
@@ -93,26 +41,6 @@ resource "cloudstack_network_service_provider" "this" {
   state               = "Enabled"
 
   depends_on = [cloudstack_traffic_type.this]
-}
-
-# ---------------------------------------------------------------------------
-# Public IP (VLAN) ranges
-# Import: set existing_vlan_ip_range_ids["<net>/<vlan>"] = UUID to import.
-#   cmk -p admin list vlanipranges zoneid=<zone_id>
-# ---------------------------------------------------------------------------
-locals {
-  vlan_ip_ranges = merge([
-    for net_name, net in var.physical_networks : net.public_ip_range != null ? {
-      "${net_name}" = {
-        physical_network_id = cloudstack_physical_network.this[net_name].id
-        gateway             = net.public_ip_range.gateway
-        netmask             = net.public_ip_range.netmask
-        start_ip            = net.public_ip_range.start_ip
-        end_ip              = net.public_ip_range.end_ip
-        vlan                = net.public_ip_range.vlan
-      }
-    } : {}
-  ]...)
 }
 
 resource "cloudstack_vlan_ip_range" "this" {

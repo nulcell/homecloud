@@ -1,4 +1,6 @@
 resource "kubernetes_secret_v1" "workload_cluster" {
+  count = var.is_enabled ? 1 : 0
+
   metadata {
     name      = var.workload_cluster_name
     namespace = "argocd"

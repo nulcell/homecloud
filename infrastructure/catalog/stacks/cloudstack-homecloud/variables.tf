@@ -77,18 +77,6 @@ variable "default_acl_id" {
   description = "UUID of the default_allow network ACL. Look up after VPC creation with cmk list networkacllists name=default_allow vpcid=<VPC_ID>."
 }
 
-variable "existing_vpc_id" {
-  type        = string
-  default     = ""
-  description = "Existing VPC UUID for import."
-}
-
-variable "existing_network_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Map of VPC network tier key → existing network UUID for import."
-}
-
 # ── Isolated Network ─────────────────────────────────────────────────────
 
 variable "isolated_net_name" {
@@ -109,12 +97,6 @@ variable "isolated_net_gateway" {
 variable "isolated_net_offering_name" {
   type        = string
   description = "Name of the network offering for the isolated network (e.g. 'isolated.core-redundant')."
-}
-
-variable "existing_isolated_net_id" {
-  type        = string
-  default     = ""
-  description = "Existing isolated network UUID for import."
 }
 
 # ── Offering / Template names ─────────────────────────────────────────────
@@ -139,12 +121,6 @@ variable "keypair_name" {
   description = "Name of the SSH keypair to register and reference on VMs."
 }
 
-variable "enable_keypair" {
-  type        = bool
-  default     = true
-  description = "Set to false to skip keypair creation (e.g. keypair already exists and provider does not support import). The keypair_name is still passed to VMs."
-}
-
 variable "op_ssh_pub_key" {
   type        = string
   default     = ""
@@ -155,12 +131,6 @@ variable "op_ssh_pub_key_field" {
   type        = string
   default     = "public key"
   description = "Field name in the 1Password nulcell item that holds the SSH public key."
-}
-
-variable "existing_keypair_id" {
-  type        = string
-  default     = ""
-  description = "Existing keypair name for import (CloudStack uses name as import ID)."
 }
 
 # ── User Data Scripts ─────────────────────────────────────────────────────
@@ -220,16 +190,4 @@ variable "vps" {
     template_name    = "Ubuntu 24.04 - Noble"
   }
   description = "VPS VM configuration."
-}
-
-variable "existing_vps_id" {
-  type        = string
-  default     = ""
-  description = "Existing VPS VM UUID for import."
-}
-
-variable "existing_userdata_ids" {
-  type        = map(string)
-  default     = {}
-  description = "Map of userdata name → existing CloudStack UUID for import. Get with: cmk -p homecloud-admin list userdata"
 }

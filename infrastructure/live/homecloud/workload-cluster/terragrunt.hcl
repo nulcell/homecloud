@@ -1,19 +1,4 @@
-# workload-cluster unit
-# Deploys the Talos Linux workload Kubernetes cluster on pub-net-1 (VPC public-lb subnet).
-#
-# This cluster hosts all user workloads: media server (ArgoCD Helm chart), n8n,
-# Traefik ingress, and any other user-facing applications.
-#
-# Bootstrap flow:
-#   1. Acquire CloudStack public IP (kube-apiserver LB endpoint)
-#   2. Create LB rule port 6443 on that IP
-#   3. Generate Talos machine secrets + controlplane/worker configs (endpoint = LB IP)
-#   4. Deploy Talos VMs with machine config as base64 user_data
-#   5. Assign control-plane VMs to LB rule
-#   6. Bootstrap etcd via talos provider
-#   7. Install Cilium CNI + CloudStack CCM + CSI + cert-manager + external-dns
-#   8. Register cluster with ArgoCD running on ops cluster
-#   9. Write talosconfig + kubeconfig to 1Password
+# workload cluster — Talos Linux on pub-net-1 (VPC public-lb subnet)
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -59,6 +44,7 @@ dependency "ops_cluster" {
 }
 
 inputs = {
+  is_enabled         = false
   cloudstack_api_url = include.account.locals.cloudstack_api_url
   op_vault           = include.account.locals.op_vault
   op_account         = include.account.locals.op_account

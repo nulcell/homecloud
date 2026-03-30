@@ -1,21 +1,4 @@
-# ops-cluster unit
-# Deploys the Talos Linux ops Kubernetes cluster on iso-net-shared (isolated network).
-#
-# Network placement rationale:
-#   CloudStack allows only one public-lb subnet per VPC. The workload cluster takes
-#   pub-net-1 (VPC, public-lb). The ops cluster therefore uses iso-net-shared (isolated
-#   network with its own virtual router and public IP) to avoid the conflict.
-#
-# Bootstrap flow:
-#   1. Acquire CloudStack public IP (kube-apiserver LB endpoint)
-#   2. Create LB rule port 6443 on that IP
-#   3. Generate Talos machine secrets + controlplane/worker configs (endpoint = LB IP)
-#   4. Deploy Talos VMs with machine config as base64 user_data
-#   5. Assign control-plane VMs to LB rule
-#   6. Bootstrap etcd via talos provider
-#   7. Install Cilium CNI + CloudStack CCM + CSI via helm_release
-#   8. Install ArgoCD — manages both ops and workload cluster apps via GitOps
-#   9. Write talosconfig + kubeconfig to 1Password
+# ops cluster — Talos Linux on iso-net-shared
 
 include "root" {
   path = find_in_parent_folders("root.hcl")
@@ -51,6 +34,7 @@ dependency "tailscale_vpn" {
 }
 
 inputs = {
+  is_enabled         = false
   cloudstack_api_url = include.account.locals.cloudstack_api_url
   op_vault           = include.account.locals.op_vault
   op_account         = include.account.locals.op_account

@@ -194,3 +194,9 @@ variable "external_dns_version" {
   default     = "1.20.0"
   description = "external-dns Helm chart version."
 }
+
+variable "is_enabled" {
+  type        = bool
+  default     = true
+  description = "Master switch. Set to false to skip all resource creation without removing the unit config."
+}
