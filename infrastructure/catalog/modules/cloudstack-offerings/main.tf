@@ -29,10 +29,10 @@ resource "null_resource" "custom_disk_offering" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      EXISTING=$(cmk -p admin list diskofferings name='${each.key}' \
+      EXISTING=$(cmk -p ${var.cmk_profile} list diskofferings name='${each.key}' \
         --output text --filter id 2>/dev/null | head -1)
       if [ -z "$EXISTING" ]; then
-        cmk -p admin create diskoffering \
+        cmk -p ${var.cmk_profile} create diskoffering \
           name='${each.key}' \
           displaytext='${each.value.display_text}' \
           customized=true \
@@ -182,10 +182,10 @@ resource "null_resource" "vpc_offering" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      EXISTING=$(cmk -p admin list vpcofferings name='${each.key}' \
+      EXISTING=$(cmk -p ${var.cmk_profile} list vpcofferings name='${each.key}' \
         --output text --filter id 2>/dev/null | head -1)
       if [ -z "$EXISTING" ]; then
-        cmk -p admin createVPCOffering \
+        cmk -p ${var.cmk_profile} createVPCOffering \
           name='${each.key}' \
           displaytext='${each.value.display_text}' \
           supportedservices='${join(",", each.value.services)}'

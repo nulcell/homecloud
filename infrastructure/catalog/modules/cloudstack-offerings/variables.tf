@@ -92,3 +92,8 @@ variable "custom_disk_offering_ids" {
   default     = {}
   description = "Map of customized disk offering name → CloudStack UUID (e.g. shared.custom, local.custom). Populated after first apply via cmk list diskofferings."
 }
+
+variable "cmk_profile" {
+  type        = string
+  description = "CloudMonkey CLI profile name for cmk commands (customized disk offerings, VPC offerings). Must match a profile in ~/.cloudmonkey/config."
+}

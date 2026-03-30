@@ -79,59 +79,100 @@ resource "helm_release" "cilium" {
 }
 
 # ---------------------------------------------------------------------------
-# Step 6 – CloudStack Cloud Controller Manager (conditional)
+# Step 6 – cloudstack-secret for CCM and CSI
+# Uses the cloud-config INI format expected by both the CloudStack Kubernetes
+# Provider (CCM) and the CloudStack CSI driver. Only created when either
+# enable_ccm or enable_csi is true.
 # ---------------------------------------------------------------------------
-resource "helm_release" "ccm" {
-  count    = var.enable_ccm ? 1 : 0
+resource "null_resource" "cloudstack_secret" {
+  count = (var.enable_ccm || var.enable_csi) ? 1 : 0
 
-  name       = "cloudstack-ccm"
-  repository = "https://kubernetes.github.io/cloud-provider-cloudstack"
-  chart      = "cloudstack-cloud-controller-manager"
-  version    = var.ccm_version
-  namespace  = "kube-system"
-  wait       = true
-  timeout    = 300
+  triggers = {
+    api_url  = var.cloudstack_api_url
+    zone     = var.cloudstack_zone_name
+    # Trigger re-create when credentials rotate (use hashed value, not raw).
+    api_key_hash = sha256(var.cloudstack_api_key)
+    secret_hash  = sha256(var.cloudstack_secret_key)
+  }
 
-  set = [
-    { name = "config.cloudStack.apiUrl", value = var.cloudstack_api_url },
-    { name = "config.cloudStack.zone", value = var.cloudstack_zone_name },
-  ]
-  set_sensitive = [
-    { name = "config.cloudStack.apiKey", value = var.cloudstack_api_key },
-    { name = "config.cloudStack.secretKey", value = var.cloudstack_secret_key },
-  ]
+  provisioner "local-exec" {
+    command = <<-EOT
+      kubectl --kubeconfig='${local_sensitive_file.kubeconfig.filename}' \
+        -n kube-system create secret generic cloudstack-secret \
+        --from-literal=cloud-config="[Global]
+api-url = ${var.cloudstack_api_url}
+api-key = ${var.cloudstack_api_key}
+secret-key = ${var.cloudstack_secret_key}
+zone = ${var.cloudstack_zone_name}
+ssl-no-verify = false" \
+        --dry-run=client -o yaml \
+        | kubectl --kubeconfig='${local_sensitive_file.kubeconfig.filename}' apply -f -
+    EOT
+  }
 
   depends_on = [helm_release.cilium]
 }
 
 # ---------------------------------------------------------------------------
-# Step 7 – CloudStack CSI Driver (conditional)
+# Step 7 – CloudStack Cloud Controller Manager (conditional)
+# Deployed as a manifest from the apache/cloudstack-kubernetes-provider repo.
 # ---------------------------------------------------------------------------
-resource "helm_release" "csi" {
-  count    = var.enable_csi ? 1 : 0
+resource "null_resource" "ccm" {
+  count = var.enable_ccm ? 1 : 0
 
-  name       = "cloudstack-csi"
-  repository = "https://kubernetes.github.io/cloud-provider-cloudstack"
-  chart      = "cloudstack-csi"
-  version    = var.csi_version
-  namespace  = "kube-system"
-  wait       = true
-  timeout    = 300
+  triggers = {
+    manifest_url = var.ccm_manifest_url
+  }
 
-  set = [
-    { name = "config.cloudStack.apiUrl", value = var.cloudstack_api_url },
-    { name = "config.cloudStack.zone", value = var.cloudstack_zone_name },
-  ]
-  set_sensitive = [
-    { name = "config.cloudStack.apiKey", value = var.cloudstack_api_key },
-    { name = "config.cloudStack.secretKey", value = var.cloudstack_secret_key },
-  ]
+  provisioner "local-exec" {
+    command = "kubectl --kubeconfig='${local_sensitive_file.kubeconfig.filename}' apply -f '${var.ccm_manifest_url}'"
+  }
 
-  depends_on = [helm_release.ccm]
+  depends_on = [null_resource.cloudstack_secret]
 }
 
 # ---------------------------------------------------------------------------
-# Step 8 – ArgoCD (conditional)
+# Step 8 – CloudStack CSI Driver (conditional)
+# Snapshot CRDs must be applied before the main manifest. The upstream manifest
+# contains a known typo ("rbac.authorization.k8s.io---") that requires a sed fix.
+# ---------------------------------------------------------------------------
+resource "null_resource" "csi_snapshot_crds" {
+  count = var.enable_csi ? 1 : 0
+
+  triggers = {
+    manifest_url = var.csi_snapshot_crds_url
+  }
+
+  provisioner "local-exec" {
+    command = "kubectl --kubeconfig='${local_sensitive_file.kubeconfig.filename}' apply -f '${var.csi_snapshot_crds_url}'"
+  }
+
+  depends_on = [null_resource.cloudstack_secret]
+}
+
+resource "null_resource" "csi" {
+  count = var.enable_csi ? 1 : 0
+
+  triggers = {
+    manifest_url = var.csi_manifest_url
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      TMP=$(mktemp)
+      curl -fsSL '${var.csi_manifest_url}' \
+        | sed 's/rbac.authorization.k8s.io---/rbac.authorization.k8s.io\n---/g' \
+        > "$TMP"
+      kubectl --kubeconfig='${local_sensitive_file.kubeconfig.filename}' apply -f "$TMP"
+      rm -f "$TMP"
+    EOT
+  }
+
+  depends_on = [null_resource.csi_snapshot_crds]
+}
+
+# ---------------------------------------------------------------------------
+# Step 9 – ArgoCD (conditional)
 # ---------------------------------------------------------------------------
 resource "helm_release" "argocd" {
   count    = var.enable_argocd ? 1 : 0
@@ -145,7 +186,7 @@ resource "helm_release" "argocd" {
   wait             = true
   timeout          = 600
 
-  depends_on = [helm_release.csi]
+  depends_on = [null_resource.csi, null_resource.ccm]
 }
 
 # ---------------------------------------------------------------------------

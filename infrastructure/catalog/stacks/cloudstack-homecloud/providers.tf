@@ -18,10 +18,10 @@ data "onepassword_item" "nulcell_key" {
 # Locals — field lookups from 1Password items
 # ---------------------------------------------------------------------------
 locals {
-  # Flatten all section fields to find CloudStack API credentials by label.
-  _cs_all_fields    = flatten([for s in data.onepassword_item.cs_homecloud.section : s.field])
-  cs_api_key        = one([for f in local._cs_all_fields : f.value if f.label == "api key"])
-  cs_secret_key     = one([for f in local._cs_all_fields : f.value if f.label == "secret key"])
+  # Build a flat label → value map from all section fields (same pattern as cloudstack-admin).
+  _cs_fields    = merge([for s in data.onepassword_item.cs_homecloud.section : { for f in s.field : f.label => f.value }]...)
+  cs_api_key    = local._cs_fields["api-key"]
+  cs_secret_key = local._cs_fields["secret-key"]
 
   # For 1Password SSH Key item types, public_key is a first-class attribute.
   # If the nulcell item is a generic Login/Secure Note with a custom field,

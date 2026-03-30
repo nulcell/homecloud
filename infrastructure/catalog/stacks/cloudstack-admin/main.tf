@@ -230,6 +230,7 @@ module "account" {
 module "offerings" {
   source = "../../modules/cloudstack-offerings"
 
+  cmk_profile       = "admin"
   disk_offerings    = var.disk_offerings
   compute_offerings = var.compute_offerings
   network_offerings = var.network_offerings

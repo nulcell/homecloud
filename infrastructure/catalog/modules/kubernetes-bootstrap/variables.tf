@@ -50,48 +50,54 @@ variable "enable_external_dns" {
 variable "enable_csi" {
   type        = bool
   default     = true
-  description = "Install the CloudStack CSI driver via Helm."
+  description = "Install the CloudStack CSI driver via kubectl manifest."
 }
 
 variable "enable_ccm" {
   type        = bool
   default     = true
-  description = "Install the CloudStack Cloud Controller Manager via Helm."
+  description = "Install the CloudStack Cloud Controller Manager via kubectl manifest."
 }
 
 variable "cilium_version" {
   type        = string
-  default     = "1.17.0"
+  default     = "1.19.2"
   description = "Cilium Helm chart version."
 }
 
-variable "ccm_version" {
+variable "ccm_manifest_url" {
   type        = string
-  default     = "0.4.0"
-  description = "CloudStack CCM Helm chart version."
+  default     = "https://github.com/apache/cloudstack-kubernetes-provider/releases/download/v1.2.0/deployment.yaml"
+  description = "URL for the CloudStack CCM (cloudstack-kubernetes-provider) deployment manifest."
 }
 
-variable "csi_version" {
+variable "csi_snapshot_crds_url" {
   type        = string
-  default     = "0.4.0"
-  description = "CloudStack CSI Helm chart version."
+  default     = "https://github.com/cloudstack/cloudstack-csi-driver/releases/download/cloudstack-csi-3.0.1/snapshot-crds.yaml"
+  description = "URL for the CSI snapshot CRDs manifest (must be applied before the main CSI manifest)."
+}
+
+variable "csi_manifest_url" {
+  type        = string
+  default     = "https://github.com/cloudstack/cloudstack-csi-driver/releases/download/cloudstack-csi-3.0.1/manifest.yaml"
+  description = "URL for the CloudStack CSI driver manifest. A sed fix for a known typo is applied automatically."
 }
 
 variable "argocd_version" {
   type        = string
-  default     = "7.8.0"
-  description = "ArgoCD Helm chart version."
+  default     = "9.4.17"
+  description = "ArgoCD Helm chart version (app version v3.3.6)."
 }
 
 variable "cert_manager_version" {
   type        = string
-  default     = "1.17.0"
+  default     = "v1.20.1"
   description = "cert-manager Helm chart version."
 }
 
 variable "external_dns_version" {
   type        = string
-  default     = "8.7.1"
+  default     = "1.20.0"
   description = "external-dns Helm chart version."
 }
 

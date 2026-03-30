@@ -81,12 +81,13 @@ module "bootstrap" {
   enable_csi          = var.enable_cloudstack_csi
   enable_ccm          = var.enable_cloudstack_ccm
 
-  cilium_version       = var.cilium_version
-  ccm_version          = var.ccm_version
-  csi_version          = var.csi_version
-  argocd_version       = var.argocd_version
-  cert_manager_version = var.cert_manager_version
-  external_dns_version = var.external_dns_version
+  cilium_version        = var.cilium_version
+  ccm_manifest_url      = var.ccm_manifest_url
+  csi_snapshot_crds_url = var.csi_snapshot_crds_url
+  csi_manifest_url      = var.csi_manifest_url
+  argocd_version        = var.argocd_version
+  cert_manager_version  = var.cert_manager_version
+  external_dns_version  = var.external_dns_version
 
   cloudstack_api_url    = var.cloudstack_api_url
   cloudstack_api_key    = local.cs_api_key

@@ -11,9 +11,9 @@ data "onepassword_item" "cs_homecloud" {
 # Locals — field lookups
 # ---------------------------------------------------------------------------
 locals {
-  _cs_all_fields = flatten([for s in data.onepassword_item.cs_homecloud.section : s.field])
-  cs_api_key     = one([for f in local._cs_all_fields : f.value if f.label == "api key"])
-  cs_secret_key  = one([for f in local._cs_all_fields : f.value if f.label == "secret key"])
+  _cs_fields    = merge([for s in data.onepassword_item.cs_homecloud.section : { for f in s.field : f.label => f.value }]...)
+  cs_api_key    = local._cs_fields["api-key"]
+  cs_secret_key = local._cs_fields["secret-key"]
 }
 
 # ---------------------------------------------------------------------------

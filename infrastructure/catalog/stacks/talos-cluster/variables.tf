@@ -155,36 +155,42 @@ variable "op_vault" {
 
 variable "cilium_version" {
   type        = string
-  default     = "1.17.0"
+  default     = "1.19.2"
   description = "Cilium Helm chart version."
 }
 
-variable "ccm_version" {
+variable "ccm_manifest_url" {
   type        = string
-  default     = "0.4.0"
-  description = "CloudStack CCM Helm chart version."
+  default     = "https://github.com/apache/cloudstack-kubernetes-provider/releases/download/v1.2.0/deployment.yaml"
+  description = "URL for the CloudStack CCM deployment manifest."
 }
 
-variable "csi_version" {
+variable "csi_snapshot_crds_url" {
   type        = string
-  default     = "0.4.0"
-  description = "CloudStack CSI Helm chart version."
+  default     = "https://github.com/cloudstack/cloudstack-csi-driver/releases/download/cloudstack-csi-3.0.1/snapshot-crds.yaml"
+  description = "URL for the CSI snapshot CRDs manifest."
+}
+
+variable "csi_manifest_url" {
+  type        = string
+  default     = "https://github.com/cloudstack/cloudstack-csi-driver/releases/download/cloudstack-csi-3.0.1/manifest.yaml"
+  description = "URL for the CloudStack CSI driver manifest."
 }
 
 variable "argocd_version" {
   type        = string
-  default     = "7.8.0"
-  description = "ArgoCD Helm chart version."
+  default     = "9.4.17"
+  description = "ArgoCD Helm chart version (app version v3.3.6)."
 }
 
 variable "cert_manager_version" {
   type        = string
-  default     = "1.17.0"
+  default     = "v1.20.1"
   description = "cert-manager Helm chart version."
 }
 
 variable "external_dns_version" {
   type        = string
-  default     = "8.7.1"
+  default     = "1.20.0"
   description = "external-dns Helm chart version."
 }
