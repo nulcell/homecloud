@@ -19,6 +19,8 @@ dependency "cloudstack_homecloud" {
   mock_outputs = {
     zone_id      = "mock-zone-id"
     iso_net_id   = "mock-net-id"
+    pub_net_1_id   = "mock-pub-net-id"
+    vpc_id       = "mock-vpc-id"
     keypair_name = "nulcell"
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
@@ -41,8 +43,8 @@ inputs = {
   cluster_name       = include.account.locals.ops_cluster_name
 
   # Network: iso-net-shared isolated network (its own virtual router + public IP)
-  network_id = dependency.cloudstack_homecloud.outputs.iso_net_id
-  vpc_id     = "" # no VPC — isolated network
+  network_id = dependency.cloudstack_homecloud.outputs.pub_net_1_id
+  vpc_id     = dependency.cloudstack_homecloud.outputs.vpc_id # no VPC — isolated network
 
   template_name         = "Talos v1.12.6 - CloudStack"
   compute_offering_name = "mem.medium"
@@ -54,7 +56,7 @@ inputs = {
   worker_count            = 2
   worker_disk_size        = 30
 
-  kubernetes_version = "1.32.0"
+  kubernetes_version = "1.35.0"
   talos_version      = "v1.12.6"
 
   # ArgoCD on ops cluster — manages both clusters via GitOps
