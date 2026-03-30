@@ -133,6 +133,18 @@ variable "domain_network" {
   description = "Network domain suffix for the CloudStack domain (e.g. homecloud.internal)."
 }
 
+variable "enable_domain" {
+  type        = bool
+  default     = true
+  description = "Set to false to skip domain/limits creation (e.g. domain already exists and provider does not support import)."
+}
+
+variable "enable_account" {
+  type        = bool
+  default     = true
+  description = "Set to false to skip account creation (e.g. account already exists and provider does not support import)."
+}
+
 variable "account_name" {
   type        = string
   description = "CloudStack account name within the domain."
@@ -250,17 +262,21 @@ variable "existing_vpc_offering_ids" {
 
 variable "templates" {
   type = map(object({
-    name         = string
-    display_text = string
-    url          = string
-    format       = string
-    hypervisor   = string
-    os_type      = string
-    is_featured  = optional(bool, false)
-    details      = optional(map(string), {})
+    name                    = string
+    display_text            = string
+    url                     = string
+    format                  = string
+    hypervisor              = string
+    os_type                 = string
+    is_featured             = optional(bool, false)
+    is_public               = optional(bool, true)
+    is_extractable          = optional(bool, false)
+    is_dynamically_scalable = optional(bool, true)
+    password_enabled        = optional(bool, false)
+    details                 = optional(map(string), {})
   }))
   default     = {}
-  description = "OS templates to register (lifecycle prevent_destroy = true)."
+  description = "OS templates to register via cloudstack_template (direct-download URLs only)."
 }
 
 variable "isos" {

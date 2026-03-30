@@ -16,16 +16,17 @@ resource "cloudstack_template" "this" {
   zone                    = var.zone_name
   os_type                 = each.value.os_type
   is_featured             = each.value.is_featured
-  is_public               = true
-  is_extractable          = false
-  is_dynamically_scalable = true
-  password_enabled        = false
+  is_public               = each.value.is_public
+  is_extractable          = each.value.is_extractable
+  is_dynamically_scalable = each.value.is_dynamically_scalable
+  password_enabled        = each.value.password_enabled
 
   lifecycle {
     prevent_destroy = true
   }
 }
 
+# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # ISOs
 # The cloudstack_template resource does not support ISO registration.

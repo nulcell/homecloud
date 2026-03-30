@@ -154,6 +154,11 @@ inputs = {
   }
 
   # ── Domain / Account ──────────────────────────────────────────────────────
+  # NOTE: cloudstack_domain and cloudstack_account do not support import in
+  # provider v0.6. Set to false on existing infra; set to true on fresh install.
+  enable_domain  = false
+  enable_account = false
+
   domain_name    = "homecloud"
   domain_network = include.account.locals.network_domain
   account_name   = "homecloud"
@@ -250,76 +255,79 @@ inputs = {
   }
 
   # ── Network Offerings (map: name → config) ────────────────────────────────
-  # lb_provider: "VirtualRouter" | "InternalLbVm" | "VpcVirtualRouter" | null
-  # lb_type:     "publicLb" | "internalLb" | null
-  network_offerings = {
-    "shared.core-redundant" = {
-      display_text     = "Shared Network with Redundant Virtual Router"
-      guest_ip_type    = "Shared"
-      for_vpc          = false
-      is_persistent    = false
-      specify_vlan     = false
-      redundant_router = true
-      lb_type          = "publicLb"
-      lb_provider      = "VirtualRouter"
-      services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
-    }
-    "shared.core-redundant-vlan" = {
-      display_text     = "Shared Network with Redundant Virtual Router and VLAN specified"
-      guest_ip_type    = "Shared"
-      for_vpc          = false
-      is_persistent    = false
-      specify_vlan     = true
-      redundant_router = true
-      lb_type          = "publicLb"
-      lb_provider      = "VirtualRouter"
-      services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
-    }
-    "isolated.core" = {
-      display_text     = "Isolated Network with Virtual Router"
-      guest_ip_type    = "Isolated"
-      for_vpc          = false
-      is_persistent    = true
-      specify_vlan     = false
-      redundant_router = false
-      lb_type          = "publicLb"
-      lb_provider      = "VirtualRouter"
-      services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
-    }
-    "isolated.core-redundant" = {
-      display_text     = "Isolated Network with Redundant Virtual Router"
-      guest_ip_type    = "Isolated"
-      for_vpc          = false
-      is_persistent    = true
-      specify_vlan     = false
-      redundant_router = true
-      lb_type          = "publicLb"
-      lb_provider      = "VirtualRouter"
-      services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
-    }
-    "vpc.core-internal-lb" = {
-      display_text     = "VPC Network with VpcVirtualRouter and Internal LB VM"
-      guest_ip_type    = "Isolated"
-      for_vpc          = true
-      is_persistent    = true
-      specify_vlan     = false
-      redundant_router = false
-      lb_type          = "internalLb"
-      lb_provider      = "InternalLbVm"
-      services         = ["Vpn", "Dhcp", "Dns", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
-    }
-    "vpc.core-public-lb" = {
-      display_text     = "VPC Network with VpcVirtualRouter and Public LB"
-      guest_ip_type    = "Isolated"
-      for_vpc          = true
-      is_persistent    = true
-      specify_vlan     = false
-      redundant_router = false
-      lb_type          = "publicLb"
-      lb_provider      = "VpcVirtualRouter"
-      services         = ["Vpn", "Dhcp", "Dns", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
-    }
-  }
+  # NOTE: cloudstack_network_offering does not support import in provider v0.6.
+  # These offerings already exist; commented out to prevent "Entity already exists"
+  # errors on apply. Downstream units reference them by name directly.
+  # Uncomment when rebuilding from scratch.
+  network_offerings = {}
+  # network_offerings = {
+  #   "shared.core-redundant" = {
+  #     display_text     = "Shared Network with Redundant Virtual Router"
+  #     guest_ip_type    = "Shared"
+  #     for_vpc          = false
+  #     is_persistent    = false
+  #     specify_vlan     = false
+  #     redundant_router = true
+  #     lb_type          = "publicLb"
+  #     lb_provider      = "VirtualRouter"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
+  #   }
+  #   "shared.core-redundant-vlan" = {
+  #     display_text     = "Shared Network with Redundant Virtual Router and VLAN specified"
+  #     guest_ip_type    = "Shared"
+  #     for_vpc          = false
+  #     is_persistent    = false
+  #     specify_vlan     = true
+  #     redundant_router = true
+  #     lb_type          = "publicLb"
+  #     lb_provider      = "VirtualRouter"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
+  #   }
+  #   "isolated.core" = {
+  #     display_text     = "Isolated Network with Virtual Router"
+  #     guest_ip_type    = "Isolated"
+  #     for_vpc          = false
+  #     is_persistent    = true
+  #     specify_vlan     = false
+  #     redundant_router = false
+  #     lb_type          = "publicLb"
+  #     lb_provider      = "VirtualRouter"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
+  #   }
+  #   "isolated.core-redundant" = {
+  #     display_text     = "Isolated Network with Redundant Virtual Router"
+  #     guest_ip_type    = "Isolated"
+  #     for_vpc          = false
+  #     is_persistent    = true
+  #     specify_vlan     = false
+  #     redundant_router = true
+  #     lb_type          = "publicLb"
+  #     lb_provider      = "VirtualRouter"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding"]
+  #   }
+  #   "vpc.core-internal-lb" = {
+  #     display_text     = "VPC Network with VpcVirtualRouter and Internal LB VM"
+  #     guest_ip_type    = "Isolated"
+  #     for_vpc          = true
+  #     is_persistent    = true
+  #     specify_vlan     = false
+  #     redundant_router = false
+  #     lb_type          = "internalLb"
+  #     lb_provider      = "InternalLbVm"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
+  #   }
+  #   "vpc.core-public-lb" = {
+  #     display_text     = "VPC Network with VpcVirtualRouter and Public LB"
+  #     guest_ip_type    = "Isolated"
+  #     for_vpc          = true
+  #     is_persistent    = true
+  #     specify_vlan     = false
+  #     redundant_router = false
+  #     lb_type          = "publicLb"
+  #     lb_provider      = "VpcVirtualRouter"
+  #     services         = ["Vpn", "Dhcp", "Dns", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
+  #   }
+  # }
 
   # ── VPC Offerings (map: name → config) ───────────────────────────────────
   vpc_offerings = {
@@ -368,17 +376,16 @@ inputs = {
       }
     }
     "talos-v1.12.6" = {
-      name         = "Talos v1.12.6 - CloudStack"
-      display_text = "Talos Linux v1.12.6 for CloudStack (btrfs, nfs, qemu-guest-agent)"
+      name           = "Talos v1.12.6 - CloudStack"
+      display_text   = "Talos Linux v1.12.6 for CloudStack (btrfs, nfs, qemu-guest-agent)"
       # Schematic: 23ff67af89fd08e5703f919f9b58c5a4a6de2540b1f8ca83379e19321560b1bf
       # Extensions: btrfs, nfs-utils, nfsd, nfsrahead, qemu-guest-agent
-      # NOTE: Try dropping .gz suffix if CloudStack rejects the compressed image
-      url          = "https://factory.talos.dev/image/23ff67af89fd08e5703f919f9b58c5a4a6de2540b1f8ca83379e19321560b1bf/v1.12.6/cloudstack-amd64.raw.gz"
-      format       = "RAW"
-      hypervisor   = "KVM"
-      os_type      = "Other (64-bit)"
-      is_featured  = false
-      details      = {}
+      url            = "https://nulcell-talos-iu1g32s97v3qp7wg.s3.eu-central-1.amazonaws.com/v1.12.6/cloudstack-amd64.raw.gz"
+      format         = "RAW"
+      hypervisor     = "KVM"
+      os_type        = "Other Linux (64-bit)"
+      is_featured    = false
+      is_extractable = true
     }
   }
 

@@ -102,6 +102,7 @@ import {
 
 # ── Network offerings ──────────────────────────────────────────────────────
 # NOTE: cloudstack_network_offering does not support import in provider v0.6.
+# Managed via null_resource + cmk with idempotent existence check (below).
 
 # ── Templates ──────────────────────────────────────────────────────────────
 # NOTE: cloudstack_template does not support import in provider v0.6.
@@ -164,6 +165,7 @@ module "zone" {
 
 # ── Domain ────────────────────────────────────────────────────────────────────
 module "domain" {
+  count  = var.enable_domain ? 1 : 0
   source = "../../modules/cloudstack-domain"
 
   domain_name        = var.domain_name
@@ -175,11 +177,12 @@ module "domain" {
 
 # ── Account ───────────────────────────────────────────────────────────────────
 module "account" {
+  count  = var.enable_account ? 1 : 0
   source = "../../modules/cloudstack-account"
 
   account_name        = var.account_name
   account_type        = 2 # domain admin
-  domain_id           = module.domain.domain_id
+  domain_id           = var.enable_domain ? module.domain[0].domain_id : var.existing_domain_id
   email               = local._cs_homecloud_fields["Email"]
   firstname           = local._cs_homecloud_fields["First name"]
   lastname            = local._cs_homecloud_fields["Last name"]
@@ -209,11 +212,11 @@ module "offerings" {
 module "templates" {
   source = "../../modules/cloudstack-templates"
 
-  zone_id     = module.zone.zone_id
-  zone_name   = var.zone_name
-  templates   = var.templates
-  isos        = var.isos
-  enable_isos = var.enable_isos
+  zone_id   = module.zone.zone_id
+  zone_name = var.zone_name
+  templates = var.templates
+  isos      = var.isos
 
   existing_template_ids = var.existing_template_ids
 }
+

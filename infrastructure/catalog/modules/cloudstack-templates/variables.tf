@@ -10,14 +10,18 @@ variable "zone_name" {
 
 variable "templates" {
   type = map(object({
-    name         = string
-    display_text = string
-    url          = string
-    format       = string
-    hypervisor   = string
-    os_type      = string
-    is_featured  = optional(bool, false)
-    details      = optional(map(string), {})
+    name                    = string
+    display_text            = string
+    url                     = string
+    format                  = string
+    hypervisor              = string
+    os_type                 = string
+    is_featured             = optional(bool, false)
+    is_public               = optional(bool, true)
+    is_extractable          = optional(bool, false)
+    is_dynamically_scalable = optional(bool, true)
+    password_enabled        = optional(bool, false)
+    details                 = optional(map(string), {})
   }))
   default     = {}
   description = "Map of template key → configuration. All templates get lifecycle { prevent_destroy = true }."
