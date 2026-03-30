@@ -20,6 +20,7 @@ module "zone" {
 }
 
 module "domain" {
+  count  = var.enable_domain ? 1 : 0
   source = "../../modules/cloudstack-domain"
 
   domain_name        = var.domain_name
@@ -29,11 +30,12 @@ module "domain" {
 }
 
 module "account" {
+  count  = var.enable_account ? 1 : 0
   source = "../../modules/cloudstack-account"
 
   account_name        = var.account_name
   account_type        = 2 # domain admin
-  domain_id           = module.domain.domain_id
+  domain_id           = try(module.domain[0].domain_id, "")
   email               = local._cs_homecloud_fields["Email"]
   firstname           = local._cs_homecloud_fields["First name"]
   lastname            = local._cs_homecloud_fields["Last name"]

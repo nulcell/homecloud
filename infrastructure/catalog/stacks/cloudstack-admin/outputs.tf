@@ -5,7 +5,7 @@ output "zone_id" {
 
 output "domain_id" {
   description = "UUID of the CloudStack domain."
-  value       = module.domain.domain_id
+  value       = try(module.domain[0].domain_id, "")
 }
 
 output "disk_offering_ids" {
