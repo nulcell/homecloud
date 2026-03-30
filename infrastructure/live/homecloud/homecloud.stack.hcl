@@ -14,7 +14,7 @@ stack {
   # homecloud-admin scope: VPC, networks, iso-net-shared, SSH keypair,
   # userdata scripts, NFS shared filesystems.
   unit "cloudstack-homecloud" {
-    source = "./cloudstack-homecloud"
+    source     = "./cloudstack-homecloud"
     depends_on = [unit.cloudstack-admin]
   }
 
@@ -22,7 +22,7 @@ stack {
   # Creates: homecloud-vpn-router Ubuntu VM connected to all CloudStack networks.
   # Advertises 10.0.0.0/15 into tailnet for operator access.
   unit "tailscale-vpn" {
-    source = "./tailscale-vpn"
+    source     = "./tailscale-vpn"
     depends_on = [unit.cloudstack-homecloud]
   }
 
@@ -31,7 +31,7 @@ stack {
   # kube-apiserver: CloudStack public IP + LB rule (port 6443).
   # ArgoCD manages both ops and workload clusters.
   unit "ops-cluster" {
-    source = "./ops-cluster"
+    source     = "./ops-cluster"
     depends_on = [unit.cloudstack-homecloud, unit.tailscale-vpn]
   }
 
@@ -41,7 +41,7 @@ stack {
   # Registered with ops-cluster ArgoCD as managed cluster.
   # cert-manager installed for TLS certificate management.
   unit "workload-cluster" {
-    source = "./workload-cluster"
+    source     = "./workload-cluster"
     depends_on = [unit.cloudstack-homecloud, unit.tailscale-vpn, unit.ops-cluster]
   }
 

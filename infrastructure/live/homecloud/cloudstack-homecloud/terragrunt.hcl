@@ -40,17 +40,17 @@ inputs = {
   # pub-net-1 uses vpc.core-public-lb offering (CloudStack LB rule target)
   # priv-net-1/2/3 use vpc.core-internal-lb offering
   vpc_networks = {
-    "pub-net-1"  = { cidr = "10.0.0.0/26",   gateway = "10.0.0.1",   offering_name = "vpc.core-public-lb" }
-    "priv-net-1" = { cidr = "10.0.0.64/26",  gateway = "10.0.0.65",  offering_name = "vpc.core-internal-lb" }
+    "pub-net-1"  = { cidr = "10.0.0.0/26", gateway = "10.0.0.1", offering_name = "vpc.core-public-lb" }
+    "priv-net-1" = { cidr = "10.0.0.64/26", gateway = "10.0.0.65", offering_name = "vpc.core-internal-lb" }
     "priv-net-2" = { cidr = "10.0.0.128/26", gateway = "10.0.0.129", offering_name = "vpc.core-internal-lb" }
     "priv-net-3" = { cidr = "10.0.0.192/26", gateway = "10.0.0.193", offering_name = "vpc.core-internal-lb" }
   }
 
   # Used by the ops Talos cluster. Separate from the VPC to work around the
   # CloudStack limitation of only one public-LB subnet per VPC.
-  isolated_net_name         = "iso-net-shared"
-  isolated_net_cidr         = include.account.locals.isolated_net_cidr
-  isolated_net_gateway      = "10.1.1.1"
+  isolated_net_name          = "iso-net-shared"
+  isolated_net_cidr          = include.account.locals.isolated_net_cidr
+  isolated_net_gateway       = "10.1.1.1"
   isolated_net_offering_name = "isolated.core-redundant"
 
   keypair_name   = "nulcell"

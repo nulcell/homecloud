@@ -9,15 +9,15 @@ locals {
   cloudstack_api_url = "http://cloudstack.nulcell.com:8080/client/api"
 
   # 1Password vault where homecloud secrets live
-  op_vault    = "homecloud"
-  op_account  = "my.1password.com"
+  op_vault   = "homecloud"
+  op_account = "my.1password.com"
 
   # CloudStack admin credentials (read from 1Password at plan/apply time)
   # Consumed by cloudstack.admin provider alias in each unit that needs it.
   op_cloudstack_admin_ref = {
-    url      = "op://homecloud/CloudStack - admin/url"
-    api_key  = "op://homecloud/CloudStack - admin/api key"
-    secret   = "op://homecloud/CloudStack - admin/secret key"
+    url     = "op://homecloud/CloudStack - admin/url"
+    api_key = "op://homecloud/CloudStack - admin/api key"
+    secret  = "op://homecloud/CloudStack - admin/secret key"
   }
 
   # CloudStack homecloud-admin credentials (domain user)
@@ -30,11 +30,11 @@ locals {
   tailscale_tailnet = "nulcell.com"
 
   # ─── Zone / Network ───────────────────────────────────────────────────────
-  zone_name           = "zone-homecloud"
-  network_domain      = "homecloud.internal"
-  vpc_cidr            = "10.0.0.0/24"
-  isolated_net_cidr   = "10.1.1.0/24"
-  cloudflare_zone     = "nulcell.com" # update if different
+  zone_name         = "zone-homecloud"
+  network_domain    = "homecloud.internal"
+  vpc_cidr          = "10.0.0.0/24"
+  isolated_net_cidr = "10.1.1.0/24"
+  cloudflare_zone   = "nulcell.com" # update if different
 
   # ─── Cluster sizing (can be overridden per unit) ──────────────────────────
   ops_cluster_name      = "ops"

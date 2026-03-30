@@ -42,7 +42,7 @@ inputs = {
 
   # Network: iso-net-shared isolated network (its own virtual router + public IP)
   network_id = dependency.cloudstack_homecloud.outputs.iso_net_id
-  vpc_id     = ""   # no VPC — isolated network
+  vpc_id     = "" # no VPC — isolated network
 
   template_name         = "Talos v1.12.6 - CloudStack"
   compute_offering_name = "mem.medium"

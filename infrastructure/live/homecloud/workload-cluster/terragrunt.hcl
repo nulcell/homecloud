@@ -68,7 +68,7 @@ inputs = {
   talos_version      = "v1.12.6"
 
   # Workload cluster add-ons
-  enable_argocd         = false  # ArgoCD runs on ops cluster only
+  enable_argocd         = false # ArgoCD runs on ops cluster only
   enable_cloudstack_ccm = true
   enable_cloudstack_csi = true
   enable_cert_manager   = true
