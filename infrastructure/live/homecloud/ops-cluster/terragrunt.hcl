@@ -43,7 +43,7 @@ inputs = {
   cluster_name       = include.account.locals.ops_cluster_name
 
   # Network: iso-net-shared isolated network (its own virtual router + public IP)
-  network_id = ""
+  network_id = dependency.cloudstack_homecloud.outputs.pub_net_1_id
   vpc_id     = dependency.cloudstack_homecloud.outputs.vpc_id # no VPC — isolated network
 
   template_name         = "Talos v1.12.6 - CloudStack"

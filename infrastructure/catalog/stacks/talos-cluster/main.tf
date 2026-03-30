@@ -6,7 +6,7 @@
 resource "cloudstack_ipaddress" "lb" {
   count      = var.is_enabled ? 1 : 0
   vpc_id     = var.vpc_id != "" ? var.vpc_id : null
-  network_id = var.network_id != "" ? var.network_id : null
+  network_id = var.network_id != "" && var.vpc_id == "" ? var.network_id : null
   zone       = var.zone_name
 }
 
@@ -53,11 +53,13 @@ resource "cloudstack_loadbalancer_rule" "apiserver" {
   count         = var.is_enabled ? 1 : 0
   name          = "${var.cluster_name}-apiserver"
   ip_address_id = cloudstack_ipaddress.lb[0].id
+  network_id    = var.network_id != "" ? var.network_id : null
   algorithm     = "roundrobin"
   private_port  = 6443
   public_port   = 6443
   protocol      = "tcp"
   member_ids    = [for vm in module.control_plane_vms : vm.vm_id]
+  cidrlist      = ["0.0.0.0/0"] # allow API access from anywhere (can be restricted if desired)
 
   depends_on = [module.control_plane_vms]
 }
