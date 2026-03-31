@@ -4,7 +4,7 @@
 # ---------------------------------------------------------------------------
 resource "talos_machine_bootstrap" "this" {
   node                 = var.controlplane_ips[0]
-  endpoint             = var.controlplane_ips[0]
+  endpoint             = var.talos_endpoint
   client_configuration = var.client_configuration
 
   lifecycle {
@@ -15,7 +15,7 @@ resource "talos_machine_bootstrap" "this" {
 resource "talos_cluster_kubeconfig" "this" {
   client_configuration = var.client_configuration
   node                 = var.controlplane_ips[0]
-  endpoint             = var.controlplane_ips[0]
+  endpoint             = var.talos_endpoint
 
   depends_on = [data.talos_cluster_health.this]
 
@@ -71,8 +71,8 @@ resource "null_resource" "cloudstack_secret" {
   count = (var.enable_ccm || var.enable_csi) ? 1 : 0
 
   triggers = {
-    api_url  = var.cloudstack_api_url
-    zone     = var.cloudstack_zone_name
+    api_url = var.cloudstack_api_url
+    zone    = var.cloudstack_zone_name
     # Trigger re-create when credentials rotate (use hashed value, not raw).
     api_key_hash = sha256(var.cloudstack_api_key)
     secret_hash  = sha256(var.cloudstack_secret_key)
@@ -158,7 +158,7 @@ resource "null_resource" "csi" {
 # Step 9 – ArgoCD (conditional)
 # ---------------------------------------------------------------------------
 resource "helm_release" "argocd" {
-  count    = var.enable_argocd ? 1 : 0
+  count = var.enable_argocd ? 1 : 0
 
   name             = "argocd"
   repository       = "https://argoproj.github.io/argo-helm"
@@ -176,7 +176,7 @@ resource "helm_release" "argocd" {
 # Step 9 – cert-manager (conditional)
 # ---------------------------------------------------------------------------
 resource "helm_release" "cert_manager" {
-  count    = var.enable_cert_manager ? 1 : 0
+  count = var.enable_cert_manager ? 1 : 0
 
   name             = "cert-manager"
   repository       = "https://charts.jetstack.io"
@@ -198,7 +198,7 @@ resource "helm_release" "cert_manager" {
 # Step 10 – external-dns (conditional)
 # ---------------------------------------------------------------------------
 resource "helm_release" "external_dns" {
-  count    = var.enable_external_dns ? 1 : 0
+  count = var.enable_external_dns ? 1 : 0
 
   name             = "external-dns"
   repository       = "https://kubernetes-sigs.github.io/external-dns/"

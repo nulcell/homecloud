@@ -1,3 +1,8 @@
+variable "talos_endpoint" {
+  type        = string
+  description = "IP or hostname to connect to for Talos API operations (bootstrap, kubeconfig, health check). Use the LB public IP when the Terraform runner cannot reach nodes directly."
+}
+
 variable "cluster_name" {
   type        = string
   description = "Name of the cluster; used for kubeconfig filename and Helm release names."

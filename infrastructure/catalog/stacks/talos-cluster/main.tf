@@ -46,8 +46,45 @@ module "control_plane_vms" {
 }
 
 # ---------------------------------------------------------------------------
-# Step 4 – Create LB rule on the public IP pointing to control plane VMs
-# member_ids is set after VMs exist via depends_on
+# Step 4 – Push machine config to control plane VMs via Talos maintenance API
+# Talos may fail to resolve "data-server." (the CloudStack metadata DNS name)
+# if the zone DNS is an external resolver that doesn't know this name. Pushing
+# the config explicitly via port 50000 (maintenance mode) is more reliable and
+# makes the config delivery deterministic regardless of DNS setup.
+#
+# Uses the LB public IP (exposed via the Talos API LB rule below) so that
+# the Terraform runner does not need VPN access to the private VM IPs.
+# ---------------------------------------------------------------------------
+resource "cloudstack_loadbalancer_rule" "talos_api" {
+  count         = var.is_enabled ? 1 : 0
+  name          = "${var.cluster_name}-talos-api"
+  ip_address_id = cloudstack_ipaddress.lb[0].id
+  network_id    = var.network_id != "" ? var.network_id : null
+  algorithm     = "leastconn"
+  private_port  = 50000
+  public_port   = 50000
+  protocol      = "tcp"
+  member_ids    = [for vm in module.control_plane_vms : vm.vm_id]
+  cidrlist      = ["0.0.0.0/0"]
+
+  depends_on = [module.control_plane_vms]
+}
+
+resource "talos_machine_configuration_apply" "controlplane" {
+  count = var.is_enabled ? var.controlplane_count : 0
+
+  client_configuration        = module.talos_config[0].client_configuration
+  machine_configuration_input = module.talos_config[0].controlplane_config
+  # endpoint and node both use the LB IP — the Terraform runner cannot reach
+  # private VM IPs directly; the LB forwards port 50000 to the control plane VM.
+  node     = cloudstack_ipaddress.lb[0].ip_address
+  endpoint = cloudstack_ipaddress.lb[0].ip_address
+
+  depends_on = [cloudstack_loadbalancer_rule.talos_api]
+}
+
+# ---------------------------------------------------------------------------
+# Step 5 – Create LB rule for the Kubernetes API server (port 6443)
 # ---------------------------------------------------------------------------
 resource "cloudstack_loadbalancer_rule" "apiserver" {
   count         = var.is_enabled ? 1 : 0
@@ -61,11 +98,11 @@ resource "cloudstack_loadbalancer_rule" "apiserver" {
   member_ids    = [for vm in module.control_plane_vms : vm.vm_id]
   cidrlist      = ["0.0.0.0/0"] # allow API access from anywhere (can be restricted if desired)
 
-  depends_on = [module.control_plane_vms]
+  depends_on = [talos_machine_configuration_apply.controlplane]
 }
 
 # ---------------------------------------------------------------------------
-# Step 5 – Bootstrap cluster and install Helm charts
+# Step 6 – Bootstrap cluster and install Helm charts
 # Depends on LB rule so that the API endpoint is reachable before bootstrap
 # ---------------------------------------------------------------------------
 module "bootstrap" {
@@ -78,6 +115,7 @@ module "bootstrap" {
 
   cluster_name         = var.cluster_name
   cluster_endpoint     = "https://${cloudstack_ipaddress.lb[0].ip_address}:6443"
+  talos_endpoint       = cloudstack_ipaddress.lb[0].ip_address
   client_configuration = module.talos_config[0].client_configuration
   controlplane_ips     = [for vm in module.control_plane_vms : vm.private_ip]
 
@@ -104,7 +142,7 @@ module "bootstrap" {
 }
 
 # ---------------------------------------------------------------------------
-# Step 6 – Deploy worker VMs (after bootstrap so kubelet can join immediately)
+# Step 7 – Deploy worker VMs (after bootstrap so kubelet can join immediately)
 # ---------------------------------------------------------------------------
 module "worker_vms" {
   count  = var.is_enabled ? var.worker_count : 0
@@ -125,7 +163,47 @@ module "worker_vms" {
 }
 
 # ---------------------------------------------------------------------------
-# Step 7 – Store talosconfig in 1Password
+# Step 8 – Push machine config to worker VMs
+# Same pattern as controlplane: explicit push avoids reliance on data-server.
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Step 8 – Push machine config to worker VMs
+# Workers need port 50000 exposed. We add a dedicated LB rule (workers get
+# their own public IP, or we reuse the same LB IP with a separate rule).
+# Worker config apply uses the same LB IP as the control plane — the LB
+# round-robins across all members, but since each worker's config is
+# identical (same worker config YAML), any delivery succeeds.
+# Workers are added to the Talos API LB rule to make port 50000 reachable.
+# ---------------------------------------------------------------------------
+resource "cloudstack_loadbalancer_rule" "talos_api_workers" {
+  count         = var.is_enabled && var.worker_count > 0 ? 1 : 0
+  name          = "${var.cluster_name}-talos-api-workers"
+  ip_address_id = cloudstack_ipaddress.lb[0].id
+  network_id    = var.network_id != "" ? var.network_id : null
+  algorithm     = "roundrobin"
+  private_port  = 50000
+  public_port   = 50001
+  protocol      = "tcp"
+  member_ids    = [for vm in module.worker_vms : vm.vm_id]
+  cidrlist      = ["0.0.0.0/0"]
+
+  depends_on = [module.worker_vms]
+}
+
+resource "talos_machine_configuration_apply" "worker" {
+  count = var.is_enabled && var.worker_count > 0 ? 1 : 0
+
+  client_configuration        = module.talos_config[0].client_configuration
+  machine_configuration_input = module.talos_config[0].worker_config
+  # Connect via LB port 50001 → worker VMs port 50000
+  node     = cloudstack_ipaddress.lb[0].ip_address
+  endpoint = "${cloudstack_ipaddress.lb[0].ip_address}:50001"
+
+  depends_on = [cloudstack_loadbalancer_rule.talos_api_workers]
+}
+
+# ---------------------------------------------------------------------------
+# Step 9 – Store talosconfig and kubeconfig in 1Password
 # ---------------------------------------------------------------------------
 module "op_talosconfig" {
   count  = var.is_enabled ? 1 : 0

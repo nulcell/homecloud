@@ -20,9 +20,10 @@ resource "cloudstack_instance" "this" {
 
   keypair = var.keypair_name != "" ? var.keypair_name : null
 
-  # user_data_base64 takes precedence (e.g. raw Talos machine config).
-  # Falls back to userdata_id when the CloudStack TF provider supports it.
-  user_data    = var.user_data_base64 != "" ? var.user_data_base64 : null
+  # The CloudStack provider base64-encodes user_data before sending to the API,
+  # so we must pass the raw (decoded) value here. var.user_data_base64 is
+  # accepted base64-encoded from callers for safe transport, then decoded here.
+  user_data    = var.user_data_base64 != "" ? base64decode(var.user_data_base64) : null
   userdata_id  = var.user_data_base64 == "" && var.userdata_id != "" ? var.userdata_id : null
 
   # userdata_details: key/value substitution params for pre-registered userdata.
