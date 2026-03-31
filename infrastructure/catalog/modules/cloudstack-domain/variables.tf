@@ -17,9 +17,3 @@ variable "resource_limits" {
   type        = map(number)
   description = "Map of resource type integer (as string key) → maximum value. See CloudStack resourcetype enumeration."
 }
-
-variable "existing_domain_id" {
-  type        = string
-  default     = ""
-  description = "Existing domain UUID for import. Leave empty to create a new domain."
-}

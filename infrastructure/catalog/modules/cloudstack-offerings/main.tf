@@ -82,7 +82,7 @@ resource "cloudstack_service_offering_unconstrained" "this" {
   # After the first apply, look up UUIDs with:
   #   cmk -p admin list diskofferings name="shared.custom" --output text --filter id
   # Then pass them via existing_compute_offering_ids or set directly in the live unit.
-  disk_offering_id        = (
+  disk_offering_id = (
     each.value.disk_type == "custom_shared"
     ? lookup(var.custom_disk_offering_ids, "shared.custom", null)
     : lookup(var.custom_disk_offering_ids, "local.custom", null)
@@ -169,6 +169,8 @@ resource "null_resource" "vpc_offering" {
         cmk -p ${var.cmk_profile} createVPCOffering \
           name='${each.key}' \
           displaytext='${each.value.display_text}' \
+          ispublic=true \
+          enable=true \
           supportedservices='${join(",", each.value.services)}'
       else
         echo "VPC offering '${each.key}' already exists ($EXISTING), skipping."

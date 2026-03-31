@@ -19,14 +19,17 @@ module "account" {
   count  = var.existing_account_name == null ? 1 : 0
   source = "../../modules/cloudstack-account"
 
-  account_name = var.account_name
-  account_type = 2 # domain admin
-  domain_id    = local.resolved_domain_id
-  email        = local._cs_homecloud_fields["Email"]
-  firstname    = local._cs_homecloud_fields["First name"]
-  lastname     = local._cs_homecloud_fields["Last name"]
-  password     = data.onepassword_item.cs_homecloud_creds.password
-  username     = data.onepassword_item.cs_homecloud_creds.username
+  account_name    = var.account_name
+  account_type    = 2 # domain admin
+  domain_id       = local.resolved_domain_id
+  email           = local._cs_homecloud_fields["Email"]
+  firstname       = local._cs_homecloud_fields["First name"]
+  lastname        = local._cs_homecloud_fields["Last name"]
+  password        = data.onepassword_item.cs_homecloud_creds.password
+  username        = data.onepassword_item.cs_homecloud_creds.username
+  resource_limits = var.resource_limits
+
+  depends_on = [module.domain]
 }
 
 # When the account is freshly created, generate its API key and write to 1Password
@@ -43,11 +46,11 @@ resource "null_resource" "homecloud_api_key" {
       USER_ID=$(cmk -p admin list users \
         account='${var.account_name}' \
         domainid='${local.resolved_domain_id}' \
-        --output text --filter id | head -1)
+        --output text --filter id | jq -r '.user[0].id')
 
-      RESULT=$(cmk -p admin createApiKey id="$USER_ID")
-      API_KEY=$(echo "$RESULT"    | jq -r '.apikeys.apikey')
-      SECRET_KEY=$(echo "$RESULT" | jq -r '.apikeys.secretkey')
+      RESULT=$(cmk -p admin getUserKeys id="$USER_ID")
+      API_KEY=$(echo "$RESULT"    | jq -r '.userkeys.apikey')
+      SECRET_KEY=$(echo "$RESULT" | jq -r '.userkeys.secretkey')
 
       op item edit '${var.op_cs_homecloud_item}' \
         --vault '${var.op_vault}' \

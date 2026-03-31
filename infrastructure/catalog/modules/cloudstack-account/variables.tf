@@ -46,8 +46,7 @@ variable "role_id" {
   description = "Role UUID to assign. Leave empty to auto-resolve the default role for the given account_type."
 }
 
-variable "existing_account_id" {
-  type        = string
-  default     = ""
-  description = "Existing account UUID for import. Leave empty to create a new account."
+variable "resource_limits" {
+  type        = map(number)
+  description = "Map of resource type integer (as string key) → maximum value. See CloudStack resourcetype enumeration."
 }
