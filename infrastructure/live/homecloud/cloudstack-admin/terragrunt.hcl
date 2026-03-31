@@ -89,11 +89,25 @@ inputs = {
       traffic_types    = ["Management"]
       vlan_range       = null
       public_ip_range  = null
+      service_providers = {
+        "VirtualRouter"        = { service_list = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData"] }
+        "VpcVirtualRouter"     = { service_list = ["Vpn", "Dhcp", "Dns", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData","NetworkACL"] }
+        # "SecurityGroupProvider" = { service_list = ["SecurityGroup"] }
+        "InternalLbVm"         = { service_list = ["Lb"] }
+        "ConfigDrive"          = { service_list = ["Dhcp", "Dns", "UserData"] }
+      }
     }
     "cloudbr1" = {
       isolation_method = "VLAN"
       traffic_types    = ["Public", "Guest"]
       vlan_range       = "500-700"
+      service_providers = {
+        "VirtualRouter"        = { service_list = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData"] }
+        "VpcVirtualRouter"     = { service_list = ["Vpn", "Dhcp", "Dns", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData","NetworkACL"] }
+        # "SecurityGroupProvider" = { service_list = ["SecurityGroup"] }
+        "InternalLbVm"         = { service_list = ["Lb"] }
+        "ConfigDrive"          = { service_list = ["Dhcp", "Dns", "UserData"] }
+      }
       public_ip_range = {
         gateway  = "10.10.31.254"
         netmask  = "255.255.240.0"

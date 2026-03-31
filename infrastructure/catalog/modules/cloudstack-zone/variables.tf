@@ -25,12 +25,15 @@ variable "zone_network_type" {
 
 variable "physical_networks" {
   type = map(object({
-    isolation_method = string
-    traffic_types    = list(string)
-    network_speed    = optional(string, "10G")
-    tags             = optional(string)
-    vlan_range       = optional(string)
-    kvm_labels       = optional(map(string), {})
+    isolation_method  = string
+    traffic_types     = list(string)
+    network_speed     = optional(string, "10G")
+    tags              = optional(string)
+    vlan_range        = optional(string)
+    kvm_labels        = optional(map(string), {})
+    service_providers = optional(map(object({
+      service_list = optional(list(string), [])
+    })), {})
     public_ip_range = optional(object({
       gateway  = string
       netmask  = string

@@ -12,6 +12,19 @@ locals {
 }
 
 locals {
+  nsp_pairs = merge([
+    for net_name, net in var.physical_networks : {
+      for nsp_name, nsp in net.service_providers :
+      "${net_name}/${nsp_name}" => {
+        physical_network_id = cloudstack_physical_network.this[net_name].id
+        name                = nsp_name
+        service_list        = nsp.service_list
+      }
+    }
+  ]...)
+}
+
+locals {
   vlan_ip_ranges = merge([
     for net_name, net in var.physical_networks : net.public_ip_range != null ? {
       "${net_name}" = {
