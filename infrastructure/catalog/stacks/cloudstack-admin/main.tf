@@ -30,6 +30,8 @@ module "domain" {
   domain_network  = var.domain_network
   account_name    = var.account_name
   resource_limits = var.resource_limits
+
+  depends_on = [module.zone]
 }
 
 module "account" {
@@ -91,5 +93,7 @@ module "templates" {
   zone_name = var.zone_name
   templates = var.templates
   isos      = var.isos
+
+  depends_on = [module.zone]
 }
 

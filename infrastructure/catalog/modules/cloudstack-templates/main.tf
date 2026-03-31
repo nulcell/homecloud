@@ -21,9 +21,9 @@ resource "cloudstack_template" "this" {
   is_dynamically_scalable = each.value.is_dynamically_scalable
   password_enabled        = each.value.password_enabled
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
 }
 
 # ---------------------------------------------------------------------------

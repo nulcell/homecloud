@@ -31,10 +31,6 @@ variable "physical_networks" {
     tags             = optional(string)
     vlan_range       = optional(string)
     kvm_labels       = optional(map(string), {})
-    service_providers = optional(list(object({
-      name         = string
-      service_list = optional(list(string))
-    })), [])
     public_ip_range = optional(object({
       gateway  = string
       netmask  = string
