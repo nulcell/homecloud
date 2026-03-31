@@ -31,6 +31,10 @@ locals {
 
   # ─── Zone / Network ───────────────────────────────────────────────────────
   zone_name         = "zone-homecloud"
+  zone_dns1         = "10.10.31.254"
+  zone_internal_dns1 = "10.10.31.254"
+  zone_network_type  = "Advanced"
+
   network_domain    = "homecloud.internal"
   vpc_cidr          = "10.0.0.0/24"
   isolated_net_cidr = "10.1.1.0/24"

@@ -1,8 +1,15 @@
+resource "cloudstack_zone" "this" {
+  name          = var.zone_name
+  dns1          = var.zone_dns1
+  internal_dns1 = var.zone_internal_dns1
+  network_type  = var.zone_network_type
+}
+
 resource "cloudstack_physical_network" "this" {
   for_each = var.physical_networks
 
   name                   = each.key
-  zone_id                = data.cloudstack_zone.this.id
+  zone_id                = cloudstack_zone.this.id
   isolation_methods      = [each.value.isolation_method]
   broadcast_domain_range = "ZONE"
   network_speed          = lookup(each.value, "network_speed", "10G")
@@ -47,7 +54,7 @@ resource "cloudstack_vlan_ip_range" "this" {
   for_each = local.vlan_ip_ranges
 
   physical_network_id = each.value.physical_network_id
-  zone_id             = data.cloudstack_zone.this.id
+  zone_id             = cloudstack_zone.this.id
   gateway             = each.value.gateway
   netmask             = each.value.netmask
   start_ip            = each.value.start_ip
@@ -64,12 +71,12 @@ resource "cloudstack_vlan_ip_range" "this" {
 #   cmk -p admin list pods zoneid=<zone_id> name=<name> --output text --filter id
 # ---------------------------------------------------------------------------
 resource "cloudstack_pod" "this" {
-  name      = var.pod.name
-  zone_id   = data.cloudstack_zone.this.id
-  gateway   = var.pod.gateway
-  netmask   = var.pod.netmask
-  start_ip  = var.pod.start_ip
-  end_ip    = var.pod.end_ip
+  name     = var.pod.name
+  zone_id  = cloudstack_zone.this.id
+  gateway  = var.pod.gateway
+  netmask  = var.pod.netmask
+  start_ip = var.pod.start_ip
+  end_ip   = var.pod.end_ip
 
   depends_on = [cloudstack_physical_network.this]
 
@@ -89,7 +96,7 @@ resource "cloudstack_cluster" "this" {
   cluster_type = "CloudManaged"
   hypervisor   = var.cluster.hypervisor
   pod_id       = cloudstack_pod.this.id
-  zone_id      = data.cloudstack_zone.this.id
+  zone_id      = cloudstack_zone.this.id
 
   depends_on = [cloudstack_pod.this]
 }
@@ -110,11 +117,11 @@ resource "null_resource" "host" {
   provisioner "local-exec" {
     command = <<-EOT
       EXISTING=$(cmk -p ${var.cmk_profile} list hosts \
-        zoneid='${data.cloudstack_zone.this.id}' \
+        zoneid='${cloudstack_zone.this.id}' \
         --output text --filter name 2>/dev/null | grep -c '${each.key}' || true)
       if [ "$EXISTING" -eq 0 ]; then
         cmk -p ${var.cmk_profile} add host \
-          zoneid='${data.cloudstack_zone.this.id}' \
+          zoneid='${cloudstack_zone.this.id}' \
           clusterid='${cloudstack_cluster.this.id}' \
           podid='${cloudstack_pod.this.id}' \
           hypervisor='${var.cluster.hypervisor}' \
@@ -140,7 +147,7 @@ resource "cloudstack_storage_pool" "primary" {
 
   name    = each.key
   url     = "nfs://${each.value.server}${each.value.path}"
-  zone_id = data.cloudstack_zone.this.id
+  zone_id = cloudstack_zone.this.id
   scope   = "ZONE"
 
   depends_on = [null_resource.host]
@@ -165,7 +172,7 @@ resource "cloudstack_secondary_storage" "this" {
   name             = each.key
   storage_provider = "NFS"
   url              = "nfs://${each.value.server}${each.value.path}"
-  zone_id          = data.cloudstack_zone.this.id
+  zone_id          = cloudstack_zone.this.id
 
   depends_on = [null_resource.host]
 }

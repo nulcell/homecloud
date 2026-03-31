@@ -28,6 +28,26 @@ variable "zone_name" {
   description = "Name of the CloudStack zone (must already exist; looked up via data source)."
 }
 
+variable "zone_dns1" {
+  type        = string
+  description = "Primary DNS for the zone."
+}
+
+variable "zone_internal_dns1" {
+  type        = string
+  description = "Internal primary DNS for the zone."
+}
+
+variable "zone_network_type" {
+  type        = string
+  description = "Network type for the zone (e.g., 'Basic' or 'Advanced')."
+  # the value must be either 'Basic' or 'Advanced'
+  validation {
+    condition     = contains(["Basic", "Advanced"], var.zone_network_type)
+    error_message = "zone_network_type must be either 'Basic' or 'Advanced'."
+  }
+}
+
 # ── Global configuration settings ────────────────────────────────────────────
 
 variable "global_settings" {

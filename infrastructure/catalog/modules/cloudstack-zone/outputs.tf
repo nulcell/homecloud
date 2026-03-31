@@ -1,11 +1,11 @@
 output "zone_id" {
   description = "UUID of the CloudStack zone."
-  value       = data.cloudstack_zone.this.id
+  value       = cloudstack_zone.this.id
 }
 
 output "zone_name" {
   description = "Name of the CloudStack zone."
-  value       = data.cloudstack_zone.this.name
+  value       = cloudstack_zone.this.name
 }
 
 output "pod_id" {

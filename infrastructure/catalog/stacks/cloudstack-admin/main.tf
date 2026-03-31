@@ -9,6 +9,9 @@ module "zone" {
   source = "../../modules/cloudstack-zone"
 
   zone_name             = var.zone_name
+  zone_dns1             = var.zone_dns1
+  zone_internal_dns1    = var.zone_internal_dns1
+  zone_network_type     = var.zone_network_type
   physical_networks     = var.physical_networks
   pod                   = var.pod
   cluster               = var.cluster
@@ -23,24 +26,24 @@ module "domain" {
   count  = var.domain_id == "" ? 1 : 0
   source = "../../modules/cloudstack-domain"
 
-  domain_name        = var.domain_name
-  domain_network     = var.domain_network
-  account_name       = var.account_name
-  resource_limits    = var.resource_limits
+  domain_name     = var.domain_name
+  domain_network  = var.domain_network
+  account_name    = var.account_name
+  resource_limits = var.resource_limits
 }
 
 module "account" {
   count  = var.account_id == "" ? 1 : 0
   source = "../../modules/cloudstack-account"
 
-  account_name        = var.account_name
-  account_type        = 2 # domain admin
-  domain_id           = local.resolved_domain_id
-  email               = local._cs_homecloud_fields["Email"]
-  firstname           = local._cs_homecloud_fields["First name"]
-  lastname            = local._cs_homecloud_fields["Last name"]
-  password            = data.onepassword_item.cs_homecloud_creds.password
-  username            = data.onepassword_item.cs_homecloud_creds.username
+  account_name = var.account_name
+  account_type = 2 # domain admin
+  domain_id    = local.resolved_domain_id
+  email        = local._cs_homecloud_fields["Email"]
+  firstname    = local._cs_homecloud_fields["First name"]
+  lastname     = local._cs_homecloud_fields["Last name"]
+  password     = data.onepassword_item.cs_homecloud_creds.password
+  username     = data.onepassword_item.cs_homecloud_creds.username
 }
 
 # When the account is freshly created, generate its API key and write to 1Password
