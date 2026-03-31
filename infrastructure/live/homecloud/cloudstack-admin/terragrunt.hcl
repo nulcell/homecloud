@@ -72,83 +72,6 @@ inputs = {
     "mem.overprovisioning.factor"     = "1.25"
   }
 
-  # zone = {
-  #   dns1                                = "10.10.31.254"
-  #   dns2                                = "8.8.8.8"
-  #   internal_dns1                       = "10.10.31.254"
-  #   guest_cidr                          = "10.0.0.0/24"
-  #   network_domain                      = "homecloud.internal"
-  #   local_storage_enabled               = true
-  #   local_storage_enabled_for_system_vm = false
-  # }
-
-  # # Two physical networks: cloudbr0 (Management) and cloudbr1 (Public + Guest)
-  # physical_networks = {
-  #   "cloudbr0" = {
-  #     isolation_method = "VLAN"
-  #     traffic_types    = ["Management"]
-  #     vlan_range       = null
-  #     public_ip_range  = null
-  #     service_providers = {
-  #       "VirtualRouter"        = { service_list = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData"] }
-  #       "VpcVirtualRouter"     = { service_list = ["Vpn", "Dhcp", "Dns", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData","NetworkACL"] }
-  #       # "SecurityGroupProvider" = { service_list = ["SecurityGroup"] }
-  #       "InternalLbVm"         = { service_list = ["Lb"] }
-  #       "ConfigDrive"          = { service_list = ["Dhcp", "Dns", "UserData"] }
-  #     }
-  #   }
-  #   "cloudbr1" = {
-  #     isolation_method = "VLAN"
-  #     traffic_types    = ["Public", "Guest"]
-  #     vlan_range       = "500-700"
-  #     service_providers = {
-  #       "VirtualRouter"        = { service_list = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData"] }
-  #       "VpcVirtualRouter"     = { service_list = ["Vpn", "Dhcp", "Dns", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData","NetworkACL"] }
-  #       # "SecurityGroupProvider" = { service_list = ["SecurityGroup"] }
-  #       "InternalLbVm"         = { service_list = ["Lb"] }
-  #       "ConfigDrive"          = { service_list = ["Dhcp", "Dns", "UserData"] }
-  #     }
-  #     public_ip_range = {
-  #       gateway  = "10.10.31.254"
-  #       netmask  = "255.255.240.0"
-  #       start_ip = "10.10.20.1"
-  #       end_ip   = "10.10.20.254"
-  #       vlan     = "vlan://untagged"
-  #     }
-  #   }
-  # }
-
-  # pod = {
-  #   name     = "pod-homecloud"
-  #   gateway  = "10.10.31.254"
-  #   netmask  = "255.255.240.0"
-  #   start_ip = "10.10.21.1"
-  #   end_ip   = "10.10.21.254"
-  # }
-
-  # cluster = {
-  #   name       = "cluster-homecloud"
-  #   hypervisor = "KVM"
-  # }
-
-  # # map: ip_address → { username }
-  # hosts = {
-  #   "10.10.17.5"  = { username = "root" }
-  #   # "10.10.17.10" = { username = "root" }
-  # }
-
-  # # map: name → { server, path }  (zone-wide NFS primary storage)
-  # primary_storage_pools = {
-  #   "primary-nfs-zone-homecloud" = { server = "10.10.17.5", path = "/export/primary" }
-  #   # "primary-nfs2-zone-homecloud"  = { server = "10.10.17.10", path = "/export/primary" }
-  # }
-
-  # # map: name → { server, path }  (NFS image stores — null_resource, no native TF resource)
-  # secondary_storage = {
-  #   "secondary-nfs-zone-homecloud" = { server = "10.10.17.5", path = "/export/secondary" }
-  #   # "secondary-nfs2-zone-homecloud"  = { server = "10.10.17.10", path = "/export/secondary" }
-  # }
-
   domain_name    = "homecloud"
   domain_network = include.account.locals.network_domain
   account_name   = "homecloud"
@@ -168,8 +91,8 @@ inputs = {
     "5"  = 5
     "6"  = 20
     "7"  = 4
-    "8"  = 110
-    "9"  = 148480
+    "8"  = 80     # 80 vCPUs at 2.5 GHz
+    "9"  = 112640 # 110 GiB RAM
     "10" = 2000
     "11" = 2000
     "12" = 50
@@ -312,7 +235,7 @@ inputs = {
       services         = ["Vpn", "Dhcp", "Dns", "Lb", "UserData", "SourceNat", "StaticNat", "PortForwarding", "NetworkACL"]
     }
   }
-  
+
   vpc_offerings = {
     "natted.core" = {
       display_text     = "NATTED Single Virtual Router VPC with VpcVirtualRouter, ConfigDrive, InternalLbVm"
@@ -339,7 +262,7 @@ inputs = {
       details = {
         keyboard         = "us"
         rootdisksize     = "10"
-        "guest.cpu.mode" = "host-model"
+        "guest.cpu.mode" = "host"
       }
     }
     "debian-12" = {
@@ -365,8 +288,12 @@ inputs = {
       format         = "RAW"
       hypervisor     = "KVM"
       os_type        = "Other Linux (64-bit)"
-      is_featured    = false
+      is_featured    = true
       is_extractable = true
+      details = {
+        keyboard         = "us"
+        "guest.cpu.mode" = "host"
+      }
     }
   }
 

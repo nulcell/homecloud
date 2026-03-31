@@ -26,6 +26,26 @@ resource "cloudstack_template" "this" {
   # }
 }
 
+# Update template configs using cmk CLI since cloudstack_template does not support in-place updates.
+resource "null_resource" "template_update" {
+  for_each = { for k, v in var.templates : k => v if length(v.details) > 0 }
+
+  triggers = {
+    hash = sha256(jsonencode(each.value.details))
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      TEMPLATE_ID=${cloudstack_template.this[each.key].id}
+      cmk -p admin update template id="$TEMPLATE_ID" \
+        ${join(" \\\n        ", [
+    for k, v in each.value.details :
+    "details[0].${k}=\"${v}\""
+])}
+    EOT
+}
+}
+
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # ISOs

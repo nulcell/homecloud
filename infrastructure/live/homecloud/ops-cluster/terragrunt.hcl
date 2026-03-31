@@ -19,7 +19,7 @@ dependency "cloudstack_homecloud" {
   mock_outputs = {
     zone_id      = "mock-zone-id"
     iso_net_id   = "mock-net-id"
-    pub_net_1_id   = "mock-pub-net-id"
+    pub_net_1_id = "mock-pub-net-id"
     vpc_id       = "mock-vpc-id"
     keypair_name = "nulcell"
   }

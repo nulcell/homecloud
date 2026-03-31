@@ -30,8 +30,8 @@ locals {
   tailscale_tailnet = "nulcell.com"
 
   # ─── Zone / Network ───────────────────────────────────────────────────────
-  zone_name         = "zone-homecloud"
-  zone_dns1         = "10.10.31.254"
+  zone_name          = "zone-homecloud"
+  zone_dns1          = "10.10.31.254"
   zone_internal_dns1 = "10.10.31.254"
   zone_network_type  = "Advanced"
 
