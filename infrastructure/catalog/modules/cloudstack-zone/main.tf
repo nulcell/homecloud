@@ -145,10 +145,11 @@ resource "null_resource" "host" {
 resource "cloudstack_storage_pool" "primary" {
   for_each = var.primary_storage_pools
 
-  name    = each.key
-  url     = "nfs://${each.value.server}${each.value.path}"
-  zone_id = cloudstack_zone.this.id
-  scope   = "ZONE"
+  name       = each.key
+  url        = "nfs://${each.value.server}${each.value.path}"
+  zone_id    = cloudstack_zone.this.id
+  hypervisor = "KVM"
+  scope      = "ZONE"
 
   depends_on = [null_resource.host]
 
