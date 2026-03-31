@@ -5,37 +5,18 @@ module "configuration" {
   cmk_profile     = "admin"
 }
 
-module "zone" {
-  source = "../../modules/cloudstack-zone"
-
-  zone_name             = var.zone_name
-  zone_dns1             = var.zone_dns1
-  zone_internal_dns1    = var.zone_internal_dns1
-  zone_network_type     = var.zone_network_type
-  physical_networks     = var.physical_networks
-  pod                   = var.pod
-  cluster               = var.cluster
-  hosts                 = var.hosts
-  primary_storage_pools = var.primary_storage_pools
-  secondary_storage     = var.secondary_storage
-  cmk_profile           = "admin"
-
-}
-
 module "domain" {
-  count  = var.domain_id == "" ? 1 : 0
+  count  = var.existing_domain_name == null ? 1 : 0
   source = "../../modules/cloudstack-domain"
 
   domain_name     = var.domain_name
   domain_network  = var.domain_network
   account_name    = var.account_name
   resource_limits = var.resource_limits
-
-  depends_on = [module.zone]
 }
 
 module "account" {
-  count  = var.account_id == "" ? 1 : 0
+  count  = var.existing_account_name == null ? 1 : 0
   source = "../../modules/cloudstack-account"
 
   account_name = var.account_name
@@ -51,7 +32,7 @@ module "account" {
 # When the account is freshly created, generate its API key and write to 1Password
 # so downstream units can configure their cloudstack provider on the next apply.
 resource "null_resource" "homecloud_api_key" {
-  count = var.account_id == "" ? 1 : 0
+  count = var.existing_account_name == null ? 1 : 0
 
   triggers = {
     account_id = module.account[0].account_id
@@ -89,11 +70,9 @@ module "offerings" {
 module "templates" {
   source = "../../modules/cloudstack-templates"
 
-  zone_id   = module.zone.zone_id
+  zone_id   = data.cloudstack_zone.this.id
   zone_name = var.zone_name
   templates = var.templates
   isos      = var.isos
-
-  depends_on = [module.zone]
 }
 

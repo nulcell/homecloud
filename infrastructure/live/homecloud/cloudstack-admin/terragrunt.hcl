@@ -19,9 +19,9 @@ inputs = {
   op_vault           = include.account.locals.op_vault
   op_account         = include.account.locals.op_account
   zone_name          = include.account.locals.zone_name
-  zone_dns1          = include.account.locals.zone_dns1
-  zone_internal_dns1 = include.account.locals.zone_internal_dns1
-  zone_network_type  = include.account.locals.zone_network_type
+  # zone_dns1          = include.account.locals.zone_dns1
+  # zone_internal_dns1 = include.account.locals.zone_internal_dns1
+  # zone_network_type  = include.account.locals.zone_network_type
 
   # ── Global Settings (map: config_name → value) ───────────────────────────
   global_settings = {
@@ -72,82 +72,82 @@ inputs = {
     "mem.overprovisioning.factor"     = "1.25"
   }
 
-  zone = {
-    dns1                                = "10.10.31.254"
-    dns2                                = "8.8.8.8"
-    internal_dns1                       = "10.10.31.254"
-    guest_cidr                          = "10.0.0.0/24"
-    network_domain                      = "homecloud.internal"
-    local_storage_enabled               = true
-    local_storage_enabled_for_system_vm = false
-  }
+  # zone = {
+  #   dns1                                = "10.10.31.254"
+  #   dns2                                = "8.8.8.8"
+  #   internal_dns1                       = "10.10.31.254"
+  #   guest_cidr                          = "10.0.0.0/24"
+  #   network_domain                      = "homecloud.internal"
+  #   local_storage_enabled               = true
+  #   local_storage_enabled_for_system_vm = false
+  # }
 
-  # Two physical networks: cloudbr0 (Management) and cloudbr1 (Public + Guest)
-  physical_networks = {
-    "cloudbr0" = {
-      isolation_method = "VLAN"
-      traffic_types    = ["Management"]
-      vlan_range       = null
-      public_ip_range  = null
-      service_providers = {
-        "VirtualRouter"        = { service_list = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData"] }
-        "VpcVirtualRouter"     = { service_list = ["Vpn", "Dhcp", "Dns", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData","NetworkACL"] }
-        # "SecurityGroupProvider" = { service_list = ["SecurityGroup"] }
-        "InternalLbVm"         = { service_list = ["Lb"] }
-        "ConfigDrive"          = { service_list = ["Dhcp", "Dns", "UserData"] }
-      }
-    }
-    "cloudbr1" = {
-      isolation_method = "VLAN"
-      traffic_types    = ["Public", "Guest"]
-      vlan_range       = "500-700"
-      service_providers = {
-        "VirtualRouter"        = { service_list = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData"] }
-        "VpcVirtualRouter"     = { service_list = ["Vpn", "Dhcp", "Dns", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData","NetworkACL"] }
-        # "SecurityGroupProvider" = { service_list = ["SecurityGroup"] }
-        "InternalLbVm"         = { service_list = ["Lb"] }
-        "ConfigDrive"          = { service_list = ["Dhcp", "Dns", "UserData"] }
-      }
-      public_ip_range = {
-        gateway  = "10.10.31.254"
-        netmask  = "255.255.240.0"
-        start_ip = "10.10.20.1"
-        end_ip   = "10.10.20.254"
-        vlan     = "vlan://untagged"
-      }
-    }
-  }
+  # # Two physical networks: cloudbr0 (Management) and cloudbr1 (Public + Guest)
+  # physical_networks = {
+  #   "cloudbr0" = {
+  #     isolation_method = "VLAN"
+  #     traffic_types    = ["Management"]
+  #     vlan_range       = null
+  #     public_ip_range  = null
+  #     service_providers = {
+  #       "VirtualRouter"        = { service_list = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData"] }
+  #       "VpcVirtualRouter"     = { service_list = ["Vpn", "Dhcp", "Dns", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData","NetworkACL"] }
+  #       # "SecurityGroupProvider" = { service_list = ["SecurityGroup"] }
+  #       "InternalLbVm"         = { service_list = ["Lb"] }
+  #       "ConfigDrive"          = { service_list = ["Dhcp", "Dns", "UserData"] }
+  #     }
+  #   }
+  #   "cloudbr1" = {
+  #     isolation_method = "VLAN"
+  #     traffic_types    = ["Public", "Guest"]
+  #     vlan_range       = "500-700"
+  #     service_providers = {
+  #       "VirtualRouter"        = { service_list = ["Vpn", "Dhcp", "Dns", "Firewall", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData"] }
+  #       "VpcVirtualRouter"     = { service_list = ["Vpn", "Dhcp", "Dns", "Lb", "SourceNat", "StaticNat", "PortForwarding", "UserData","NetworkACL"] }
+  #       # "SecurityGroupProvider" = { service_list = ["SecurityGroup"] }
+  #       "InternalLbVm"         = { service_list = ["Lb"] }
+  #       "ConfigDrive"          = { service_list = ["Dhcp", "Dns", "UserData"] }
+  #     }
+  #     public_ip_range = {
+  #       gateway  = "10.10.31.254"
+  #       netmask  = "255.255.240.0"
+  #       start_ip = "10.10.20.1"
+  #       end_ip   = "10.10.20.254"
+  #       vlan     = "vlan://untagged"
+  #     }
+  #   }
+  # }
 
-  pod = {
-    name     = "pod-homecloud"
-    gateway  = "10.10.31.254"
-    netmask  = "255.255.240.0"
-    start_ip = "10.10.21.1"
-    end_ip   = "10.10.21.254"
-  }
+  # pod = {
+  #   name     = "pod-homecloud"
+  #   gateway  = "10.10.31.254"
+  #   netmask  = "255.255.240.0"
+  #   start_ip = "10.10.21.1"
+  #   end_ip   = "10.10.21.254"
+  # }
 
-  cluster = {
-    name       = "cluster-homecloud"
-    hypervisor = "KVM"
-  }
+  # cluster = {
+  #   name       = "cluster-homecloud"
+  #   hypervisor = "KVM"
+  # }
 
-  # map: ip_address → { username }
-  hosts = {
-    "10.10.17.5"  = { username = "root" }
-    # "10.10.17.10" = { username = "root" }
-  }
+  # # map: ip_address → { username }
+  # hosts = {
+  #   "10.10.17.5"  = { username = "root" }
+  #   # "10.10.17.10" = { username = "root" }
+  # }
 
-  # map: name → { server, path }  (zone-wide NFS primary storage)
-  primary_storage_pools = {
-    "primary-nfs-zone-homecloud" = { server = "10.10.17.5", path = "/export/primary" }
-    # "primary-nfs2-zone-homecloud"  = { server = "10.10.17.10", path = "/export/primary" }
-  }
+  # # map: name → { server, path }  (zone-wide NFS primary storage)
+  # primary_storage_pools = {
+  #   "primary-nfs-zone-homecloud" = { server = "10.10.17.5", path = "/export/primary" }
+  #   # "primary-nfs2-zone-homecloud"  = { server = "10.10.17.10", path = "/export/primary" }
+  # }
 
-  # map: name → { server, path }  (NFS image stores — null_resource, no native TF resource)
-  secondary_storage = {
-    "secondary-nfs-zone-homecloud" = { server = "10.10.17.5", path = "/export/secondary" }
-    # "secondary-nfs2-zone-homecloud"  = { server = "10.10.17.10", path = "/export/secondary" }
-  }
+  # # map: name → { server, path }  (NFS image stores — null_resource, no native TF resource)
+  # secondary_storage = {
+  #   "secondary-nfs-zone-homecloud" = { server = "10.10.17.5", path = "/export/secondary" }
+  #   # "secondary-nfs2-zone-homecloud"  = { server = "10.10.17.10", path = "/export/secondary" }
+  # }
 
   domain_name    = "homecloud"
   domain_network = include.account.locals.network_domain

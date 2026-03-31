@@ -28,25 +28,25 @@ variable "zone_name" {
   description = "Name of the CloudStack zone (must already exist; looked up via data source)."
 }
 
-variable "zone_dns1" {
-  type        = string
-  description = "Primary DNS for the zone."
-}
+# variable "zone_dns1" {
+#   type        = string
+#   description = "Primary DNS for the zone."
+# }
 
-variable "zone_internal_dns1" {
-  type        = string
-  description = "Internal primary DNS for the zone."
-}
+# variable "zone_internal_dns1" {
+#   type        = string
+#   description = "Internal primary DNS for the zone."
+# }
 
-variable "zone_network_type" {
-  type        = string
-  description = "Network type for the zone (e.g., 'Basic' or 'Advanced')."
-  # the value must be either 'Basic' or 'Advanced'
-  validation {
-    condition     = contains(["Basic", "Advanced"], var.zone_network_type)
-    error_message = "zone_network_type must be either 'Basic' or 'Advanced'."
-  }
-}
+# variable "zone_network_type" {
+#   type        = string
+#   description = "Network type for the zone (e.g., 'Basic' or 'Advanced')."
+#   # the value must be either 'Basic' or 'Advanced'
+#   validation {
+#     condition     = contains(["Basic", "Advanced"], var.zone_network_type)
+#     error_message = "zone_network_type must be either 'Basic' or 'Advanced'."
+#   }
+# }
 
 # ── Global configuration settings ────────────────────────────────────────────
 
@@ -56,99 +56,99 @@ variable "global_settings" {
   description = "Map of CloudStack configuration key → value to apply via updateConfiguration API."
 }
 
-# ── Zone infrastructure ────────────────────────────────────────────────────────
-# All zone infrastructure is pre-existing and imported (set-once).
+# # ── Zone infrastructure ────────────────────────────────────────────────────────
+# # All zone infrastructure is pre-existing and imported (set-once).
 
-variable "zone" {
-  type = object({
-    dns1                                = optional(string)
-    dns2                                = optional(string)
-    internal_dns1                       = optional(string)
-    guest_cidr                          = optional(string)
-    network_domain                      = optional(string)
-    local_storage_enabled               = optional(bool, false)
-    local_storage_enabled_for_system_vm = optional(bool, false)
-  })
+# variable "zone" {
+#   type = object({
+#     dns1                                = optional(string)
+#     dns2                                = optional(string)
+#     internal_dns1                       = optional(string)
+#     guest_cidr                          = optional(string)
+#     network_domain                      = optional(string)
+#     local_storage_enabled               = optional(bool, false)
+#     local_storage_enabled_for_system_vm = optional(bool, false)
+#   })
+#   default     = null
+#   description = "Zone DNS and storage settings. Currently informational; zone must be pre-created and imported."
+# }
+
+# variable "physical_networks" {
+#   type = map(object({
+#     isolation_method  = string
+#     traffic_types     = list(string)
+#     network_speed     = optional(string, "10G")
+#     vlan_range        = optional(string)
+#     service_providers = optional(map(object({
+#       service_list = optional(list(string), [])
+#     })), {})
+#     public_ip_range = optional(object({
+#       gateway  = string
+#       netmask  = string
+#       start_ip = string
+#       end_ip   = string
+#       vlan     = string
+#     }))
+#   }))
+#   default     = {}
+#   description = "Map of physical network name → configuration."
+# }
+
+# variable "pod" {
+#   type = object({
+#     name     = string
+#     gateway  = string
+#     netmask  = string
+#     start_ip = string
+#     end_ip   = string
+#   })
+#   description = "Pod configuration for the zone."
+# }
+
+# variable "cluster" {
+#   type = object({
+#     name       = string
+#     hypervisor = string
+#   })
+#   description = "KVM cluster configuration."
+# }
+
+# variable "hosts" {
+#   type = map(object({
+#     username = string
+#   }))
+#   default     = {}
+#   description = "Map of host IP address → configuration."
+# }
+
+# variable "primary_storage_pools" {
+#   type = map(object({
+#     server = string
+#     path   = string
+#   }))
+#   default     = {}
+#   description = "Map of storage pool name → NFS primary storage configuration."
+# }
+
+# variable "secondary_storage" {
+#   type = map(object({
+#     server = string
+#     path   = string
+#   }))
+#   default     = {}
+#   description = "Map of image store name → NFS secondary storage configuration."
+# }
+
+variable "existing_domain_name" {
+  type        = string
   default     = null
-  description = "Zone DNS and storage settings. Currently informational; zone must be pre-created and imported."
+  description = "Pre-existing domain name. When non-empty, domain creation is skipped and this name is used."
 }
 
-variable "physical_networks" {
-  type = map(object({
-    isolation_method  = string
-    traffic_types     = list(string)
-    network_speed     = optional(string, "10G")
-    vlan_range        = optional(string)
-    service_providers = optional(map(object({
-      service_list = optional(list(string), [])
-    })), {})
-    public_ip_range = optional(object({
-      gateway  = string
-      netmask  = string
-      start_ip = string
-      end_ip   = string
-      vlan     = string
-    }))
-  }))
-  default     = {}
-  description = "Map of physical network name → configuration."
-}
-
-variable "pod" {
-  type = object({
-    name     = string
-    gateway  = string
-    netmask  = string
-    start_ip = string
-    end_ip   = string
-  })
-  description = "Pod configuration for the zone."
-}
-
-variable "cluster" {
-  type = object({
-    name       = string
-    hypervisor = string
-  })
-  description = "KVM cluster configuration."
-}
-
-variable "hosts" {
-  type = map(object({
-    username = string
-  }))
-  default     = {}
-  description = "Map of host IP address → configuration."
-}
-
-variable "primary_storage_pools" {
-  type = map(object({
-    server = string
-    path   = string
-  }))
-  default     = {}
-  description = "Map of storage pool name → NFS primary storage configuration."
-}
-
-variable "secondary_storage" {
-  type = map(object({
-    server = string
-    path   = string
-  }))
-  default     = {}
-  description = "Map of image store name → NFS secondary storage configuration."
-}
-
-variable "domain_id" {
+variable "existing_account_name" {
   type        = string
-  default     = ""
-  description = "Pre-existing domain UUID. When non-empty, domain creation is skipped and this ID is used."
-}
-
-variable "account_id" {
-  type        = string
-  default     = ""
-  description = "Pre-existing account UUID. When non-empty, account creation is skipped and this ID is used."
+  default     = null
+  description = "Pre-existing account name. When non-empty, account creation is skipped and this name is used."
 }
 
 variable "domain_name" {

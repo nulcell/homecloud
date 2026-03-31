@@ -12,3 +12,18 @@ data "onepassword_item" "cs_homecloud_creds" {
   vault = var.op_vault
   title = var.op_cs_homecloud_item
 }
+
+data "cloudstack_zone" "this" {
+  filter {
+    name  = "name"
+    value = var.zone_name
+  }
+}
+
+data "cloudstack_domain" "this" {
+  count = var.existing_domain_name != null ? 1 : 0
+  filter {
+    name  = "name"
+    value = var.existing_domain_name
+  }
+}

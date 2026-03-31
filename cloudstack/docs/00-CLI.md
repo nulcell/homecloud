@@ -285,24 +285,24 @@ HYPERVISOR="KVM"
 
 # Host Configuration
 HOST_1_IP="10.10.17.5"
-HOST_2_IP="10.10.17.10"
+# HOST_2_IP="10.10.17.10"
 HOST_USERNAME="root"
 
 # Primary Storage (NFS)
 PRIMARY_STORAGE_1_NAME="primary-nfs-zone-homecloud"
-PRIMARY_STORAGE_1_SERVER="10.10.17.10"
+PRIMARY_STORAGE_1_SERVER="10.10.17.5"
 PRIMARY_STORAGE_1_PATH="/export/primary"
-PRIMARY_STORAGE_2_NAME="primary-nfs2-zone-homecloud"
-PRIMARY_STORAGE_2_SERVER="10.10.17.5"
-PRIMARY_STORAGE_2_PATH="/export/primary"
+# PRIMARY_STORAGE_2_NAME="primary-nfs2-zone-homecloud"
+# PRIMARY_STORAGE_2_SERVER="10.10.17.10"
+# PRIMARY_STORAGE_2_PATH="/export/primary"
 
 # Secondary Storage (NFS)
 SECONDARY_STORAGE_1_NAME="secondary-nfs-zone-homecloud"
-SECONDARY_STORAGE_1_SERVER="10.10.17.10"
+SECONDARY_STORAGE_1_SERVER="10.10.17.5"
 SECONDARY_STORAGE_1_PATH="/export/secondary"
-SECONDARY_STORAGE_2_NAME="secondary-nfs2-zone-homecloud"
-SECONDARY_STORAGE_2_SERVER="10.10.17.5"
-SECONDARY_STORAGE_2_PATH="/export/secondary"
+# SECONDARY_STORAGE_2_NAME="secondary-nfs2-zone-homecloud"
+# SECONDARY_STORAGE_2_SERVER="10.10.17.10"
+# SECONDARY_STORAGE_2_PATH="/export/secondary"
 
 echo "Creating Advanced Zone: $ZONE_NAME..."
 ZONE_ID=$(cmk -p admin create zone \
@@ -501,15 +501,15 @@ cmk -p admin add host \
   username="$HOST_USERNAME"
 echo "Host added"
 
-echo "Adding host: $HOST_2_IP..."
-cmk -p admin add host \
-  zoneid="$ZONE_ID" \
-  podid="$POD_ID" \
-  clusterid="$CLUSTER_ID" \
-  hypervisor="$HYPERVISOR" \
-  url="http://$HOST_2_IP" \
-  username="$HOST_USERNAME"
-echo "Host added"
+# echo "Adding host: $HOST_2_IP..."
+# cmk -p admin add host \
+#   zoneid="$ZONE_ID" \
+#   podid="$POD_ID" \
+#   clusterid="$CLUSTER_ID" \
+#   hypervisor="$HYPERVISOR" \
+#   url="http://$HOST_2_IP" \
+#   username="$HOST_USERNAME"
+# echo "Host added"
 
 # Create Primary Storage (Zone-wide NFS)
 echo "Creating primary storage: $PRIMARY_STORAGE_1_NAME..."
@@ -522,16 +522,16 @@ PRIMARY_STORAGE_1_ID=$(cmk -p admin create storagepool \
   url="nfs://$PRIMARY_STORAGE_1_SERVER$PRIMARY_STORAGE_1_PATH" \
   | jq -r '.storagepool.id')
 echo "Primary storage created with ID: $PRIMARY_STORAGE_1_ID"
-echo "Creating primary storage: $PRIMARY_STORAGE_2_NAME..."
-PRIMARY_STORAGE_2_ID=$(cmk -p admin create storagepool \
-  name="$PRIMARY_STORAGE_2_NAME" \
-  scope="ZONE" \
-  zoneid="$ZONE_ID" \
-  provider="DefaultPrimary" \
-  hypervisor="$HYPERVISOR" \
-  url="nfs://$PRIMARY_STORAGE_2_SERVER$PRIMARY_STORAGE_2_PATH" \
-  | jq -r '.storagepool.id')
-echo "Primary storage created with ID: $PRIMARY_STORAGE_2_ID"
+# echo "Creating primary storage: $PRIMARY_STORAGE_2_NAME..."
+# PRIMARY_STORAGE_2_ID=$(cmk -p admin create storagepool \
+#   name="$PRIMARY_STORAGE_2_NAME" \
+#   scope="ZONE" \
+#   zoneid="$ZONE_ID" \
+#   provider="DefaultPrimary" \
+#   hypervisor="$HYPERVISOR" \
+#   url="nfs://$PRIMARY_STORAGE_2_SERVER$PRIMARY_STORAGE_2_PATH" \
+#   | jq -r '.storagepool.id')
+# echo "Primary storage created with ID: $PRIMARY_STORAGE_2_ID"
 
 # Add Secondary Storage (Image Store)
 echo "Adding secondary storage: $SECONDARY_STORAGE_1_NAME..."
@@ -542,14 +542,14 @@ SECONDARY_STORAGE_1_ID=$(cmk -p admin add imagestore \
   url="nfs://$SECONDARY_STORAGE_1_SERVER$SECONDARY_STORAGE_1_PATH" \
   | jq -r '.imagestore.id')
 echo "Secondary storage added with ID: $SECONDARY_STORAGE_1_ID"
-echo "Adding secondary storage: $SECONDARY_STORAGE_2_NAME..."
-SECONDARY_STORAGE_2_ID=$(cmk -p admin add imagestore \
-  name="$SECONDARY_STORAGE_2_NAME" \
-  provider="NFS" \
-  zoneid="$ZONE_ID" \
-  url="nfs://$SECONDARY_STORAGE_2_SERVER$SECONDARY_STORAGE_2_PATH" \
-  | jq -r '.imagestore.id')
-echo "Secondary storage added with ID: $SECONDARY_STORAGE_2_ID"
+# echo "Adding secondary storage: $SECONDARY_STORAGE_2_NAME..."
+# SECONDARY_STORAGE_2_ID=$(cmk -p admin add imagestore \
+#   name="$SECONDARY_STORAGE_2_NAME" \
+#   provider="NFS" \
+#   zoneid="$ZONE_ID" \
+#   url="nfs://$SECONDARY_STORAGE_2_SERVER$SECONDARY_STORAGE_2_PATH" \
+#   | jq -r '.imagestore.id')
+# echo "Secondary storage added with ID: $SECONDARY_STORAGE_2_ID"
 
 # Enable Zone
 echo "Enabling zone: $ZONE_NAME..."
@@ -1228,7 +1228,7 @@ CloudStack uses raw disk images (`.raw.gz`). Images are built via the
 
 ### Image 1 — Base (no Tailscale) — for general VMs
 
-```
+```txt
 https://factory.talos.dev/image/23ff67af89fd08e5703f919f9b58c5a4a6de2540b1f8ca83379e19321560b1bf/v1.12.6/cloudstack-amd64.raw.gz
 ```
 
@@ -1247,7 +1247,7 @@ customization:
 
 ### Image 2 — Kubernetes Nodes (with Tailscale) — TODO
 
-Generate a second schematic at https://factory.talos.dev by adding
+Generate a second schematic at <https://factory.talos.dev> by adding
 `siderolabs/tailscale` to the base schematic above. Required for k8s cluster
 nodes so each node can join the Tailscale tailnet via the auth key injected
 in the Talos machine config.

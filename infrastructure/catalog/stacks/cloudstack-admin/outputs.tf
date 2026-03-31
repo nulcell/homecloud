@@ -1,16 +1,11 @@
 output "zone_id" {
   description = "UUID of the CloudStack zone."
-  value       = module.zone.zone_id
+  value       = data.cloudstack_zone.this.id
 }
 
 output "domain_id" {
   description = "UUID of the CloudStack domain."
   value       = local.resolved_domain_id
-}
-
-output "account_id" {
-  description = "UUID of the homecloud account."
-  value       = local.resolved_account_id
 }
 
 output "disk_offering_ids" {

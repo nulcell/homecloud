@@ -131,7 +131,7 @@ variable "disk_offering_ids" {
 
 variable "keypair_name" {
   type        = string
-  default     = ""
+  default     = null
   description = "Name of the SSH keypair to register and reference on VMs."
 }
 
@@ -162,7 +162,7 @@ variable "userdata_scripts" {
 
 variable "enable_shared_storage" {
   type        = bool
-  default     = true
+  default     = false
   description = "Set false to disable all shared filesystem management without removing map entries."
 }
 
@@ -183,7 +183,7 @@ variable "shared_filesystems" {
 
 variable "enable_vps" {
   type        = bool
-  default     = true
+  default     = false
   description = "Set false to skip VPS VM creation without removing the config block."
 }
 

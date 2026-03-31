@@ -26,7 +26,7 @@ module "isolated_network" {
 }
 
 module "keypair" {
-  count  = var.keypair_name != "" ? 1 : 0
+  count  = var.keypair_name != null ? 1 : 0
   source = "../../modules/cloudstack-keypair"
 
   name         = var.keypair_name
@@ -44,13 +44,13 @@ module "userdata" {
 }
 
 module "shared_filesystems" {
+  count  = var.enable_shared_storage ? 1 : 0
   source = "../../modules/cloudstack-shared-filesystem"
 
   account_name = var.account_name
   domain_id    = var.domain_id
   zone_id      = data.cloudstack_zone.this.id
   zone_name    = var.zone_name
-  enable       = var.enable_shared_storage
   filesystems  = var.shared_filesystems
 }
 
@@ -68,5 +68,4 @@ module "vps" {
   network_ids    = [module.vpc.network_ids[var.vps.network_name]]
   keypair_name   = var.keypair_name
   userdata_id    = lookup(module.userdata.userdata_ids, var.vps.userdata_name, "")
-  enable         = var.enable_vps
 }

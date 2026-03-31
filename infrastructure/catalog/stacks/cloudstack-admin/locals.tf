@@ -23,6 +23,5 @@ locals {
 }
 
 locals {
-  resolved_domain_id  = var.domain_id  != "" ? var.domain_id  : try(module.domain[0].domain_id, "")
-  resolved_account_id = var.account_id != "" ? var.account_id : try(module.account[0].account_id, "")
+  resolved_domain_id = var.existing_domain_name != null ? data.cloudstack_domain.this[0].id : try(module.domain[0].domain_id, "")
 }

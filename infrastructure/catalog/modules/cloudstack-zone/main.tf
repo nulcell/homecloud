@@ -61,27 +61,65 @@ resource "null_resource" "enable_physical_network" {
 # ---------------------------------------------------------------------------
 # Enable network service providers.
 # CloudStack auto-creates NSPs when a physical network is created but leaves
-# them Disabled. First configure service_list, then enable via state resource.
+# them Disabled. We must update the existing auto-created NSPs via cmk rather
+# than creating new ones (addNetworkServiceProvider creates duplicates without
+# VR/ILB elements, causing "Provider is not ready" errors on enable).
 # ---------------------------------------------------------------------------
-resource "cloudstack_network_service_provider" "this" {
+resource "null_resource" "enable_nsp" {
   for_each = local.nsp_pairs
 
-  name                = each.value.name
-  physical_network_id = each.value.physical_network_id
-  service_list        = length(each.value.service_list) > 0 ? each.value.service_list : null
-  state               = "Disabled"
+  triggers = {
+    physical_network_id = each.value.physical_network_id
+    nsp_name            = each.value.name
+    service_list        = join(",", each.value.service_list)
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      PROVIDER_NAME="${each.value.name}"
+      PHYS_NET_ID="${each.value.physical_network_id}"
+      SERVICE_LIST="${join(",", each.value.service_list)}"
+
+      PROVIDER_ID=$(cmk -p ${var.cmk_profile} list networkserviceproviders \
+        physicalnetworkid="$PHYS_NET_ID" name="$PROVIDER_NAME" \
+        | jq -r '.networkserviceprovider[0].id // empty')
+
+      if [ -z "$PROVIDER_ID" ]; then
+        echo "NSP $PROVIDER_NAME not found on $PHYS_NET_ID, skipping."
+        exit 0
+      fi
+
+      if [ -n "$SERVICE_LIST" ]; then
+        echo "  Setting service list for $PROVIDER_NAME: $SERVICE_LIST"
+        cmk -p ${var.cmk_profile} update networkserviceprovider \
+          id="$PROVIDER_ID" servicelist="$SERVICE_LIST"
+      fi
+
+      if [ "$PROVIDER_NAME" = "VirtualRouter" ] || [ "$PROVIDER_NAME" = "VpcVirtualRouter" ]; then
+        VR_ELEMENT_ID=$(cmk -p ${var.cmk_profile} list virtualrouterelements nspid="$PROVIDER_ID" \
+          | jq -r '.virtualrouterelement[0].id // empty')
+        if [ -n "$VR_ELEMENT_ID" ]; then
+          echo "  Configuring VR element $VR_ELEMENT_ID for $PROVIDER_NAME..."
+          cmk -p ${var.cmk_profile} configure virtualrouterelement id="$VR_ELEMENT_ID" enabled=true
+        fi
+      fi
+
+      if [ "$PROVIDER_NAME" = "InternalLbVm" ]; then
+        ILB_ELEMENT_ID=$(cmk -p ${var.cmk_profile} list internalloadbalancerelements nspid="$PROVIDER_ID" \
+          | jq -r '.internalloadbalancerelement[0].id // empty')
+        if [ -n "$ILB_ELEMENT_ID" ]; then
+          echo "  Configuring InternalLbVm element $ILB_ELEMENT_ID..."
+          cmk -p ${var.cmk_profile} configure internalloadbalancerelement id="$ILB_ELEMENT_ID" enabled=true
+        fi
+      fi
+
+      echo "  Enabling NSP $PROVIDER_NAME (ID: $PROVIDER_ID)..."
+      cmk -p ${var.cmk_profile} update networkserviceprovider id="$PROVIDER_ID" state="Enabled" \
+        || echo "  Warning: Could not enable $PROVIDER_NAME (may not be applicable for this network type)"
+    EOT
+  }
 
   depends_on = [null_resource.enable_physical_network]
-}
-
-resource "cloudstack_network_service_provider_state" "this" {
-  for_each = local.nsp_pairs
-
-  name                = each.value.name
-  physical_network_id = each.value.physical_network_id
-  enabled             = true
-
-  depends_on = [cloudstack_network_service_provider.this]
 }
 
 resource "cloudstack_vlan_ip_range" "this" {
