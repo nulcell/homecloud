@@ -73,9 +73,10 @@ module "offerings" {
 module "templates" {
   source = "../../modules/cloudstack-templates"
 
-  zone_id   = data.cloudstack_zone.this.id
-  zone_name = var.zone_name
-  templates = var.templates
-  isos      = var.isos
+  zone_id     = data.cloudstack_zone.this.id
+  zone_name   = var.zone_name
+  templates   = var.templates
+  enable_isos = var.enable_isos
+  isos        = var.isos
 }
 

@@ -67,19 +67,18 @@ resource "null_resource" "iso" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      EXISTING=$(cmk list isos \
+      EXISTING=$(cmk -p admin list isos \
         name='${each.value.name}' \
         zoneid='${var.zone_id}' \
-        isofilter=all \
-        --output text --filter id 2>/dev/null | head -1)
+        isofilter=all | jq -r '.iso[0].id'  )
 
       if [ -z "$EXISTING" ]; then
-        cmk register iso \
+        cmk -p admin register iso \
           name='${each.value.name}' \
           displaytext='${each.value.display_text}' \
           url='${each.value.url}' \
           zoneid='${var.zone_id}' \
-          ostypeid=$(cmk list ostypes description='${each.value.os_type}' --output text --filter id 2>/dev/null | head -1) \
+          ostypeid=$(cmk -p admin list ostypes description='${each.value.os_type}' | jq -r '.ostype[0].id') \
           bootable=${each.value.bootable} \
           isfeatured=${each.value.is_featured} \
           ispublic=true \
