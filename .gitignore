@@ -91,3 +91,7 @@ charts/*/charts/
 
 # Terragrunt
 .terragrunt-cache/
+
+# AI
+.ai/
+.claude/

@@ -1,0 +1,190 @@
+#cloud-config
+# OpenStack Single-Node Setup using Kolla-Ansible
+# Target: Ubuntu 24.04 LTS, 16C/32T, 96GB RAM, 2TB SSD, 2x NIC
+#   NIC1 (`eth0`) = mgmt/API (static via MaaS)
+#   NIC2 (`eth1`) = neutron external (no IP)
+# Cloud-init handles base prereqs only. SSH in and run install.sh to deploy.
+
+package_update: true
+package_upgrade: true
+
+# prettier-ignore
+users:
+  - name: os-admin
+    gecos: OpenStack Admin User
+    groups: [ sudo, docker ]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEn9DdzGbGXbjxkvmA4n8HV1JBCNjo81dtE+Kq+tcupZ
+
+packages:
+  - git
+  - curl
+  - wget
+  - vim
+  - htop
+  - jq
+  - tar
+  - gnupg
+  - ca-certificates
+  - apt-transport-https
+  - software-properties-common
+  - python3
+  - python3-dev
+  - python3-venv
+  - python3-pip
+  - libffi-dev
+  - libssl-dev
+  - build-essential
+  - lvm2
+  - thin-provisioning-tools
+  - xfsprogs
+  - nfs-common
+  - chrony
+  - bridge-utils
+  - net-tools
+  - qemu-kvm
+  - libvirt-daemon-system
+  - libvirt-clients
+  - virtinst
+  - cpu-checker
+  - ovmf
+  # Required by install.sh
+  - rsync
+  - iputils-arping
+  # Required by build-amphora.sh diskimage-create
+  - qemu-utils
+  - kpartx
+  - debootstrap
+
+write_files:
+  # Sysctl for Neutron / OVN / Magnum
+  - path: /etc/sysctl.d/99-openstack.conf
+    content: |
+      net.ipv4.ip_forward = 1
+      net.ipv4.conf.all.rp_filter = 0
+      net.ipv4.conf.default.rp_filter = 0
+      net.bridge.bridge-nf-call-iptables = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-arptables = 1
+      fs.inotify.max_user_instances = 8192
+      fs.inotify.max_user_watches = 524288
+      vm.max_map_count = 262144
+    owner: root:root
+    permissions: "0644"
+
+  # Modules required by Neutron / Magnum (k8s)
+  - path: /etc/modules-load.d/openstack.conf
+    content: |
+      br_netfilter
+      bridge
+      overlay
+      nf_conntrack
+      vhost_net
+      tun
+      kvm
+      kvm_intel
+    owner: root:root
+    permissions: "0644"
+
+  # Docker daemon config tuned for kolla
+  - path: /etc/docker/daemon.json
+    content: |
+      {
+        "bridge": "none",
+        "iptables": false,
+        "ip-forward": false,
+        "log-driver": "json-file",
+        "log-opts": { "max-size": "100m", "max-file": "3" },
+        "default-ulimits": {
+          "nofile": { "Name": "nofile", "Hard": 1048576, "Soft": 1048576 }
+        }
+      }
+    owner: root:root
+    permissions: "0644"
+
+  - path: /root/openstack-next-steps.txt
+    content: |
+      OpenStack Single-Node — Post-Provisioning
+      ==========================================
+
+      Cloud-init has finished. To deploy OpenStack:
+
+        ssh os-admin@<this-server-ip>
+        cd /opt/homecloud/openstack
+
+        # 1. Edit globals.yml — set kolla_internal_vip_address
+        sudo -E nano homecloud-kolla-ansible/globals.yml
+
+        # 2. Run installer (LVM VGs, kolla bootstrap, deploy)
+        sudo -E ./install.sh
+
+        # 3. Run configurator (images, flavors, networks, magnum templates)
+        ./configure.sh
+
+      Logs:
+        /var/log/kolla/                       # service logs
+        /var/log/openstack-cloud-init.log     # this script's output
+    owner: root:root
+    permissions: "0644"
+
+# prettier-ignore
+runcmd:
+  # Tee subsequent output for debuggability
+  - exec > >(tee -a /var/log/openstack-cloud-init.log) 2>&1
+
+  # Apply sysctl + modules
+  - sysctl --system
+  - systemctl restart systemd-modules-load.service
+
+  # Verify KVM is available (logs only — does not abort)
+  - kvm-ok || echo "WARNING: KVM acceleration not available."
+
+  # Install Docker CE (kolla requires docker, not docker.io)
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - chmod a+r /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg]
+    https://download.docker.com/linux/ubuntu noble stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update -y
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+  - usermod -aG docker os-admin
+
+  # Clone homecloud repo (the openstack/ tree is what install.sh runs from)
+  - git clone https://github.com/nulcell/homecloud.git /opt/homecloud || (cd /opt/homecloud && git pull)
+  - chown -R os-admin:os-admin /opt/homecloud
+
+  # Pre-create kolla-ansible Python venv
+  - python3 -m venv /opt/kolla/venv
+  - /opt/kolla/venv/bin/pip install --upgrade pip wheel
+  - /opt/kolla/venv/bin/pip install 'ansible-core>=2.16,<2.18'
+  - /opt/kolla/venv/bin/pip install git+https://opendev.org/openstack/kolla-ansible@stable/2025.1
+  # Unified `openstack` CLI + service plugins, used by install.sh / configure.sh /
+  # build-amphora.sh / install-swift.sh. Installed in the kolla venv so all the
+  # scripts find /opt/kolla/venv/bin/openstack with every plugin registered.
+  - /opt/kolla/venv/bin/pip install
+    python-openstackclient
+    python-magnumclient
+    python-troveclient
+    python-designateclient
+    python-octaviaclient
+    python-manilaclient
+    python-barbicanclient
+    python-heatclient
+    python-swiftclient
+  - chown -R os-admin:os-admin /opt/kolla
+
+  # Drop kolla config skeleton in /etc/kolla
+  - mkdir -p /etc/kolla
+  - chown os-admin:os-admin /etc/kolla
+
+  - echo "Cloud-init prereqs complete at $(date)" >> /var/log/openstack-cloud-init.log
+
+final_message: |
+  OpenStack single-node prereqs installed.
+
+  Next:
+    ssh os-admin@<this-server-ip>
+    cat /root/openstack-next-steps.txt
