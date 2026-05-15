@@ -7,8 +7,6 @@ defaultSettings:
   deletingConfirmationFlag: true # disable to prevent accidental deletions after testing
 
   defaultDataLocality: best-effort
-  # # Create default disk on nodes
-  # createDefaultDiskLabeledNodes: true
   # Node drain policy
   nodeDrainPolicy: block-for-eviction
   # Guaranteed instance manager CPU

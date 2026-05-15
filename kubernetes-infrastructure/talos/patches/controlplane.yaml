@@ -1,7 +1,7 @@
-# Set talosconfig: export TALOSCONFIG=generated/talosconfig
+# Set talosconfig: export TALOSCONFIG=$(pwd)/generated/talosconfig
 #
 # Patch merged onto the output of:
-#   talosctl gen config homecloud https://10.10.25.25:6443
+#   talosctl gen config homecloud https://k8s.nulcell.com:6443
 #
 # Apply patch with:
 #   talosctl machineconfig patch generated/controlplane.yaml \
@@ -14,16 +14,6 @@
 # Confirm the NIC name on the running node with `talosctl get links` before applying.
 machine:
   network:
-    interfaces:
-      - interface: dummy0
-        vip:
-          ip: 10.10.25.25
-      # - interface: enp3s0 # check with `talosctl get links` on the booted node
-      #   dhcp: true
-      #   # vip:
-      #   #   ip: 10.10.25.25 # shared across all control planes via etcd election
-      # - interface: enp4s0 # check with `talosctl get links` on the booted node
-      #   dhcp: true
     nameservers:
       - 10.10.31.254 # home DNS
       - 1.1.1.1
@@ -69,6 +59,7 @@ cluster:
     disabled: true # Cilium replaces kube-proxy
   apiServer:
     certSANs: # API server cert must cover every address clients hit
+      - k8s.nulcell.com # the VIP's DNS name
       - 10.10.25.25 # the VIP
       - 10.10.17.5 # node #1
       - 10.10.17.15 # node #2 (future)
@@ -78,3 +69,19 @@ cluster:
   etcd:
     advertisedSubnets:
       - 10.10.16.0/20
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: "off"
+hostname: talos-control-1 # A static hostname to set for the machine.
+---
+apiVersion: v1alpha1
+kind: Layer2VIPConfig
+name: 10.10.25.25
+link: apiservervip0
+---
+apiVersion: v1alpha1
+kind: LinkAliasConfig
+name: apiservervip%d
+selector:
+  match: true

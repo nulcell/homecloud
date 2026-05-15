@@ -26,26 +26,52 @@ Record the **schematic ID** somewhere you'll find it again — you need it for `
 
 ```bash
 export TALOSCONFIG=$(pwd)/generated/talosconfig
+export INSTALLER=metal-installer-secureboot
+export SCHEMATIC_ID=65cf8364cd0de4cf7b851dc7067a2db83d0ba04f11d8635c6cd3334be6ffb825
+export TALOS_VERSION=v1.13.2
+export KUBERNETES_VERSION=v1.35.5
+export INSTALL_IMAGE=factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION}
+
+export NODE_IP=10.10.17.5
 
 # Generate the initial config
-talosctl gen config homecloud https://<NODE_IP>:6443 --output-dir ./generated
+talosctl gen config homecloud https://k8s.nulcell.com:6443 \
+  --kubernetes-version ${KUBERNETES_VERSION} \
+  --install-image ${INSTALL_IMAGE} \
+  --install-disk /dev/nvme0n1 \
+  --output-dir ./generated --force
+
+talosctl config endpoints  ${NODE_IP} --context homecloud
+talosctl config nodes ${NODE_IP} --context homecloud
 
 # Patch + apply
 talosctl machineconfig patch generated/controlplane.yaml \
   --patch @patches/controlplane.yaml \
   --output controlplane-final.yaml
-
-talosctl apply-config --insecure --nodes <NODE_IP> --file controlplane-final.yaml
+talosctl validate --config controlplane-final.yaml --mode metal
+talosctl apply-config --insecure --nodes ${NODE_IP} --file controlplane-final.yaml
 
 # Bootstrap etcd (ONCE, on ONE node, ever)
-talosctl bootstrap --nodes <NODE_IP>
+talosctl bootstrap --nodes ${NODE_IP}
+talosctl config endpoints 10.10.25.25 k8s.nulcell.com --context homecloud
 
 # Pull kubeconfig
 talosctl kubeconfig ./kubeconfig
+export KUBECONFIG=$(pwd)/kubeconfig
+
+# Approve CSRs if any are pending
+kubectl get csr -o json | jq -r '.items[] | select(.status == {}) | .metadata.name' | xargs -r kubectl certificate approve
+
+# Go ahead and install the CNI and other addons
 
 # Day-2
+talosctl get links
 talosctl health
 talosctl dashboard
-talosctl upgrade --image factory.talos.dev/installer/<SCHEMATIC_ID>:v<VERSION>
-talosctl upgrade-k8s --to <K8S_VERSION>
+talosctl upgrade --image factory.talos.dev/installer/${SCHEMATIC_ID}:${TALOS_VERSION}
+export KUBERNETES_VERSION_UPGRADE=v1.36.1
+talosctl upgrade-k8s --to ${KUBERNETES_VERSION_UPGRADE}
+
+# Day never
+talosctl reset --nodes ${NODE_IP} --graceful=false --reboot=true
 ```

@@ -1,7 +1,7 @@
-# Set talosconfig: export TALOSCONFIG=generated/talosconfig
+# Set talosconfig: export TALOSCONFIG=$(pwd)/generated/talosconfig
 #
 # Patch merged onto the output of:
-#   talosctl gen config homecloud https://10.10.25.25:6443
+#   talosctl gen config homecloud https://k8s.nulcell.com:6443
 #
 # Apply patch with:
 #   talosctl machineconfig patch generated/worker.yaml \
