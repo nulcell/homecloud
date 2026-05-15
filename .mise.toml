@@ -6,19 +6,19 @@
 [tools]
 
 # ── Infrastructure as Code ────────────────────────────────────────────────────
-terraform   = "1.14.7"
-terragrunt  = "0.99.4"
+terraform   = "1.15.3"
+terragrunt  = "1.0.4"
 
 # ── Kubernetes ───────────────────────────────────────────────────────────────
-kubectl  = "1.33.10"
-helm     = "3.20.1"
-argocd   = "3.3.4"
+kubectl  = "1.36.1"
+helm     = "4.2.0"
+argocd   = "3.4.2"
 
 # ── Talos Linux ──────────────────────────────────────────────────────────────
 # talosctl manages Talos Linux nodes and clusters.
 # talhelper is a helper for generating Talos configs.
-talosctl  = "1.12.6"
-talhelper = "3.1.7"
+talosctl  = "1.13.2"
+talhelper = "3.1.10"
 
 # ── Tailscale ────────────────────────────────────────────────────────────────
 # CLI for interacting with the Tailscale control plane during debugging.
@@ -28,38 +28,6 @@ talhelper = "3.1.7"
 # cloudmonkey: CloudStack CLI.
 "github:apache/cloudstack-cloudmonkey" = "6.5.0"
 
-# ── OpenStack ────────────────────────────────────────────────────────────────
-# python-openstackclient: unified `openstack` CLI for the homecloud OpenStack
-# deployment (kolla-ansible, single-node). Pinned to a 2025.1-compatible release.
-"pipx:python-openstackclient" = "9.0.0"
-# These ship standalone binaries (`magnum`, `trove`, `barbican`) AND register as
-# plugins under the unified `openstack` CLI when they live in the same venv.
-"pipx:python-magnumclient"   = "4.10.0"
-"pipx:python-troveclient"    = "8.10.0"
-"pipx:python-barbicanclient" = "7.3.0"
-#
-# Plugin-only packages (no standalone CLI — they extend `openstack`):
-#   python-manilaclient    → `openstack share ...`
-#   python-designateclient → `openstack zone ...`
-#   python-octaviaclient   → `openstack loadbalancer ...`
-#
-# `uv tool install` (which mise's pipx backend wraps) refuses to install these
-# on their own because they expose no entrypoints. Inject them into the
-# openstackclient venv with `--with`:
-#
-#   uv tool install python-openstackclient==9.0.0 --force \
-#     --with python-magnumclient==4.10.0 \
-#     --with python-troveclient==8.10.0 \
-#     --with python-barbicanclient==7.3.0 \
-#     --with python-manilaclient==6.0.0 \
-#     --with python-designateclient==6.4.0 \
-#     --with python-octaviaclient==3.13.0
-#
-# Run that once after `mise install`. It will replace the openstackclient venv
-# mise just created and bundle every plugin in one shot. mise will continue
-# treating the `pipx:python-openstackclient` line as the source of truth on
-# next `mise install`, so re-run the command above whenever you bump versions.
-
 # ── Cloud / Secrets ──────────────────────────────────────────────────────────
 # 1Password CLI: used by Terraform 1Password provider at plan/apply time.
 # Install via: brew install 1password-cli  (not managed by mise — system-level)
@@ -68,14 +36,15 @@ talhelper = "3.1.7"
 cilium-cli  = "0.19.2"
 
 # ── Data processing ──────────────────────────────────────────────────────────
-yq  = "4.52.4"
-jq  = "1.7.1"
+yq  = "4.53.2"
+jq  = "1.8.1"
+sops = "3.13.0"
 
 # ── Language runtimes ─────────────────────────────────────────────────────────
-python = "3.13.12"
+python = "3.13"
 
 # ── Local testing ─────────────────────────────────────────────────────────────
-kind = "0.23.0"
+kind = "0.31.0"
 
 [settings]
 # Automatically activate tool versions when entering directories.
