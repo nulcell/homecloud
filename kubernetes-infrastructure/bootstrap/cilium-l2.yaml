@@ -1,7 +1,7 @@
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
-  name: home-lan
+  name: kube-system
 spec:
   blocks:
     - start: 10.10.20.0
@@ -10,7 +10,7 @@ spec:
 apiVersion: cilium.io/v2alpha1
 kind: CiliumL2AnnouncementPolicy
 metadata:
-  name: home-lan
+  name: kube-system
 spec:
   loadBalancerIPs: true
   interfaces:

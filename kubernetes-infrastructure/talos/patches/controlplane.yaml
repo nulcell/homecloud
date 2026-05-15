@@ -9,19 +9,27 @@
 # Confirm the NIC name on the running node with `talosctl get links` before applying.
 machine:
   network:
-    hostname: talos-cp-01
+    # hostname: talos-cp-01
     interfaces:
-      - interface: eth0           # check with `talosctl get links` on the booted node
+      - interface: enp3s0 # check with `talosctl get links` on the booted node
         addresses:
-          - 10.10.25.10/20
+          - 10.10.17.5/20
         routes:
           - network: 0.0.0.0/0
             gateway: 10.10.31.254
         vip:
-          ip: 10.10.25.25         # shared across all control planes via etcd election
+          ip: 10.10.25.25 # shared across all control planes via etcd election
+      - interface: enp4s0 # check with `talosctl get links` on the booted node
+        addresses:
+          - 10.10.17.10/20
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 10.10.31.254
     nameservers:
-      - 10.10.31.254              # home DNS
+      - 10.10.31.254 # home DNS
       - 1.1.1.1
+    install:
+      disk: /dev/nvme0n1
   time:
     servers:
       - pool.ntp.org
@@ -29,22 +37,22 @@ machine:
     extraArgs:
       rotate-server-certificates: "true"
 cluster:
-  allowSchedulingOnControlPlanes: true   # single-node / hyperconverged; flip to false on Phase 3
+  allowSchedulingOnControlPlanes: true # single-node / hyperconverged; flip to false on Phase 3
   network:
     cni:
-      name: none                         # Cilium replaces the built-in CNI
+      name: none # Cilium replaces the built-in CNI
     podSubnets:
       - 10.244.0.0/16
     serviceSubnets:
       - 10.96.0.0/12
   proxy:
-    disabled: true                       # Cilium replaces kube-proxy
+    disabled: true # Cilium replaces kube-proxy
   apiServer:
-    certSANs:                            # API server cert must cover every address clients hit
-      - 10.10.25.25                      # the VIP
-      - 10.10.25.10                      # node #1
-      - 10.10.25.11                      # node #2 (future)
-      - 10.10.25.12                      # node #3 (future)
+    certSANs: # API server cert must cover every address clients hit
+      - 10.10.25.25 # the VIP
+      - 10.10.17.5 # node #1
+      - 10.10.17.15 # node #2 (future)
+      - 10.10.17.25 # node #3 (future)
   discovery:
     enabled: true
   etcd:
