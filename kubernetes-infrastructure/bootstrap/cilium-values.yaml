@@ -4,8 +4,8 @@
 kubeProxyReplacement: true
 
 # kube-proxy is disabled in Talos, so Cilium needs an explicit API server endpoint.
-# Use the node IP for single-node; swap to the VIP when you go HA.
-k8sServiceHost: <NODE_IP_OR_VIP>
+# This is the Talos VIP — already active on node #1 and shared with future CPs.
+k8sServiceHost: 10.10.25.25
 k8sServicePort: 6443
 
 ipam:

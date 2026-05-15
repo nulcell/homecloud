@@ -1,0 +1,13 @@
+# SOPS creation rules — picked up automatically by `sops` when encrypting.
+#
+# After running:
+#   age-keygen -o ~/.config/sops/age/keys.txt
+# replace <YOUR_AGE_PUBLIC_KEY> below with the line starting "age1..." from the
+# generated file (the "# public key:" comment shows it).
+#
+# encrypted_regex limits encryption to the data/stringData fields of Secrets,
+# so the rest of the manifest stays human-readable in git diffs.
+creation_rules:
+  - path_regex: kubernetes-infrastructure/.*\.enc\.ya?ml$
+    encrypted_regex: ^(data|stringData)$
+    age: <YOUR_AGE_PUBLIC_KEY>

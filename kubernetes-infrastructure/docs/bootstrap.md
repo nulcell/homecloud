@@ -39,18 +39,19 @@ helm repo update
 
 Pick values **before** you start and write them down — most of these are baked into the machine config.
 
-| Variable           | Example                       | Notes                                                    |
-| ------------------ | ----------------------------- | -------------------------------------------------------- |
-| Cluster name       | `homecloud`                   | Anything. Used in `talosconfig`.                         |
-| Node hostname      | `talos-cp-01`                 | Set per-node.                                            |
-| Node IP (static)   | `192.168.1.50/24`             | Static highly recommended.                               |
-| Default gateway    | `192.168.1.1`                 |                                                          |
-| DNS                | `192.168.1.1`, `1.1.1.1`      |                                                          |
-| Kubernetes API VIP | `192.168.1.49`                | Optional now; required when going HA. Reserve it anyway. |
-| Pod CIDR           | `10.244.0.0/16`               | Avoid overlap with your LAN.                             |
-| Service CIDR       | `10.96.0.0/12`                | Default; change if it collides.                          |
-| Cilium L2 LB pool  | `192.168.1.200–192.168.1.230` | Range on your LAN for `LoadBalancer` services.           |
-| Time source        | `pool.ntp.org`                | Talos needs reliable NTP.                                |
+| Variable           | Example                     | Notes                                                |
+| ------------------ | --------------------------- | ---------------------------------------------------- |
+| Cluster name       | `homecloud`                 | Anything. Used in `talosconfig`.                     |
+| Node hostname      | `talos-cp-01`               | Set per-node.                                        |
+| LAN CIDR           | `10.10.16.0/20`             | Home network range.                                  |
+| Node IP (static)   | `10.10.25.10/20`            | First control plane. /20 mask matches the LAN CIDR.  |
+| Default gateway    | `10.10.31.254`              | Home gateway.                                        |
+| DNS                | `10.10.31.254`, `1.1.1.1`   | Home DNS first, public fallback second.              |
+| Kubernetes API VIP | `10.10.25.25`               | Active from day one; baked into kubeconfig + Cilium. |
+| Pod CIDR           | `10.244.0.0/16`             | No overlap with the LAN.                             |
+| Service CIDR       | `10.96.0.0/12`              | Default; no overlap with the LAN.                    |
+| Cilium L2 LB pool  | `10.10.20.0–10.10.20.254`   | Range on your LAN for `LoadBalancer` services.       |
+| Time source        | `pool.ntp.org`              | Talos needs reliable NTP.                            |
 
 ### Hardware sanity check
 
@@ -88,8 +89,11 @@ On your workstation:
 ```bash
 cd kubernetes-infrastructure/talos
 
-# Endpoint = the node's IP (or VIP when you have one). Cluster name is up to you.
-talosctl gen config homecloud https://192.168.1.50:6443 \
+# Endpoint = the API VIP. This goes into the kubeconfig and the API server cert
+# SANs, so once we set it here we never have to rewrite either when more control
+# planes join. Talos itself is reached via the node IP (Talos API, port 50000),
+# NOT the VIP — only the Kubernetes API (6443) is fronted by the VIP.
+talosctl gen config homecloud https://10.10.25.25:6443 \
   --output-dir ./generated \
   --with-examples=false \
   --with-docs=false
@@ -109,15 +113,14 @@ machine:
     interfaces:
       - interface: eth0          # adjust to your NIC; check with `talosctl get links`
         addresses:
-          - 192.168.1.50/24
+          - 10.10.25.10/20
         routes:
           - network: 0.0.0.0/0
-            gateway: 192.168.1.1
-        # When you go HA, uncomment the VIP block:
-        # vip:
-        #   ip: 192.168.1.49
+            gateway: 10.10.31.254
+        vip:
+          ip: 10.10.25.25        # API VIP — shared across control planes via etcd election
     nameservers:
-      - 192.168.1.1
+      - 10.10.31.254
       - 1.1.1.1
   time:
     servers:
@@ -137,21 +140,29 @@ cluster:
   proxy:
     disabled: true                       # Cilium replaces kube-proxy
   apiServer:
+    certSANs:                            # cert must be valid for every IP clients might use
+      - 10.10.25.25                      # the VIP
+      - 10.10.25.10                      # node #1
+      - 10.10.25.11                      # node #2 (future)
+      - 10.10.25.12                      # node #3 (future)
     extraArgs:
-      feature-gates: ""                  # add gates here if you need them
+      feature-gates: ""
   discovery:
     enabled: true
   etcd:
     advertisedSubnets:
-      - 192.168.1.0/24
+      - 10.10.16.0/20
 ```
 
 > **Why each line matters:**
 >
 > - `cni.name: none` + `proxy.disabled: true` are non-negotiable for Cilium replacing both.
 > - `allowSchedulingOnControlPlanes` lets workloads run on the only node you have.
+> - `vip.ip` + `apiServer.certSANs` make the VIP usable from day one. Talos handles the IP via etcd-coordinated leader election; whichever control plane holds the lease answers ARP for it.
 > - `etcd.advertisedSubnets` keeps etcd peers on your LAN once you have multiple control planes.
 > - `rotate-server-certificates` lets the metrics-server scrape kubelets cleanly.
+>
+> **VIP lifecycle gotcha**: the VIP comes up *after* etcd, so during the very first bootstrap the node won't answer on the VIP yet. That's why `talosctl apply-config` and `talosctl bootstrap` in step 3 below target the **node IP** directly — the VIP only starts working once the API server is healthy.
 
 Apply the patch and produce the final machine config:
 
@@ -166,28 +177,29 @@ talosctl machineconfig patch generated/controlplane.yaml \
 ## 3. Apply the config and bootstrap
 
 ```bash
-# Apply config to the node (it's still in maintenance mode)
+# Apply config to the node (it's still in maintenance mode — VIP isn't up yet)
 talosctl apply-config \
   --insecure \
-  --nodes 192.168.1.50 \
+  --nodes 10.10.25.10 \
   --file controlplane-final.yaml
 
-# Point talosctl at the new cluster
+# Point talosctl at the new cluster. The Talos API (port 50000) is per-node,
+# NOT behind the VIP — always use real node IPs here.
 export TALOSCONFIG=$(pwd)/generated/talosconfig
-talosctl config endpoint 192.168.1.50
-talosctl config node 192.168.1.50
+talosctl config endpoint 10.10.25.10
+talosctl config node 10.10.25.10
 
 # Wait for the node to settle (it reboots into the configured OS)
 talosctl health --wait-timeout 10m
 ```
 
-Bootstrap etcd — **do this exactly once, on exactly one node:**
+Bootstrap etcd — **do this exactly once, on exactly one node** (still targeting the node IP; the VIP becomes active right after this):
 
 ```bash
 talosctl bootstrap
 ```
 
-Pull the kubeconfig:
+Pull the kubeconfig. It was generated with the VIP as the server URL, so kubectl talks to the cluster via `https://10.10.25.25:6443` from here on:
 
 ```bash
 talosctl kubeconfig ./kubeconfig
@@ -221,7 +233,8 @@ Save [`bootstrap/cilium-values.yaml`](../bootstrap/cilium-values.yaml):
 kubeProxyReplacement: true
 
 # Required because kube-proxy is gone — Cilium needs to know how to reach the API server.
-k8sServiceHost: 192.168.1.50   # or your VIP when you have one
+# Use the VIP, not the node IP, so HA expansion doesn't require a Cilium rollout.
+k8sServiceHost: 10.10.25.25
 k8sServicePort: 6443
 
 ipam:
@@ -304,8 +317,8 @@ metadata:
   name: home-lan
 spec:
   blocks:
-    - start: 192.168.1.200
-      stop: 192.168.1.230
+    - start: 10.10.20.0
+      stop: 10.10.20.254
 ---
 apiVersion: "cilium.io/v2alpha1"
 kind: CiliumL2AnnouncementPolicy
