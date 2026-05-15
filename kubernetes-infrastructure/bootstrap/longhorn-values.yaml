@@ -1,0 +1,14 @@
+# Longhorn 1.11.2 values.
+defaultSettings:
+  defaultReplicaCount: 1                # raise to 3 once you have 3 nodes
+  defaultDataPath: /var/lib/longhorn
+  storageMinimalAvailablePercentage: 10
+  allowRecurringJobWhileVolumeDetached: true
+
+persistence:
+  defaultClass: true
+  defaultClassReplicaCount: 1
+  reclaimPolicy: Retain
+
+ingress:
+  enabled: false                        # exposed via Gateway HTTPRoute in gitops/

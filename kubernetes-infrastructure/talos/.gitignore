@@ -1,0 +1,7 @@
+generated/
+secrets/
+kubeconfig
+*.kubeconfig
+talosconfig
+controlplane-final.yaml
+worker-final.yaml

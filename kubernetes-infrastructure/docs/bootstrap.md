@@ -204,11 +204,11 @@ Expected: one node, `Ready=False` because there's no CNI yet. That's correct.
 Cilium consumes these CRDs; install them before Cilium so the gateway controller can register.
 
 ```bash
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml  # for TLSRoute, optional
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/experimental-install.yaml  # for TLSRoute, optional
 ```
 
-> Pin to a specific Gateway API release. Check the [Cilium docs](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/gateway-api/) for the version it currently supports.
+> Cilium 1.19.x targets Gateway API v1.5.x. If you bump either, re-check the [Cilium Gateway API support matrix](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/gateway-api/).
 
 ---
 
@@ -286,7 +286,7 @@ Install:
 ```bash
 helm install cilium cilium/cilium \
   --namespace kube-system \
-  --version 1.16.5 \
+  --version 1.19.4 \
   --values bootstrap/cilium-values.yaml
 
 # Wait for it
@@ -340,7 +340,7 @@ If this works, networking is sound.
 
 ## 6. Install cert-manager
 
-Longhorn's webhooks and KubeVirt later both want a working cert-manager, so install it before Longhorn.
+Longhorn's webhooks and KubeVirt later both want a working cert-manager, so install it before Longhorn. It will also serve as the issuer for `nulcell.com` Let's Encrypt certificates via Cloudflare DNS-01 — the [`ClusterIssuer` and `Certificate`](argocd.md#cert-manager--cloudflare-dns-01) are defined under GitOps once ArgoCD is up.
 
 ```yaml
 # bootstrap/cert-manager-values.yaml
@@ -353,7 +353,7 @@ prometheus:
 ```bash
 helm install cert-manager jetstack/cert-manager \
   --namespace cert-manager --create-namespace \
-  --version v1.16.2 \
+  --version v1.20.2 \
   --values bootstrap/cert-manager-values.yaml
 
 kubectl -n cert-manager rollout status deploy/cert-manager-webhook
@@ -383,7 +383,7 @@ Talos exposes the `/var/lib/longhorn` path as an `extraMount` if you need a dedi
 ```bash
 helm install longhorn longhorn/longhorn \
   --namespace longhorn-system --create-namespace \
-  --version 1.7.2 \
+  --version 1.11.2 \
   --values bootstrap/longhorn-values.yaml
 
 kubectl -n longhorn-system rollout status deploy/longhorn-manager   # may take a few minutes
@@ -423,7 +423,7 @@ args:
 ```bash
 helm install metrics-server metrics-server/metrics-server \
   --namespace kube-system \
-  --version 3.12.2 \
+  --version 3.13.0 \
   --values bootstrap/metrics-server-values.yaml
 
 kubectl top nodes   # should return values within a minute
@@ -484,7 +484,7 @@ repoServer:
 ```bash
 helm install argocd argo/argo-cd \
   --namespace argocd --create-namespace \
-  --version 7.7.10 \
+  --version 9.5.14 \
   --values bootstrap/argocd-values.yaml
 
 kubectl -n argocd rollout status deploy/argocd-server

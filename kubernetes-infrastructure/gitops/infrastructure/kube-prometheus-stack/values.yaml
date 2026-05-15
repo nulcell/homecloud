@@ -1,0 +1,59 @@
+# Trimmed for a single-node homelab. Adjust storage sizes and retention to taste.
+fullnameOverride: kps
+
+# Talos exposes kube-controller-manager / scheduler / proxy differently —
+# we disable proxy entirely (Cilium replaces it) and let the others stay on host.
+kubeProxy:
+  enabled: false
+kubeControllerManager:
+  endpoints: []
+kubeScheduler:
+  endpoints: []
+kubeEtcd:
+  enabled: true
+  service:
+    enabled: true
+    port: 2381
+
+prometheus:
+  prometheusSpec:
+    retention: 30d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 50Gi
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 5Gi
+
+grafana:
+  enabled: true
+  adminPassword: changeme              # replace with a SOPS-encrypted Secret + existingSecret
+  persistence:
+    enabled: true
+    storageClassName: longhorn
+    size: 5Gi
+  defaultDashboardsTimezone: browser
+  service:
+    type: ClusterIP                    # exposed via HTTPRoute, not LoadBalancer
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true

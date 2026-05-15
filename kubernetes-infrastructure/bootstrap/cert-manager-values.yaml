@@ -1,0 +1,5 @@
+# cert-manager 1.20.2 values.
+crds:
+  enabled: true
+prometheus:
+  enabled: false   # turn on after kube-prometheus-stack is installed

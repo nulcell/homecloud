@@ -1,0 +1,46 @@
+# Patch merged onto the output of `talosctl gen config <cluster> https://<NODE_IP>:6443`.
+# Apply with:
+#   talosctl machineconfig patch generated/controlplane.yaml \
+#     --patch @patches/controlplane.yaml \
+#     --output controlplane-final.yaml
+#
+# Replace placeholders before applying:
+#   <HOSTNAME>, <NIC>, <NODE_CIDR>, <GATEWAY_IP>, <DNS_1>, <DNS_2>, <LAN_CIDR>
+machine:
+  network:
+    hostname: <HOSTNAME>            # e.g. talos-cp-01
+    interfaces:
+      - interface: <NIC>            # e.g. eth0 (check with `talosctl get links`)
+        addresses:
+          - <NODE_CIDR>             # e.g. 192.168.1.50/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: <GATEWAY_IP>   # e.g. 192.168.1.1
+        # When you go HA, uncomment and set the shared VIP:
+        # vip:
+        #   ip: <API_VIP>
+    nameservers:
+      - <DNS_1>
+      - <DNS_2>
+  time:
+    servers:
+      - pool.ntp.org
+  kubelet:
+    extraArgs:
+      rotate-server-certificates: "true"
+cluster:
+  allowSchedulingOnControlPlanes: true   # single-node / hyperconverged; flip to false on Phase 3
+  network:
+    cni:
+      name: none                         # Cilium replaces the built-in CNI
+    podSubnets:
+      - 10.244.0.0/16
+    serviceSubnets:
+      - 10.96.0.0/12
+  proxy:
+    disabled: true                       # Cilium replaces kube-proxy
+  discovery:
+    enabled: true
+  etcd:
+    advertisedSubnets:
+      - <LAN_CIDR>                       # e.g. 192.168.1.0/24

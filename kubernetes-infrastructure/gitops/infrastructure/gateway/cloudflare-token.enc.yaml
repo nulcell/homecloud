@@ -1,0 +1,14 @@
+# ⚠ Plaintext placeholder — encrypt before committing real values:
+#   sops --encrypt --in-place gitops/infrastructure/gateway/cloudflare-token.enc.yaml
+#
+# Token scope: Zone → DNS → Edit, restricted to the nulcell.com zone only.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-api-token
+  namespace: cert-manager
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+type: Opaque
+stringData:
+  api-token: REPLACE_WITH_CLOUDFLARE_API_TOKEN

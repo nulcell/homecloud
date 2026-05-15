@@ -1,0 +1,29 @@
+# Applied once during bootstrap:
+#   kubectl apply -f gitops/root/root-app.yaml
+#
+# Edit `repoURL` before applying.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/<you>/homecloud
+    targetRevision: main
+    path: kubernetes-infrastructure/gitops/root
+    directory:
+      recurse: false        # only pick up the ApplicationSets in this directory
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -309,7 +309,7 @@ spec:
         mode: Terminate
         certificateRefs:
           - kind: Secret
-            name: wildcard-home-lab-tls
+            name: wildcard-nulcell-tls
       allowedRoutes:
         namespaces:
           from: All
@@ -326,7 +326,7 @@ spec:
   parentRefs:
     - name: default
       namespace: gateway
-  hostnames: [argocd.home.lab]
+  hostnames: [argocd.nulcell.com]
   rules:
     - matches:
         - path:
@@ -338,6 +338,77 @@ spec:
 ```
 
 The Gateway picks an IP from the Cilium `CiliumLoadBalancerIPPool` you created during bootstrap.
+
+---
+
+## cert-manager + Cloudflare DNS-01
+
+`nulcell.com` is managed by Cloudflare. cert-manager solves DNS-01 challenges against the Cloudflare API, which means the cluster does **not** need to be reachable from the internet to issue certificates — wildcard certs Just Work.
+
+You need:
+
+1. A Cloudflare API token (scoped to **Zone → DNS → Edit** for `nulcell.com` only — do **not** use the global API key).
+2. That token committed to git as a SOPS-encrypted Secret.
+3. A `ClusterIssuer` pointing at it.
+4. A `Certificate` (one wildcard is usually enough) that produces the Secret the Gateway references.
+
+```yaml
+# gitops/infrastructure/gateway/cloudflare-token.enc.yaml  (BEFORE encryption)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-api-token
+  namespace: cert-manager
+type: Opaque
+stringData:
+  api-token: cf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+```yaml
+# gitops/infrastructure/gateway/clusterissuer.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: you@nulcell.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
+        selector:
+          dnsZones: [nulcell.com]
+```
+
+```yaml
+# gitops/infrastructure/gateway/wildcard-certificate.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-nulcell
+  namespace: gateway
+spec:
+  secretName: wildcard-nulcell-tls   # consumed by the Gateway listener above
+  duration: 2160h    # 90 days
+  renewBefore: 720h  # renew 30 days before expiry
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+  commonName: '*.nulcell.com'
+  dnsNames:
+    - nulcell.com
+    - '*.nulcell.com'
+```
+
+Use a `letsencrypt-staging` ClusterIssuer for first runs — Let's Encrypt's prod rate limit is unforgiving if you misconfigure the DNS-01 solver and burn through requests.
+
+> **If you switch to 1Password later**: External Secrets Operator with the 1Password Connect provider can replace the SOPS-encrypted `cloudflare-api-token` Secret transparently. The `ClusterIssuer` keeps the same `apiTokenSecretRef`, so only the source of the Secret changes. SOPS is the recommended starting point — fewer moving parts, no Connect server to run.
 
 ---
 
