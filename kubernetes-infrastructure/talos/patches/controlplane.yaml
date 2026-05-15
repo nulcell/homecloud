@@ -1,41 +1,61 @@
+# Set talosconfig: export TALOSCONFIG=generated/talosconfig
+#
 # Patch merged onto the output of:
 #   talosctl gen config homecloud https://10.10.25.25:6443
 #
-# Apply with:
+# Apply patch with:
 #   talosctl machineconfig patch generated/controlplane.yaml \
 #     --patch @patches/controlplane.yaml \
 #     --output controlplane-final.yaml
 #
+# Apply the final config to the node with:
+#   talosctl apply -f controlplane-final.yaml --nodes <node-ip>
+#
 # Confirm the NIC name on the running node with `talosctl get links` before applying.
 machine:
   network:
-    # hostname: talos-cp-01
     interfaces:
-      - interface: enp3s0 # check with `talosctl get links` on the booted node
-        addresses:
-          - 10.10.17.5/20
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 10.10.31.254
+      - interface: dummy0
         vip:
-          ip: 10.10.25.25 # shared across all control planes via etcd election
-      - interface: enp4s0 # check with `talosctl get links` on the booted node
-        addresses:
-          - 10.10.17.10/20
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 10.10.31.254
+          ip: 10.10.25.25
+      # - interface: enp3s0 # check with `talosctl get links` on the booted node
+      #   dhcp: true
+      #   # vip:
+      #   #   ip: 10.10.25.25 # shared across all control planes via etcd election
+      # - interface: enp4s0 # check with `talosctl get links` on the booted node
+      #   dhcp: true
     nameservers:
       - 10.10.31.254 # home DNS
       - 1.1.1.1
-    install:
-      disk: /dev/nvme0n1
+  install:
+    disk: /dev/nvme0n1
+    image: factory.talos.dev/metal-installer-secureboot/65cf8364cd0de4cf7b851dc7067a2db83d0ba04f11d8635c6cd3334be6ffb825:v1.13.2
+    wipe: true
   time:
     servers:
       - pool.ntp.org
   kubelet:
     extraArgs:
       rotate-server-certificates: "true"
+    extraMounts:
+      - destination: /var/lib/longhorn
+        type: bind
+        source: /var/lib/longhorn
+        options:
+          - bind
+          - rshared
+          - rw
+    nodeIP:
+      validSubnets:
+        - 10.10.16.0/20
+  sysctls:
+    vm.nr_hugepages: "1024"
+  kernel:
+    modules:
+      - name: iscsi_tcp
+      - name: nvme_tcp
+      - name: vfio_pci
+      - name: uio_pci_generic
 cluster:
   allowSchedulingOnControlPlanes: true # single-node / hyperconverged; flip to false on Phase 3
   network:

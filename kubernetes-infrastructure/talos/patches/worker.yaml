@@ -1,0 +1,48 @@
+# Set talosconfig: export TALOSCONFIG=generated/talosconfig
+#
+# Patch merged onto the output of:
+#   talosctl gen config homecloud https://10.10.25.25:6443
+#
+# Apply patch with:
+#   talosctl machineconfig patch generated/worker.yaml \
+#     --patch @patches/worker.yaml \
+#     --output worker-final.yaml
+#
+# Apply the final config to the node with:
+#   talosctl apply -f worker-final.yaml --nodes <node-ip>
+#
+# Confirm the NIC name on the running node with `talosctl get links` before applying.
+machine:
+  network:
+    nameservers:
+      - 10.10.31.254 # home DNS
+      - 1.1.1.1
+  install:
+    disk: /dev/nvme0n1
+    image: factory.talos.dev/metal-installer-secureboot/65cf8364cd0de4cf7b851dc7067a2db83d0ba04f11d8635c6cd3334be6ffb825:v1.13.2
+    wipe: true
+  time:
+    servers:
+      - pool.ntp.org
+  kubelet:
+    extraArgs:
+      rotate-server-certificates: "true"
+    extraMounts:
+      - destination: /var/lib/longhorn
+        type: bind
+        source: /var/lib/longhorn
+        options:
+          - bind
+          - rshared
+          - rw
+    nodeIP:
+      validSubnets:
+        - 10.10.16.0/20
+  sysctls:
+    vm.nr_hugepages: "1024"
+  kernel:
+    modules:
+      - name: iscsi_tcp
+      - name: nvme_tcp
+      - name: vfio_pci
+      - name: uio_pci_generic

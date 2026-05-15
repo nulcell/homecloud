@@ -1,14 +1,53 @@
 # Longhorn 1.11.2 values.
 defaultSettings:
-  defaultReplicaCount: 1                # raise to 3 once you have 3 nodes
+  defaultReplicaCount: 1 # Raise to 3 once you have 3 nodes
   defaultDataPath: /var/lib/longhorn
-  storageMinimalAvailablePercentage: 10
-  allowRecurringJobWhileVolumeDetached: true
+  storageOverProvisioningPercentage: 100
+  storageMinimalAvailablePercentage: 15
+  deletingConfirmationFlag: true # disable to prevent accidental deletions after testing
+
+  defaultDataLocality: best-effort
+  # # Create default disk on nodes
+  # createDefaultDiskLabeledNodes: true
+  # Node drain policy
+  nodeDrainPolicy: block-for-eviction
+  # Guaranteed instance manager CPU
+  guaranteedInstanceManagerCPU: 12
 
 persistence:
   defaultClass: true
   defaultClassReplicaCount: 1
   reclaimPolicy: Retain
+  defaultFsType: ext4
+
+# Resource limits
+longhornManager:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+longhornDriver:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Enable the UI
+longhornUI:
+  replicas: 2
 
 ingress:
-  enabled: false                        # exposed via Gateway HTTPRoute in gitops/
+  enabled: yes # Exposed via Gateway HTTPRoute in gitops/
+  ingressClassName: "cilium"
+  host: "longhorn.nulcell.com"
+  path: "/"
+  pathType: Prefix
+
+preUpgradeChecker:
+  jobEnabled: false
+
+# # CRITICAL FOR TALOS:
+# # Informs the Container Storage Interface (CSI) where to mount active block devices.
+# csi:
+#   kubeletRootDir: /var/lib/kubelet

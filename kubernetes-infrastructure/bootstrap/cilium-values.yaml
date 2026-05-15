@@ -31,6 +31,12 @@ k8sClientRateLimit:
 gatewayAPI:
   enabled: true
 
+ingressController:
+  enabled: true
+  default: true
+  loadbalancer:
+    annotationPattern: "cilium.io/*"
+
 operator:
   replicas: 1
 
