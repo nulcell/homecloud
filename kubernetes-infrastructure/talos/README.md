@@ -68,9 +68,9 @@ kubectl get csr -o json | jq -r '.items[] | select(.status == {}) | .metadata.na
 talosctl get links
 talosctl health
 talosctl dashboard
-talosctl upgrade --image factory.talos.dev/installer/${SCHEMATIC_ID}:${TALOS_VERSION}
+talosctl upgrade --image factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION}
 export KUBERNETES_VERSION_UPGRADE=v1.36.1
-talosctl upgrade-k8s --to ${KUBERNETES_VERSION_UPGRADE}
+talosctl upgrade-k8s --from ${KUBERNETES_VERSION} --to ${KUBERNETES_VERSION_UPGRADE} --dry-run
 
 # Day never
 talosctl reset --nodes ${NODE_IP} --graceful=false --reboot=true
