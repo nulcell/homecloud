@@ -1,0 +1,56 @@
+{{- if .Values.jellyfin.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: {{ include "mediaStack.namespace" . }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "jellyfin") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "jellyfin") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "jellyfin") | nindent 8 }}
+    spec:
+      securityContext:
+        {{- include "mediaStack.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: jellyfin
+          image: "{{ .Values.jellyfin.image.repository }}:{{ .Values.jellyfin.image.tag }}"
+          imagePullPolicy: {{ .Values.jellyfin.image.pullPolicy }}
+          env:
+            {{- include "mediaStack.commonEnv" . | nindent 12 }}
+            {{- if .Values.jellyfin.publishedServerUrl }}
+            - name: JELLYFIN_PublishedServerUrl
+              value: {{ .Values.jellyfin.publishedServerUrl | quote }}
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.jellyfin.service.ports.web }}
+              name: web
+              protocol: TCP
+            - containerPort: {{ .Values.jellyfin.service.ports.discovery }}
+              name: discovery
+              protocol: UDP
+            - containerPort: {{ .Values.jellyfin.service.ports.dlna }}
+              name: dlna
+              protocol: UDP
+          resources:
+            {{- toYaml .Values.jellyfin.resources | nindent 12 }}
+          securityContext:
+            {{- include "mediaStack.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              subPath: jellyfin
+            - mountPath: /data
+              name: data
+      volumes:
+        {{- include "mediaStack.volumes" . | nindent 8 }}
+      restartPolicy: Always
+{{- end }}

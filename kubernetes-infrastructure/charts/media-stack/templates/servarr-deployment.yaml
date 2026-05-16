@@ -1,0 +1,141 @@
+{{- if .Values.servarr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servarr
+  namespace: {{ include "mediaStack.namespace" . }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "servarr") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "servarr") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "servarr") | nindent 8 }}
+    spec:
+      securityContext:
+        {{- include "mediaStack.podSecurityContext" . | nindent 8 }}
+      containers:
+        {{- if .Values.vpn.enabled }}
+        # ---------- Gluetun VPN sidecar (owns the pod's network namespace) ----------
+        - name: gluetun
+          image: "{{ .Values.vpn.image.repository }}:{{ .Values.vpn.image.tag }}"
+          imagePullPolicy: {{ .Values.vpn.image.pullPolicy }}
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: {{ .Values.vpn.provider | quote }}
+            - name: VPN_TYPE
+              value: {{ .Values.vpn.type | quote }}
+            - name: SERVER_COUNTRIES
+              value: {{ .Values.vpn.serverCountries | quote }}
+            - name: TZ
+              value: {{ .Values.common.timezone | quote }}
+            - name: UPDATER_PERIOD
+              value: {{ .Values.vpn.updaterPeriod | quote }}
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: {{ .Values.vpn.firewallOutboundSubnets | quote }}
+            - name: FIREWALL_INPUT_PORTS
+              value: {{ .Values.vpn.firewallInputPorts | quote }}
+            - name: DNS_UPSTREAM_RESOLVERS
+              value: {{ .Values.vpn.dnsUpstreamResolvers | quote }}
+            {{- if eq .Values.vpn.type "openvpn" }}
+            - name: OPENVPN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vpn.credentialsSecret.name }}
+                  key: {{ .Values.vpn.credentialsSecret.userKey }}
+            - name: OPENVPN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vpn.credentialsSecret.name }}
+                  key: {{ .Values.vpn.credentialsSecret.passwordKey }}
+            {{- end }}
+            {{- with .Values.vpn.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            {{- if .Values.prowlarr.enabled }}
+            - containerPort: {{ .Values.prowlarr.service.ports.web }}
+              name: prowlarr
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.qbittorrent.enabled }}
+            - containerPort: {{ .Values.qbittorrent.service.ports.web }}
+              name: qbit-web
+              protocol: TCP
+            - containerPort: {{ .Values.qbittorrent.service.ports.bt }}
+              name: qbit-bt
+              protocol: TCP
+            {{- end }}
+          livenessProbe:
+            exec:
+              command: [sh, -c, "ping -c 1 -W 2 1.1.1.1"]
+            failureThreshold: 5
+            periodSeconds: 20
+            timeoutSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_ADMIN
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /gluetun
+              name: config
+              subPath: gluetun
+        {{- end }}
+        {{- if .Values.prowlarr.enabled }}
+        # ---------- Prowlarr (network namespace shared with gluetun) ----------
+        - name: prowlarr
+          image: "{{ .Values.prowlarr.image.repository }}:{{ .Values.prowlarr.image.tag }}"
+          imagePullPolicy: {{ .Values.prowlarr.image.pullPolicy }}
+          env:
+            {{- include "mediaStack.commonEnv" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.prowlarr.resources | nindent 12 }}
+          securityContext:
+            {{- include "mediaStack.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              subPath: prowlarr
+        {{- end }}
+        {{- if .Values.qbittorrent.enabled }}
+        # ---------- qBittorrent (network namespace shared with gluetun) ----------
+        - name: qbittorrent
+          image: "{{ .Values.qbittorrent.image.repository }}:{{ .Values.qbittorrent.image.tag }}"
+          imagePullPolicy: {{ .Values.qbittorrent.image.pullPolicy }}
+          env:
+            {{- include "mediaStack.commonEnv" . | nindent 12 }}
+            - name: WEBUI_PORT
+              value: {{ .Values.qbittorrent.webuiPort | quote }}
+          livenessProbe:
+            exec:
+              command: [sh, -c, "ping -c 1 -W 2 1.1.1.1"]
+            failureThreshold: 3
+            initialDelaySeconds: 20
+            periodSeconds: 60
+            timeoutSeconds: 10
+          resources:
+            {{- toYaml .Values.qbittorrent.resources | nindent 12 }}
+          securityContext:
+            {{- include "mediaStack.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              subPath: qbittorrent
+            - mountPath: /data
+              name: data
+        {{- end }}
+      volumes:
+        {{- include "mediaStack.volumes" . | nindent 8 }}
+      restartPolicy: Always
+{{- end }}

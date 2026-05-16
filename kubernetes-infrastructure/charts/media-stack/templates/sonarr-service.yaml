@@ -1,0 +1,18 @@
+{{- if .Values.sonarr.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarr
+  namespace: {{ include "mediaStack.namespace" . }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "sonarr") | nindent 4 }}
+spec:
+  type: {{ .Values.sonarr.service.type }}
+  selector:
+    {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "sonarr") | nindent 4 }}
+  ports:
+    - name: web
+      port: {{ .Values.sonarr.service.ports.web }}
+      targetPort: {{ .Values.sonarr.service.ports.web }}
+      protocol: TCP
+{{- end }}

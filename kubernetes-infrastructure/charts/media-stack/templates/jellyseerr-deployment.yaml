@@ -1,0 +1,44 @@
+{{- if .Values.jellyseerr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyseerr
+  namespace: {{ include "mediaStack.namespace" . }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "jellyseerr") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "jellyseerr") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "jellyseerr") | nindent 8 }}
+    spec:
+      securityContext:
+        {{- include "mediaStack.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: jellyseerr
+          image: "{{ .Values.jellyseerr.image.repository }}:{{ .Values.jellyseerr.image.tag }}"
+          imagePullPolicy: {{ .Values.jellyseerr.image.pullPolicy }}
+          env:
+            {{- include "mediaStack.commonEnv" . | nindent 12 }}
+          ports:
+            - containerPort: {{ .Values.jellyseerr.service.ports.web }}
+              name: web
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.jellyseerr.resources | nindent 12 }}
+          securityContext:
+            {{- include "mediaStack.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - mountPath: /app/config
+              name: config
+              subPath: jellyseerr
+      volumes:
+        {{- include "mediaStack.volumes" . | nindent 8 }}
+      restartPolicy: Always
+{{- end }}

@@ -1,0 +1,18 @@
+{{- if .Values.bazarr.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: bazarr
+  namespace: {{ include "mediaStack.namespace" . }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "bazarr") | nindent 4 }}
+spec:
+  type: {{ .Values.bazarr.service.type }}
+  selector:
+    {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "bazarr") | nindent 4 }}
+  ports:
+    - name: web
+      port: {{ .Values.bazarr.service.ports.web }}
+      targetPort: {{ .Values.bazarr.service.ports.web }}
+      protocol: TCP
+{{- end }}

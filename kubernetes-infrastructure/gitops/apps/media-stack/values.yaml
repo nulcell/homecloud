@@ -1,0 +1,55 @@
+# Overrides for the media-stack chart at kubernetes-infrastructure/charts/media-stack/.
+# Everything not listed here keeps the chart's default value.
+
+common:
+  puid: 1000
+  pgid: 1000
+  timezone: Europe/Amsterdam
+
+persistence:
+  storageClassName: longhorn
+  accessMode: ReadWriteMany
+  config:
+    size: 20Gi
+  data:
+    size: 500Gi
+
+vpn:
+  enabled: true
+  provider: nordvpn
+  type: openvpn
+  serverCountries: Netherlands
+  credentialsSecret:
+    name: media-stack-vpn
+    userKey: openvpn-user
+    passwordKey: openvpn-password
+
+# Hostnames published via external-dns. Omit any to keep that app internal-only.
+jellyfin:
+  publishedServerUrl: https://jellyfin.nulcell.com
+  gateway:
+    hostname: jellyfin.nulcell.com
+
+jellyseerr:
+  gateway:
+    hostname: jellyseerr.nulcell.com
+
+sonarr:
+  gateway:
+    hostname: sonarr.nulcell.com
+
+radarr:
+  gateway:
+    hostname: radarr.nulcell.com
+
+bazarr:
+  gateway:
+    hostname: bazarr.nulcell.com
+
+prowlarr:
+  gateway:
+    hostname: prowlarr.nulcell.com
+
+qbittorrent:
+  gateway:
+    hostname: qbittorrent.nulcell.com

@@ -1,0 +1,257 @@
+# =============================================================================
+# Chart-level
+# =============================================================================
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+# =============================================================================
+# Common configuration applied to every app
+# =============================================================================
+common:
+  # User and group the linuxserver.io containers drop to after init.
+  puid: 1000
+  pgid: 1000
+  # Timezone for all media apps.
+  timezone: UTC
+  # Container-level security context defaults. linuxserver.io images start
+  # as root to chown volumes via s6, then drop to PUID:PGID — so we keep a
+  # small allowlist of capabilities for that hand-off.
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilitiesAdd:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+      - KILL
+
+# =============================================================================
+# Persistence — shared `config` and `data` PVCs mounted into every pod.
+# Longhorn supports RWX via its share-manager (NFS under the hood); pick a
+# different storageClassName if you have something else (e.g. nfs-subdir,
+# rook-ceph-rbd, etc.).
+# =============================================================================
+persistence:
+  enabled: true
+  storageClassName: longhorn
+  accessMode: ReadWriteMany # RWX so every pod can mount both PVCs at once
+  config:
+    size: 20Gi
+  data:
+    size: 500Gi
+  annotations: {}
+
+# =============================================================================
+# Gateway API — global parentRef shared by every app's HTTPRoute. Per-app
+# hostnames are configured in the per-app blocks below; omit the hostname to
+# keep an app internal-only.
+# =============================================================================
+gateway:
+  enabled: true
+  parentRef:
+    name: default
+    namespace: gateway
+    sectionName: https # HTTPS listener on the parent Gateway
+    httpSectionName: http # used by the redirect route
+  httpRedirect: true # emit a 301 HTTP→HTTPS route alongside each HTTPRoute
+
+# =============================================================================
+# VPN — Gluetun sidecar in the same pod as Prowlarr + qBittorrent.
+# Credentials MUST come from a Secret (never set them in values).
+# Create the Secret externally (SOPS-encrypted manifest is the recommended
+# pattern); see the example in the gitops overlay.
+#   stringData:
+#     openvpn-user: <user>
+#     openvpn-password: <password>
+# =============================================================================
+vpn:
+  enabled: true
+  image:
+    repository: qmcgaw/gluetun
+    tag: latest
+    pullPolicy: IfNotPresent
+  provider: nordvpn
+  type: openvpn # openvpn | wireguard
+  serverCountries: Netherlands
+  # Subnets allowed to bypass the killswitch — must include your cluster's
+  # pod + service CIDRs so other containers in the pod can still hit the WebUI.
+  firewallOutboundSubnets: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,10.244.0.0/16,10.96.0.0/12"
+  # Ports inside the pod that should accept inbound traffic through the firewall.
+  firewallInputPorts: "9696,8080,6881"
+  dnsUpstreamResolvers: "cloudflare,google"
+  updaterPeriod: 24h
+  credentialsSecret:
+    name: media-stack-vpn
+    userKey: openvpn-user
+    passwordKey: openvpn-password
+  extraEnv: [] # arbitrary extra env vars (list of {name, value})
+
+# =============================================================================
+# Per-app config. Every block has:
+#   enabled        - toggle the whole app on/off
+#   image          - repository + tag + pullPolicy
+#   resources      - K8s resource requests/limits
+#   gateway        - {hostname: <fqdn>} to publish an HTTPRoute; omit for internal-only
+# =============================================================================
+
+# ---------- Jellyfin (media server) ----------
+jellyfin:
+  enabled: true
+  image:
+    repository: lscr.io/linuxserver/jellyfin
+    tag: latest
+    pullPolicy: IfNotPresent
+  publishedServerUrl: "" # set to your https URL for proper auto-discovery
+  service:
+    type: ClusterIP
+    ports:
+      web: 8096
+      discovery: 7359
+      dlna: 1900
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "4"
+      memory: 4Gi
+  gateway:
+    hostname: "" # e.g. jellyfin.example.com
+
+# ---------- Jellyseerr (request manager) ----------
+jellyseerr:
+  enabled: true
+  image:
+    repository: fallenbagel/jellyseerr
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    ports:
+      web: 5055
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  gateway:
+    hostname: ""
+
+# ---------- Sonarr (TV) ----------
+sonarr:
+  enabled: true
+  image:
+    repository: lscr.io/linuxserver/sonarr
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    ports:
+      web: 8989
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  gateway:
+    hostname: ""
+
+# ---------- Radarr (movies) ----------
+radarr:
+  enabled: true
+  image:
+    repository: lscr.io/linuxserver/radarr
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    ports:
+      web: 7878
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  gateway:
+    hostname: ""
+
+# ---------- Bazarr (subtitles) ----------
+bazarr:
+  enabled: true
+  image:
+    repository: lscr.io/linuxserver/bazarr
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    ports:
+      web: 6767
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  gateway:
+    hostname: ""
+
+# ---------- Servarr pod (Gluetun + Prowlarr + qBittorrent share a network namespace) ----------
+# Prowlarr and qBittorrent route ALL egress through the gluetun sidecar — if
+# the VPN drops, the killswitch blocks traffic. Their Services target the
+# servarr pod, and traffic enters via the firewallInputPorts above.
+servarr:
+  enabled: true
+
+# ---------- Prowlarr (indexer aggregator) ----------
+prowlarr:
+  enabled: true
+  image:
+    repository: lscr.io/linuxserver/prowlarr
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    ports:
+      web: 9696
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  gateway:
+    hostname: ""
+
+# ---------- qBittorrent (torrent client) ----------
+qbittorrent:
+  enabled: true
+  image:
+    repository: lscr.io/linuxserver/qbittorrent
+    tag: latest
+    pullPolicy: IfNotPresent
+  webuiPort: 8080
+  service:
+    type: ClusterIP
+    ports:
+      web: 8080
+      bt: 6881
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 2
+      memory: 1Gi
+  gateway:
+    hostname: ""

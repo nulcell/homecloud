@@ -1,0 +1,46 @@
+{{- if .Values.radarr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: {{ include "mediaStack.namespace" . }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "radarr") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "radarr") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "radarr") | nindent 8 }}
+    spec:
+      securityContext:
+        {{- include "mediaStack.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: radarr
+          image: "{{ .Values.radarr.image.repository }}:{{ .Values.radarr.image.tag }}"
+          imagePullPolicy: {{ .Values.radarr.image.pullPolicy }}
+          env:
+            {{- include "mediaStack.commonEnv" . | nindent 12 }}
+          ports:
+            - containerPort: {{ .Values.radarr.service.ports.web }}
+              name: web
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.radarr.resources | nindent 12 }}
+          securityContext:
+            {{- include "mediaStack.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              subPath: radarr
+            - mountPath: /data
+              name: data
+      volumes:
+        {{- include "mediaStack.volumes" . | nindent 8 }}
+      restartPolicy: Always
+{{- end }}

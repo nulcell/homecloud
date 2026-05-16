@@ -1,0 +1,25 @@
+apiVersion: v2
+name: media-stack
+description: |
+  Self-hosted media platform: Jellyfin, Jellyseerr, Sonarr, Radarr, Bazarr,
+  Prowlarr, qBittorrent (the last two behind a Gluetun VPN sidecar).
+  Per-app enable flags, Gateway API HTTPRoutes, RWX storage, no Ingress.
+type: application
+version: "0.1.0"
+appVersion: "1.0.0"
+sources:
+  - https://github.com/nulcell/homecloud
+keywords:
+  - media
+  - jellyfin
+  - jellyseerr
+  - sonarr
+  - radarr
+  - bazarr
+  - prowlarr
+  - qbittorrent
+  - gluetun
+home: https://nulcell.com
+maintainers:
+  - name: Salimon Ayanleye
+    email: cloud@nulcell.com

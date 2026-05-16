@@ -1,0 +1,19 @@
+{{- if .Values.prowlarr.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowlarr
+  namespace: {{ include "mediaStack.namespace" . }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "prowlarr") | nindent 4 }}
+spec:
+  type: {{ .Values.prowlarr.service.type }}
+  # Targets the servarr pod — prowlarr runs there inside the gluetun network ns.
+  selector:
+    {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "servarr") | nindent 4 }}
+  ports:
+    - name: web
+      port: {{ .Values.prowlarr.service.ports.web }}
+      targetPort: {{ .Values.prowlarr.service.ports.web }}
+      protocol: TCP
+{{- end }}

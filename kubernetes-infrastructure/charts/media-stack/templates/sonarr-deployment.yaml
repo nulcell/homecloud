@@ -1,0 +1,46 @@
+{{- if .Values.sonarr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarr
+  namespace: {{ include "mediaStack.namespace" . }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "sonarr") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "sonarr") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "sonarr") | nindent 8 }}
+    spec:
+      securityContext:
+        {{- include "mediaStack.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: sonarr
+          image: "{{ .Values.sonarr.image.repository }}:{{ .Values.sonarr.image.tag }}"
+          imagePullPolicy: {{ .Values.sonarr.image.pullPolicy }}
+          env:
+            {{- include "mediaStack.commonEnv" . | nindent 12 }}
+          ports:
+            - containerPort: {{ .Values.sonarr.service.ports.web }}
+              name: web
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.sonarr.resources | nindent 12 }}
+          securityContext:
+            {{- include "mediaStack.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              subPath: sonarr
+            - mountPath: /data
+              name: data
+      volumes:
+        {{- include "mediaStack.volumes" . | nindent 8 }}
+      restartPolicy: Always
+{{- end }}

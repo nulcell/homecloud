@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: media
+
+# Chart at kubernetes-infrastructure/charts/media-stack/ — referenced via chartHome.
+# Requires the CMP plugin to use --load-restrictor=LoadRestrictionsNone (set in
+# bootstrap/argocd-values.yaml) so kustomize can read files above this dir.
+helmGlobals:
+  chartHome: ../../../charts
+
+helmCharts:
+  - name: media-stack
+    releaseName: media-stack
+    namespace: media
+    valuesFile: values.yaml
+    includeCRDs: false
+
+resources:
+  - namespace.yaml
+
+generators:
+  - secret-generator.yaml

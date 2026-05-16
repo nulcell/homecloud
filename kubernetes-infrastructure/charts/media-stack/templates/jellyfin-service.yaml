@@ -1,0 +1,26 @@
+{{- if .Values.jellyfin.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin
+  namespace: {{ include "mediaStack.namespace" . }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "jellyfin") | nindent 4 }}
+spec:
+  type: {{ .Values.jellyfin.service.type }}
+  selector:
+    {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "jellyfin") | nindent 4 }}
+  ports:
+    - name: web
+      port: {{ .Values.jellyfin.service.ports.web }}
+      targetPort: {{ .Values.jellyfin.service.ports.web }}
+      protocol: TCP
+    - name: discovery
+      port: {{ .Values.jellyfin.service.ports.discovery }}
+      targetPort: {{ .Values.jellyfin.service.ports.discovery }}
+      protocol: UDP
+    - name: dlna
+      port: {{ .Values.jellyfin.service.ports.dlna }}
+      targetPort: {{ .Values.jellyfin.service.ports.dlna }}
+      protocol: UDP
+{{- end }}
