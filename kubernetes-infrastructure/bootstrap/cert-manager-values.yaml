@@ -4,6 +4,13 @@ crds:
 prometheus:
   enabled: false # turn on after kube-prometheus-stack is installed
 
+# DNS-01 self-check uses these recursors instead of the pod's resolv.conf.
+# Bypasses the home DNS at 10.10.31.254, which may shadow the nulcell.com zone
+# and mask the TXT records cert-manager just created in Cloudflare.
+extraArgs:
+  - --dns01-recursive-nameservers-only
+  - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
+
 resources:
   requests:
     cpu: 20m
