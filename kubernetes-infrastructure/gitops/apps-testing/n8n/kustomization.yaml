@@ -2,8 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: n8n
 
-# The chart sits under ./charts/n8n — kustomize's helm inflator picks it up
-# from the default chartHome (./charts) without needing a repo: URL.
+# Chart lives at kubernetes-infrastructure/charts/n8n/, referenced via chartHome.
+# Requires the CMP plugin to be invoked with --load-restrictor=LoadRestrictionsNone
+# (set in bootstrap/argocd-values.yaml) so kustomize can read files above this dir.
+helmGlobals:
+  chartHome: ../../../charts
+
 helmCharts:
   - name: n8n
     releaseName: n8n
@@ -13,17 +17,6 @@ helmCharts:
 
 resources:
   - namespace.yaml
-  - httproute.yaml
 
-# The chart unconditionally renders a traefik Ingress; we use the Gateway API
-# HTTPRoute defined in this folder instead. Strip the rendered Ingress out.
-patches:
-  - target:
-      kind: Ingress
-      name: n8n-ingress
-    patch: |
-      $patch: delete
-      apiVersion: networking.k8s.io/v1
-      kind: Ingress
-      metadata:
-        name: n8n-ingress
+generators:
+  - secret-generator.yaml

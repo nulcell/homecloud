@@ -1,44 +1,20 @@
-# Overrides for the local n8n chart at ./charts/n8n.
+# Overrides for the n8n chart at kubernetes-infrastructure/charts/n8n/.
 # Everything not listed here keeps the chart's default value.
 
 n8n:
-  replicaCount: 1
-  image:
-    tag: "2.0.2"
-  resources:
-    requests:
-      cpu: 200m
-      memory: 256Mi
-    limits:
-      cpu: 1
-      memory: 512Mi
+  timezone: Europe/Amsterdam
 
-n8nTaskRunner:
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
+gateway:
+  enabled: true
+  hostname: n8n.nulcell.com
 
-service:
-  type: ClusterIP
-  name: n8n
-  webPort: 5678
-  taskBrokerPort: 5679
-
-# The chart's Ingress block is still referenced by the rendered Ingress (which
-# we delete via a kustomize patch), so these values are inert but kept for
-# clarity — host is also what the HTTPRoute uses.
-ingress:
-  className: cilium
-  host: n8n.nulcell.com
-  certIssuer: letsencrypt-nulcell-com
-  sslHost: n8n.nulcell.com
+# Reference to the SOPS-encrypted Secret in this folder (n8n-runner-auth.enc.yaml).
+taskRunner:
+  authToken:
+    secretName: n8n-runner-auth
+    secretKey: auth-token
 
 persistence:
-  enabled: true
   storageClass: longhorn
+  accessMode: ReadWriteOnce # flip to ReadWriteMany once Longhorn RWX is desired
   size: 5Gi

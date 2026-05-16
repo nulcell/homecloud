@@ -7,8 +7,6 @@ metadata:
     {{- include "n8n.labels" . | nindent 4 }}
   {{- with .Values.commonAnnotations }}
   annotations:
-    traefik.ingress.kubernetes.io/router.tls.certresolver: {{ .Values.ingress.certIssuer }}
-    traefik.ingress.kubernetes.io/ssl-host: "{{ .Values.ingress.sslHost }}"
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
@@ -16,9 +14,9 @@ spec:
   selector:
     {{- include "n8n.selectorLabels" . | nindent 4 }}
   ports:
-    - name: "web-port"
+    - name: web-port
       port: {{ .Values.service.webPort }}
       targetPort: {{ .Values.service.webPort }}
-    - name: "broker-port"
+    - name: broker-port
       port: {{ .Values.service.taskBrokerPort }}
       targetPort: {{ .Values.service.taskBrokerPort }}

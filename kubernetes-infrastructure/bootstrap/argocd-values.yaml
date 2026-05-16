@@ -14,7 +14,10 @@ configs:
       kustomize-sops:
         generate:
           command: [sh, -c]
-          args: ["kustomize build --enable-alpha-plugins --enable-exec ."]
+          # --load-restrictor=LoadRestrictionsNone lets kustomizations reference
+          # files outside their own directory — needed by helmGlobals.chartHome
+          # paths like ../../../charts (e.g. gitops/apps/n8n -> charts/n8n).
+          args: ["kustomize build --enable-alpha-plugins --enable-exec --load-restrictor=LoadRestrictionsNone ."]
 
 server:
   service:

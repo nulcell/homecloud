@@ -1,0 +1,28 @@
+# Plaintext placeholder — encrypt before committing:
+#   sops --encrypt --in-place kubernetes-infrastructure/gitops/apps-testing/n8n/n8n-runner-auth.enc.yaml
+#
+# Generate a token first:
+#   openssl rand -hex 32
+apiVersion: v1
+kind: Secret
+metadata:
+    name: n8n-runner-auth
+    namespace: n8n
+type: Opaque
+stringData:
+    auth-token: ENC[AES256_GCM,data:LHBci4wS2y4d1jDzSrTtTGrAGIWxBW7hZAA+y3WpKaTe+FkEh5/s7Cf5E0/h3hRhUBdRIZjrH09NdJkjlgA2sA==,iv:3q/430th6IQrlJXQMcFiDPMS8UEcccMMPxJ2OtOk66g=,tag:liECaKDYSpNzoVQv4Zvm8Q==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBHSGZEN2x3Nnd6emZIeFhY
+            NC81clFSSk5pc0pkTnBaZ2szOVVDOHlybVhjCnZYelhYNTZkcGNmTWdwTG5EVUJx
+            YkJPQy96aUdFWGRieVh6L1U0OHp4dzQKLS0tICtmTGpoTTBCSjFyZHJ0S3dCRXFW
+            cW02THhzbndCOW9xZ0U1YXVCdDVvUGMK+ocbfxCNUm7N2fdbX3+09U3t/LgNlkAY
+            ro6m5LniPoSaAZWHh82mtXHISpYKw0mwx/Z20dKlzQhyD3YjFark6Q==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zghrycrgnan0c7nfp5ke5csdeh9rdgtzwsd6yj4pl9rzlzjp24cspycpul
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-05-16T10:51:55Z"
+    mac: ENC[AES256_GCM,data:PV966x5IvrNZSXPrg7ZX4zGQgjVmavT5JJoA6NcouhCii7g4pBpfc6SB5O1pikIHf894Nd0jk3kY2+DaQRjdl4r7C/Rki4qcY4ORMlTEf53PA6eaYFMA2s320R9fuxZd06QpHYLxhQCToD75y3KT9oaXmEJr8o/HhMzRsfophek=,iv:NpMMkZE7LjjBxJ9Z1iqDm+kLKEaOoJwJvjT2zNOUh7w=,tag:GNJja3sYmcB4CP/K9sbgCA==,type:str]
+    version: 3.13.0

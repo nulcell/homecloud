@@ -1,0 +1,132 @@
+n8n:
+  replicaCount: 1
+
+  image:
+    repository: docker.n8n.io/n8nio/n8n
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "2.0.2"
+
+  # Used for both GENERIC_TIMEZONE and TZ env vars on the n8n + task-runner pods.
+  timezone: UTC
+  logLevel: info
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+  namespaceOverride: ""
+
+  updateStrategy: {}
+  podAnnotations: {}
+  podLabels: {}
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    fsGroup: 1000
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 512Mi
+
+n8nTaskRunner:
+  replicaCount: 1
+
+  image:
+    repository: n8nio/runners
+    pullPolicy: IfNotPresent
+    tag: "2.0.2"
+
+  launcherLogLevel: info
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+  namespaceOverride: ""
+
+  updateStrategy: {}
+  podAnnotations: {}
+  podLabels: {}
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+hostNetwork: false
+dnsPolicy: ClusterFirst
+
+# Annotations to be added to all other resources.
+commonAnnotations: {}
+priorityClassName: ""
+
+service:
+  type: ClusterIP
+  # DO NOT CHANGE THE SERVICE NAME — referenced by N8N_RUNNERS_TASK_BROKER_URI.
+  name: n8n
+  webPort: 5678
+  taskBrokerPort: 5679
+
+# Gateway API HTTPRoute config. Set gateway.enabled=false to omit routing
+# resources entirely (e.g. if exposing some other way).
+gateway:
+  enabled: true
+  hostname: n8n.example.com
+  parentRef:
+    name: default
+    namespace: gateway
+    sectionName: https        # HTTPS listener on the parent Gateway
+    httpSectionName: http     # used by the redirect route below
+  httpRedirect: true          # render a second HTTPRoute that 301s :80 → :443
+
+# Shared HMAC secret between n8n and the task-runner. Create the Secret
+# externally (e.g. SOPS-encrypted) with a key matching `secretKey` below.
+#   stringData:
+#     auth-token: <random_token>
+taskRunner:
+  authToken:
+    secretName: n8n-runner-auth
+    secretKey: auth-token
+
+persistence:
+  enabled: true
+  storageClass: longhorn
+  # ReadWriteOnce or ReadWriteMany. RWX lets you scale n8n replicas across
+  # nodes; RWO is fine for a single-replica deploy.
+  accessMode: ReadWriteOnce
+  size: 5Gi

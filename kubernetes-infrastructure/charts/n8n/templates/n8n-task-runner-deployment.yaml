@@ -20,8 +20,8 @@ spec:
   {{- end }}
   template:
     metadata:
-      annotations:
       {{- with .Values.n8nTaskRunner.podAnnotations }}
+      annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
@@ -42,29 +42,31 @@ spec:
       {{- end }}
       enableServiceLinks: true
       containers:
-        - env:
+        - name: n8n-task-runner
+          image: "{{ .Values.n8nTaskRunner.image.repository }}:{{ .Values.n8nTaskRunner.image.tag }}"
+          imagePullPolicy: {{ .Values.n8nTaskRunner.image.pullPolicy }}
+          env:
             - name: GENERIC_TIMEZONE
-              value: Europe/Amsterdam
+              value: {{ .Values.n8n.timezone | quote }}
             - name: N8N_RUNNERS_AUTH_TOKEN
-              value: your-secret-here
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.taskRunner.authToken.secretName }}
+                  key: {{ .Values.taskRunner.authToken.secretKey }}
             - name: N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT
               value: "15"
             - name: N8N_RUNNERS_EXTERNAL_ALLOW
               value: '*'
             - name: N8N_RUNNERS_LAUNCHER_LOG_LEVEL
-              value: debug
+              value: {{ .Values.n8nTaskRunner.launcherLogLevel | default "debug" | quote }}
             - name: N8N_RUNNERS_STDLIB_ALLOW
               value: '*'
             - name: N8N_RUNNERS_TASK_BROKER_URI
-              # value: http://n8n.n8n.svc.cluster.local:5679
               value: {{ printf "http://%s.%s.svc.cluster.local:5679" .Values.service.name (include "n8n.namespace" .) }}
             - name: NODE_FUNCTION_ALLOW_BUILTIN
               value: '*'
             - name: NODE_FUNCTION_ALLOW_EXTERNAL
               value: '*'
-          image: {{ .Values.n8nTaskRunner.image.repository }}:{{ .Values.n8nTaskRunner.image.tag }}
-          imagePullPolicy: {{ .Values.n8nTaskRunner.image.pullPolicy }}
-          name: n8n-task-runner
           resources:
             {{- toYaml .Values.n8nTaskRunner.resources | nindent 12 }}
           securityContext:
