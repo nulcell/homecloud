@@ -87,6 +87,14 @@ vpn:
     name: media-stack-vpn
     userKey: openvpn-user
     passwordKey: openvpn-password
+  # Gluetun needs /dev/net/tun. By default we mount it from the host as a
+  # CharDevice — Talos (and most distros) load the tun kernel module out of
+  # the box, so the device exists on the node. Set `useHostPath: false` if you
+  # use a device plugin (e.g. squat/generic-device-plugin) or run gluetun
+  # privileged so it can mknod the device itself.
+  tunDevice:
+    useHostPath: true
+    hostPath: /dev/net/tun
   extraEnv: [] # arbitrary extra env vars (list of {name, value})
 
 # =============================================================================

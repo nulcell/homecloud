@@ -20,10 +20,13 @@ spec:
     spec:
       securityContext:
         {{- include "mediaStack.podSecurityContext" . | nindent 8 }}
-      containers:
-        {{- if .Values.vpn.enabled }}
-        # ---------- Gluetun VPN sidecar (owns the pod's network namespace) ----------
+      {{- if .Values.vpn.enabled }}
+      # Gluetun runs as a native sidecar (initContainer + restartPolicy: Always,
+      # K8s 1.29+). Main containers are gated on its startupProbe so they can't
+      # start, and won't leak traffic, until the tunnel is verified up.
+      initContainers:
         - name: gluetun
+          restartPolicy: Always
           image: "{{ .Values.vpn.image.repository }}:{{ .Values.vpn.image.tag }}"
           imagePullPolicy: {{ .Values.vpn.image.pullPolicy }}
           env:
@@ -72,6 +75,15 @@ spec:
               name: qbit-bt
               protocol: TCP
             {{- end }}
+          # Gates main containers. Killswitch means the ping only succeeds once
+          # the tunnel is up — handshake usually completes in 10-30s, but allow
+          # up to ~5 min on slow links / provider issues.
+          startupProbe:
+            exec:
+              command: [sh, -c, "ping -c 1 -W 2 1.1.1.1"]
+            failureThreshold: 60
+            periodSeconds: 5
+            timeoutSeconds: 5
           livenessProbe:
             exec:
               command: [sh, -c, "ping -c 1 -W 2 1.1.1.1"]
@@ -91,7 +103,12 @@ spec:
             - mountPath: /gluetun
               name: config
               subPath: gluetun
-        {{- end }}
+            {{- if .Values.vpn.tunDevice.useHostPath }}
+            - mountPath: /dev/net/tun
+              name: dev-tun
+            {{- end }}
+      {{- end }}
+      containers:
         {{- if .Values.prowlarr.enabled }}
         # ---------- Prowlarr (network namespace shared with gluetun) ----------
         - name: prowlarr
@@ -137,5 +154,11 @@ spec:
         {{- end }}
       volumes:
         {{- include "mediaStack.volumes" . | nindent 8 }}
+        {{- if and .Values.vpn.enabled .Values.vpn.tunDevice.useHostPath }}
+        - name: dev-tun
+          hostPath:
+            path: {{ .Values.vpn.tunDevice.hostPath }}
+            type: CharDevice
+        {{- end }}
       restartPolicy: Always
 {{- end }}
