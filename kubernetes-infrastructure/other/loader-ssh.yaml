@@ -1,0 +1,51 @@
+# Connect using `ssh -p 2222 -o "StrictHostKeyChecking=accept-new" -o "PubkeyAuthentication=no" loader@10.10.20.3` if a public key is not set
+# Move media
+# - `kubectl -n media exec data-loader -- apk add --no-cache rsync`
+# - `rsync -avhP --info=progress2 -e "ssh -p 2222" /Volumes/nulcell/media-server-data/downloads  loader@10.10.20.1:/data/downloads/ -n `
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: data-loader
+  namespace: media
+  labels:
+    app: data-loader
+spec:
+  restartPolicy: Never
+  securityContext:
+    fsGroup: 1000
+  containers:
+    - name: sshd
+      image: linuxserver/openssh-server:latest
+      env:
+        - { name: PUID, value: "1000" }
+        - { name: PGID, value: "1000" }
+        - { name: TZ, value: "Europe/Amsterdam" }
+        - { name: PASSWORD_ACCESS, value: "true" }
+        - { name: USER_NAME, value: "loader" }
+        - { name: USER_PASSWORD, value: "loader" }
+        - {
+            name: PUBLIC_KEY,
+            value: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEn9DdzGbGXbjxkvmA4n8HV1JBCNjo81dtE+Kq+tcupZ",
+          }
+
+      ports:
+        - { containerPort: 2222, name: ssh }
+      volumeMounts:
+        - { name: data, mountPath: /data }
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: media-stack-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-loader
+  namespace: media
+spec:
+  type: LoadBalancer
+  selector:
+    app: data-loader
+  ports:
+    - { port: 2222, targetPort: 2222, name: ssh }
