@@ -41,20 +41,20 @@ redis:
   resources:
     requests:
       cpu: 50m
-      memory: 64Mi
+      memory: 128Mi
     limits:
       cpu: 200m
-      memory: 128Mi
+      memory: 256Mi
 
 controller:
   replicas: 1
   resources:
     requests:
       cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
       memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2048Mi
 
 dex:
   enabled: false # add later if you want SSO
@@ -66,8 +66,8 @@ repoServer:
       cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 1000m # High ceiling for rapid manifest generation
-      memory: 1024Mi # Extra space for massive Git checkouts
+      cpu: 2000m # High ceiling for rapid manifest generation
+      memory: 2048Mi # Extra space for massive Git checkouts
   # SOPS decryption: mount the age key as a Secret named argocd-sops-age.
   # Create it once during bootstrap:
   #   kubectl -n argocd create secret generic argocd-sops-age \
