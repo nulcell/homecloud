@@ -46,7 +46,7 @@ longhornUI:
       memory: 128Mi
 
 ingress:
-  enabled: yes # Exposed via Gateway HTTPRoute in gitops/
+  enabled: no # Exposed via Gateway HTTPRoute in gitops/
   ingressClassName: "cilium"
   host: "longhorn.nulcell.com"
   path: "/"

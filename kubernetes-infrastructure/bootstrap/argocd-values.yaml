@@ -20,7 +20,7 @@ server:
   service:
     type: LoadBalancer # Cilium L2 pool issues the IP
   ingress:
-    enabled: true # HTTPRoute lives in gitops/
+    enabled: false # HTTPRoute lives in gitops/
     ingressClassName: cilium
     hostname: argocd.nulcell.com
     paths:
