@@ -18,5 +18,5 @@ taskRunner:
 
 persistence:
   storageClass: longhorn
-  accessMode: ReadWriteMany
+  accessMode: ReadWriteOnce # Only one n8n instance, so no need for ReadWriteMany.
   size: 5Gi
