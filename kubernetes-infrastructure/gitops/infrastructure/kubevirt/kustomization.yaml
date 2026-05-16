@@ -15,6 +15,9 @@ resources:
   # kubevirt-manager: web UI for KubeVirt VMs. Single bundled manifest that
   # ships its own namespace, CRDs, RBAC, Deployment, and a ClusterIP Service
   # `kubevirt-manager:8080` exposed via gitops/infrastructure/infra-app-httproutes/.
-  - https://github.com/kubevirt-manager/kubevirt-manager/releases/download/v1.5.3/bundled-v1.5.3.yaml
+  # v1.5.3's bundled manifest shipped a broken Deployment selector
+  # (matchLabels said `version: nightly` while template labels said `v1.5.3`,
+  # so the API server rejected it). Fixed upstream in v1.5.4 — stay on .4+.
+  - https://github.com/kubevirt-manager/kubevirt-manager/releases/download/v1.5.4/bundled-v1.5.4.yaml
   - kubevirt.yaml
   - cdi.yaml
