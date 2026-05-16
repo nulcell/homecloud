@@ -1,0 +1,40 @@
+# Rancher 2.14.1 values for a homelab cluster.
+# Docs: https://github.com/rancher/rancher/blob/release/v2.14/chart/values.yaml
+
+hostname: rancher.nulcell.com
+
+# Single replica — Rancher's "local" cluster (this one) is a single point of
+# failure anyway in a homelab. Bump to 3 when you have a 3-node HA control plane.
+replicas: 1
+
+# Ingress disabled — exposed via Gateway HTTPRoute in
+# gitops/infrastructure/infra-app-httproutes/rancher.yaml.
+ingress:
+  enabled: false
+
+# TLS terminated at the Cilium Gateway with the wildcard *.nulcell.com cert.
+# Rancher itself serves HTTP behind the Gateway; downstream cluster agents
+# trust the public Let's Encrypt chain natively, so no privateCA bundle.
+tls: external
+privateCA: false
+
+# Resource budget — Rancher idles around 600Mi–1Gi and spikes on cluster
+# imports. Generous limit so OOMKills don't blow up the management plane.
+resources:
+  requests:
+    cpu: 250m
+    memory: 1Gi
+  limits:
+    cpu: "2"
+    memory: 4Gi
+
+# Keep the local-cluster registration so Rancher manages itself. Set to "false"
+# only if you intend to use this Rancher purely as a control plane for *other*
+# clusters and never want it self-managing.
+addLocal: "true"
+
+# Audit log to stdout (Loki / kube-prometheus-stack picks it up) rather than to
+# a hostPath volume that ties pods to nodes.
+auditLog:
+  level: 1
+  destination: sidecar
