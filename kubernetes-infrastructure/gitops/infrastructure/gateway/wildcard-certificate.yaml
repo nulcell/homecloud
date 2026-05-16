@@ -6,13 +6,13 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
-  secretName: wildcard-nulcell-tls    # consumed by gateway-default.yaml
-  duration: 2160h                     # 90 days
-  renewBefore: 720h                   # renew 30 days before expiry
+  secretName: wildcard-nulcell-tls # consumed by gateway-default.yaml
+  duration: 2160h # 90 days
+  renewBefore: 720h # renew 30 days before expiry
   issuerRef:
     kind: ClusterIssuer
-    name: letsencrypt-prod            # flip to letsencrypt-staging during testing
-  commonName: '*.nulcell.com'
+    name: letsencrypt-nulcell-com
+  commonName: "*.nulcell.com"
   dnsNames:
     - nulcell.com
-    - '*.nulcell.com'
+    - "*.nulcell.com"

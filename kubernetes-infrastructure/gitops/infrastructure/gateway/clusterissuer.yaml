@@ -2,36 +2,15 @@
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: letsencrypt-staging
+  name: letsencrypt-nulcell-com
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   acme:
     server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: you@nulcell.com
+    email: cloud@nulcell.com
     privateKeySecretRef:
-      name: letsencrypt-staging-account-key
-    solvers:
-      - dns01:
-          cloudflare:
-            apiTokenSecretRef:
-              name: cloudflare-api-token
-              key: api-token
-        selector:
-          dnsZones: [nulcell.com]
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: you@nulcell.com
-    privateKeySecretRef:
-      name: letsencrypt-prod-account-key
+      name: letsencrypt-nulcell-com-account-key
     solvers:
       - dns01:
           cloudflare:

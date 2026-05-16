@@ -62,7 +62,7 @@ kubernetes-infrastructure/gitops/
 Already applied during bootstrap (step 11). For reference:
 
 ```yaml
-# gitops/root/root-app.yaml
+# kubernetes-infrastructure/gitops/root/root-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -97,7 +97,7 @@ spec:
 Two sets, one per top-level GitOps folder. Splitting them lets you put cluster-critical infra on stricter sync settings than workloads.
 
 ```yaml
-# gitops/root/infrastructure-appset.yaml
+# kubernetes-infrastructure/gitops/root/infrastructure-appset.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -136,7 +136,7 @@ spec:
 ```
 
 ```yaml
-# gitops/root/apps-appset.yaml
+# kubernetes-infrastructure/gitops/root/apps-appset.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -258,7 +258,7 @@ The `plugin.name: kustomize-sops` in each ApplicationSet template (above) tells 
 ### 3. Example encrypted secret
 
 ```yaml
-# gitops/infrastructure/sops-secrets/example-secret.enc.yaml   (BEFORE encryption)
+# kubernetes-infrastructure/gitops/infrastructure/sops-secrets/example-secret.enc.yaml   (BEFORE encryption)
 apiVersion: v1
 kind: Secret
 metadata:
@@ -277,7 +277,7 @@ After `sops --encrypt --in-place`, the `stringData` block is encrypted but the m
 ## Cilium Gateway example
 
 ```yaml
-# gitops/infrastructure/gateway/gatewayclass.yaml
+# kubernetes-infrastructure/gitops/infrastructure/gateway/gatewayclass.yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
@@ -287,7 +287,7 @@ spec:
 ```
 
 ```yaml
-# gitops/infrastructure/gateway/gateway-default.yaml
+# kubernetes-infrastructure/gitops/infrastructure/gateway/gateway-default.yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -353,7 +353,7 @@ You need:
 4. A `Certificate` (one wildcard is usually enough) that produces the Secret the Gateway references.
 
 ```yaml
-# gitops/infrastructure/gateway/cloudflare-token.enc.yaml  (BEFORE encryption)
+# kubernetes-infrastructure/gitops/infrastructure/gateway/cloudflare-token.enc.yaml  (BEFORE encryption)
 apiVersion: v1
 kind: Secret
 metadata:
@@ -365,17 +365,17 @@ stringData:
 ```
 
 ```yaml
-# gitops/infrastructure/gateway/clusterissuer.yaml
+# kubernetes-infrastructure/gitops/infrastructure/gateway/clusterissuer.yaml
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: letsencrypt-prod
+  name: letsencrypt-nulcell-com
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: you@nulcell.com
+    email: cloud@nulcell.com
     privateKeySecretRef:
-      name: letsencrypt-prod-account-key
+      name: letsencrypt-nulcell-com-account-key
     solvers:
       - dns01:
           cloudflare:
@@ -387,7 +387,7 @@ spec:
 ```
 
 ```yaml
-# gitops/infrastructure/gateway/wildcard-certificate.yaml
+# kubernetes-infrastructure/gitops/infrastructure/gateway/wildcard-certificate.yaml
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
