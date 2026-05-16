@@ -1,0 +1,48 @@
+# Watch HTTPRoutes (Gateway API). Add other gateway-* sources if you adopt them.
+sources:
+  - gateway-httproute
+
+provider:
+  name: cloudflare
+
+# Only touch records inside nulcell.com — protects unrelated zones if the
+# Cloudflare token is ever broadened by accident.
+domainFilters:
+  - nulcell.com
+
+# `sync` = create AND delete records; `upsert-only` keeps stale records around.
+# Safe to use `sync` because txtOwnerId+txtPrefix mark every record we manage,
+# so we never delete something this controller didn't create.
+policy: sync
+registry: txt
+txtOwnerId: homecloud
+txtPrefix: _externaldns-
+
+# DNS-only (gray cloud). Proxying through Cloudflare would require a public
+# origin IP, but our Gateway IP is on the LAN — proxy mode wouldn't reach it.
+extraArgs:
+  - --cloudflare-proxied=false
+
+env:
+  - name: CF_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: cloudflare-api-token
+        key: api-token
+
+# Reconcile every 1m by default; bump if you start hitting Cloudflare rate limits.
+interval: 1m
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+serviceMonitor:
+  enabled: false   # flip on after kube-prometheus-stack lands
+
+# Default chart RBAC + ServiceAccount; the chart adds Gateway API perms
+# automatically because of the `sources` entries above.

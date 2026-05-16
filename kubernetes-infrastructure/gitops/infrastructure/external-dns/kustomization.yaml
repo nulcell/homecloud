@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Remap every namespaced resource into external-dns. This rewrites the decrypted
+# Cloudflare Secret (originally namespaced to cert-manager via gateway/) into
+# this namespace so external-dns can mount it. No-op on the chart-rendered
+# resources, which the helm inflator already places here.
+namespace: external-dns
+
+helmCharts:
+  - name: external-dns
+    repo: https://kubernetes-sigs.github.io/external-dns/
+    version: 1.21.1
+    releaseName: external-dns
+    namespace: external-dns
+    valuesFile: values.yaml
+    includeCRDs: true
+
+resources:
+  - namespace.yaml
+
+generators:
+  - secret-generator.yaml
