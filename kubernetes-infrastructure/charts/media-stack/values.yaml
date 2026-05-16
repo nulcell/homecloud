@@ -78,7 +78,7 @@ vpn:
   serverCountries: Netherlands
   # Subnets allowed to bypass the killswitch — must include your cluster's
   # pod + service CIDRs so other containers in the pod can still hit the WebUI.
-  firewallOutboundSubnets: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,10.244.0.0/16,10.96.0.0/12"
+  firewallOutboundSubnets: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" #,10.244.0.0/16,10.96.0.0/12"
   # Ports inside the pod that should accept inbound traffic through the firewall.
   firewallInputPorts: "9696,8080,6881"
   dnsUpstreamResolvers: "cloudflare,google"

@@ -26,6 +26,18 @@ vpn:
     userKey: openvpn-user
     passwordKey: openvpn-password
     wireguardPrivateKeyKey: wireguard-private-key
+  # Gluetun's DoT (DNS-over-TLS) upstream wasn't completing through the
+  # NordVPN tunnel — every hostname lookup (blocklist downloads, healthcheck)
+  # timed out and tripped the VPN restart loop, even though the tunnel itself
+  # carries traffic fine. Drop to plain DNS, skip blocklists, and point the
+  # healthcheck at a raw IP so DNS isn't on the critical path.
+  extraEnv:
+    - { name: DOT, value: "off" }
+    - { name: BLOCK_MALICIOUS, value: "off" }
+    - { name: BLOCK_SURVEILLANCE, value: "off" }
+    - { name: BLOCK_ADS, value: "off" }
+    - { name: HEALTH_TARGET_ADDRESS, value: "1.1.1.1:443" }
+    - { name: HEALTH_VPN_DURATION_INITIAL, value: "30s" }
 
 # Hostnames published via external-dns. Omit any to keep that app internal-only.
 jellyfin:
