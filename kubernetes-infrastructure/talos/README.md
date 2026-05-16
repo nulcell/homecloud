@@ -34,11 +34,16 @@ export INSTALL_IMAGE=factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERS
 
 export NODE_IP=10.10.17.5
 
+# Generate secrets (ONCE, ever)
+# talosctl gen secrets --output-file secrets/secret.yaml
+
 # Generate the initial config
 talosctl gen config homecloud https://k8s.nulcell.com:6443 \
   --kubernetes-version ${KUBERNETES_VERSION} \
+  --talos-version ${TALOS_VERSION} \
   --install-image ${INSTALL_IMAGE} \
   --install-disk /dev/nvme0n1 \
+  --with-secrets secrets/secret.yaml \
   --output-dir ./generated --force
 
 talosctl config endpoints  ${NODE_IP} --context homecloud
@@ -70,7 +75,7 @@ talosctl health
 talosctl dashboard
 talosctl upgrade --image factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION}
 export KUBERNETES_VERSION_UPGRADE=v1.36.1
-talosctl upgrade-k8s --from ${KUBERNETES_VERSION} --to ${KUBERNETES_VERSION_UPGRADE} --dry-run
+talosctl upgrade-k8s --from ${KUBERNETES_VERSION} --to ${KUBERNETES_VERSION_UPGRADE} --nodes ${NODE_IP} --dry-run
 
 # Day never
 talosctl reset --nodes ${NODE_IP} --graceful=false --reboot=true
