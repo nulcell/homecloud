@@ -1,4 +1,6 @@
-# Two issuers: use `letsencrypt-staging` for first runs to avoid prod rate limits.
+# Production Let's Encrypt. Switched from staging after DNS-01 flow was verified.
+# Rate limits to keep in mind: 50 certs per registered domain per week,
+# 5 duplicate certs per week, 300 new orders per account per 3 hours.
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -7,7 +9,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   acme:
-    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    server: https://acme-v02.api.letsencrypt.org/directory
     email: cloud@nulcell.com
     privateKeySecretRef:
       name: letsencrypt-nulcell-com-account-key
