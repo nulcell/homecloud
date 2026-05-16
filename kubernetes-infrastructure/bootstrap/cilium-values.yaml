@@ -18,6 +18,17 @@ autoDirectNodeRoutes: true
 bpf:
   masquerade: true
 
+# Transparent WireGuard encryption for all pod-to-pod traffic between nodes.
+# nodeEncryption also covers host-network pods (Cilium agent, node-exporter,
+# Hubble) so cross-node traffic on the LAN is encrypted end-to-end without any
+# per-workload mTLS plumbing. No-op on single-node; live the moment a second
+# node joins. Compatible with routingMode: native — Cilium routes through the
+# cilium_wg0 interface it creates on each node.
+encryption:
+  enabled: true
+  type: wireguard
+  nodeEncryption: true
+
 l2announcements:
   enabled: true
 externalIPs:
