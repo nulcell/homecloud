@@ -33,8 +33,7 @@ resources:
 # clusters and never want it self-managing.
 addLocal: "true"
 
-# Audit log to stdout (Loki / kube-prometheus-stack picks it up) rather than to
-# a hostPath volume that ties pods to nodes.
-auditLog:
-  level: 1
-  destination: sidecar
+# Pin a known bootstrap password so you can always recover the admin login,
+# even if the rancher-webhook is mid-bootstrap and login flows are flaking.
+# Encrypt this with SOPS once the cluster is stable.
+bootstrapPassword: "homecloud-bootstrap"
