@@ -18,11 +18,6 @@ registry: txt
 txtOwnerId: homecloud
 txtPrefix: _externaldns-
 
-# DNS-only (gray cloud). Proxying through Cloudflare would require a public
-# origin IP, but our Gateway IP is on the LAN — proxy mode wouldn't reach it.
-extraArgs:
-  - --cloudflare-proxied=false
-
 env:
   - name: CF_API_TOKEN
     valueFrom:
@@ -42,7 +37,8 @@ resources:
     memory: 64Mi
 
 serviceMonitor:
-  enabled: false   # flip on after kube-prometheus-stack lands
+  enabled: false # flip on after kube-prometheus-stack lands
+
 
 # Default chart RBAC + ServiceAccount; the chart adds Gateway API perms
 # automatically because of the `sources` entries above.
