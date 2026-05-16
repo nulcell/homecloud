@@ -5,7 +5,7 @@ n8n:
     repository: docker.n8n.io/n8nio/n8n
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "2.0.2"
+    tag: "2.20.9"
 
   # Used for both GENERIC_TIMEZONE and TZ env vars on the n8n + task-runner pods.
   timezone: UTC
@@ -51,7 +51,7 @@ n8nTaskRunner:
   image:
     repository: n8nio/runners
     pullPolicy: IfNotPresent
-    tag: "2.0.2"
+    tag: "2.20.9"
 
   launcherLogLevel: info
 
@@ -110,9 +110,9 @@ gateway:
   parentRef:
     name: default
     namespace: gateway
-    sectionName: https        # HTTPS listener on the parent Gateway
-    httpSectionName: http     # used by the redirect route below
-  httpRedirect: true          # render a second HTTPRoute that 301s :80 → :443
+    sectionName: https # HTTPS listener on the parent Gateway
+    httpSectionName: http # used by the redirect route below
+  httpRedirect: true # render a second HTTPRoute that 301s :80 → :443
 
 # Shared HMAC secret between n8n and the task-runner. Create the Secret
 # externally (e.g. SOPS-encrypted) with a key matching `secretKey` below.
