@@ -1,5 +1,5 @@
 # Applied once during bootstrap:
-#   kubectl apply -f gitops/root/root-app.yaml
+#   kubectl apply -f kubernetes-infrastructure/gitops/root/root-app.yaml
 #
 # Edit `repoURL` before applying.
 apiVersion: argoproj.io/v1alpha1
