@@ -5,7 +5,7 @@ namespace: monitoring
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
-    version: 65.5.0                   # bump as appropriate
+    version: 85.1.1
     releaseName: kube-prometheus-stack
     namespace: monitoring
     valuesFile: values.yaml
@@ -13,3 +13,6 @@ helmCharts:
 
 resources:
   - namespace.yaml
+
+generators:
+  - secret-generator.yaml

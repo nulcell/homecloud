@@ -26,6 +26,8 @@ prometheus:
           resources:
             requests:
               storage: 50Gi
+    # Pick up ServiceMonitors / PodMonitors / Rules from any namespace, regardless
+    # of their helm-release labels — needed for app teams to ship their own.
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
@@ -43,14 +45,36 @@ alertmanager:
 
 grafana:
   enabled: true
-  adminPassword: changeme              # replace with a SOPS-encrypted Secret + existingSecret
+  # Deterministic Service name so the HTTPRoute can target `grafana` directly.
+  fullnameOverride: grafana
+
+  # Admin creds come from the SOPS-encrypted Secret in this folder.
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+
   persistence:
     enabled: true
     storageClassName: longhorn
     size: 5Gi
+
   defaultDashboardsTimezone: browser
+
   service:
-    type: ClusterIP                    # exposed via HTTPRoute, not LoadBalancer
+    type: ClusterIP            # exposed via HTTPRoute, not LoadBalancer
+
+  # Disable the chart's Ingress — Gateway API HTTPRoute handles ingress for us.
+  ingress:
+    enabled: false
+
+  # Tell Grafana its own public URL so absolute links, OAuth callbacks, and
+  # rendered dashboard share URLs all work correctly.
+  grafana.ini:
+    server:
+      root_url: https://grafana.nulcell.com
+      domain: grafana.nulcell.com
+      serve_from_sub_path: false
 
 nodeExporter:
   enabled: true

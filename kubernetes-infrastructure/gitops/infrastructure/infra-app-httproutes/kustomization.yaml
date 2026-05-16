@@ -5,3 +5,4 @@ kind: Kustomization
 resources:
   - argocd.yaml
   - longhorn.yaml
+  - grafana.yaml
