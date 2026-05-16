@@ -22,7 +22,7 @@ server:
   ingress:
     enabled: true # HTTPRoute lives in gitops/
     ingressClassName: cilium
-    hostname: argo.nulcell.com
+    hostname: argocd.nulcell.com
     paths:
       - /
     pathType: Prefix

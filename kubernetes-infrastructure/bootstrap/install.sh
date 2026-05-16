@@ -108,6 +108,5 @@ echo "Bootstrap complete."
 echo "Next: apply gitops/root/root-app.yaml after editing the repoURL."
 echo
 echo "Initial ArgoCD admin password:"
-kubectl -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath='{.data.password}' | base64 -d
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 echo
