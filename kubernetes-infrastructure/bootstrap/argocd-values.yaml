@@ -31,13 +31,13 @@ redis-ha:
   enabled: false # single-node; HA Redis is wasteful here
 
 controller:
-  replicas: 1
+  replicas: 3
 
 dex:
   enabled: false # add later if you want SSO
 
 repoServer:
-  replicas: 1
+  replicas: 3
   # SOPS decryption: mount the age key as a Secret named argocd-sops-age.
   # Create it once during bootstrap:
   #   kubectl -n argocd create secret generic argocd-sops-age \
