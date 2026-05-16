@@ -15,3 +15,11 @@ spec:
     # mid-import and avoids "no available storage" on slow networks.
     scratchSpaceStorageClass: longhorn
     featureGates: []
+      # - HonorWaitForFirstConsumer
+    podResourceRequirements:
+      requests:
+        cpu: "100m"
+        memory: "60M"
+      limits:
+        cpu: "750m"
+        memory: "2Gi"

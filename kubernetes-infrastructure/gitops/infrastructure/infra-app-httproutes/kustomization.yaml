@@ -6,3 +6,4 @@ resources:
   - argocd.yaml
   - longhorn.yaml
   - grafana.yaml
+  - kubevirt-manager.yaml

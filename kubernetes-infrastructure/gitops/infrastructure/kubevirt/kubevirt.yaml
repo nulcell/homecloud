@@ -14,6 +14,12 @@ spec:
       featureGates:
         - LiveMigration
         - NetworkBindingPlugins
+        - HotplugVolumes
+        - HostDisk
+        - VMExport
+        - Snapshot
+        - ExpandDisks
+        - ExperimentalIgnitionSupport
     smbios:
       sku: "TalosCloud"
       version: "v0.1.0"
