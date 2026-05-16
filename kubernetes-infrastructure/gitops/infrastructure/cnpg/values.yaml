@@ -1,0 +1,39 @@
+# CloudNativePG operator — installs CRDs (Cluster, Pooler, Backup,
+# ScheduledBackup, ImageCatalog, ClusterImageCatalog) and the controller.
+# Apps then create their own Postgres clusters declaratively, e.g.:
+#
+#   apiVersion: postgresql.cnpg.io/v1
+#   kind: Cluster
+#   metadata:
+#     name: my-app-db
+#     namespace: my-app
+#   spec:
+#     instances: 1                    # bump to 3 once you have 3 nodes
+#     storage:
+#       storageClass: longhorn
+#       size: 5Gi
+
+replicaCount: 1
+
+image:
+  pullPolicy: IfNotPresent
+
+crds:
+  create: true
+
+# PodMonitor is picked up by kube-prometheus-stack automatically because the
+# operator's selectors aren't restricted (we set the *SelectorNilUsesHelmValues
+# flags to false in the kps values).
+monitoring:
+  podMonitorEnabled: true
+  grafanaDashboard:
+    create: true
+    namespace: monitoring # where Grafana's sidecar watches for dashboards
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
