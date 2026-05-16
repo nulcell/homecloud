@@ -96,7 +96,13 @@ spec:
               drop:
                 - ALL
               add:
+                # Routing, iptables, the tun device.
                 - NET_ADMIN
+                # Gluetun writes /etc/openvpn/target.ovpn then chowns/chmods
+                # it; without these even root-in-container can't do that.
+                - CHOWN
+                - FOWNER
+                - DAC_OVERRIDE
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
