@@ -84,6 +84,11 @@ repoServer:
         items:
           - key: kustomize-sops.yaml
             path: plugin.yaml
+    # Populated by the download-tools initContainer below; mounted into the
+    # kustomize-sops sidecar so `kustomize build` can shell out to `helm` when
+    # rendering `helmCharts:` blocks (external-dns, kube-prometheus-stack, etc.).
+    - name: custom-tools
+      emptyDir: {}
   volumeMounts:
     - name: sops-age
       mountPath: /sops
@@ -91,6 +96,22 @@ repoServer:
   env:
     - name: SOPS_AGE_KEY_FILE
       value: /sops/key.txt
+  # Downloads helm into the shared custom-tools volume. Bump HELM_VERSION
+  # alongside any cluster-wide helm-rendered manifest changes.
+  initContainers:
+    - name: download-tools
+      image: alpine:3.20
+      command: [sh, -c]
+      args:
+        - |
+          set -eux
+          HELM_VERSION=v3.16.4
+          wget -qO- "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" \
+            | tar -xzO linux-amd64/helm > /custom-tools/helm
+          chmod +x /custom-tools/helm
+      volumeMounts:
+        - name: custom-tools
+          mountPath: /custom-tools
   extraContainers:
     - name: kustomize-sops
       image: viaductoss/ksops:v4.3.3
@@ -114,3 +135,7 @@ repoServer:
           readOnly: true
         - name: kustomize-sops-config
           mountPath: /home/argocd/cmp-server/config
+        # Drop the helm binary directly onto PATH inside this sidecar.
+        - name: custom-tools
+          mountPath: /usr/local/bin/helm
+          subPath: helm
