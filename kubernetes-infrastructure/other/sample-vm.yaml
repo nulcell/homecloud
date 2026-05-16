@@ -1,0 +1,69 @@
+# Sample KubeVirt VM — Ubuntu 24.04 from the public quay.io containerdisk,
+# with SSH access via the same ed25519 key used by other/loader-ssh.yaml.
+#
+# Apply:
+#   kubectl apply -f other/sample-vm.yaml
+#
+# Watch it come up:
+#   kubectl get vm,vmi ubuntu-sample
+#   virtctl console ubuntu-sample            # serial console (Ctrl+] to exit)
+#   virtctl ssh ubuntu@ubuntu-sample         # works once qemu-guest-agent is up
+#
+# Clean up:
+#   kubectl delete -f other/sample-vm.yaml
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: ubuntu-sample
+  namespace: default
+spec:
+  runStrategy: Always # restart on crash; switch to Manual for virtctl start/stop control
+  template:
+    metadata:
+      labels:
+        kubevirt.io/vm: ubuntu-sample
+    spec:
+      domain:
+        cpu:
+          cores: 2
+        memory:
+          guest: 2Gi
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+          rng: {} # paravirt RNG so the guest doesn't stall waiting for entropy
+        machine:
+          type: q35
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: rootdisk
+          containerDisk:
+            image: quay.io/containerdisks/ubuntu:24.04
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              users:
+                - name: ubuntu
+                  sudo: ALL=(ALL) NOPASSWD:ALL
+                  groups: [users, sudo, adm]
+                  shell: /bin/bash
+                  ssh_authorized_keys:
+                    - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEn9DdzGbGXbjxkvmA4n8HV1JBCNjo81dtE+Kq+tcupZ
+              # qemu-guest-agent enables `virtctl ssh` and clean shutdowns.
+              package_update: true
+              packages:
+                - qemu-guest-agent
+              runcmd:
+                - systemctl enable --now qemu-guest-agent
