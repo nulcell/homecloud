@@ -4,7 +4,7 @@ global:
 
 configs:
   params:
-    server.insecure: true             # TLS is terminated at the Gateway
+    server.insecure: true # TLS is terminated at the Gateway
   cm:
     timeout.reconciliation: 60s
     kustomize.buildOptions: "--enable-helm"
@@ -18,18 +18,23 @@ configs:
 
 server:
   service:
-    type: LoadBalancer                # Cilium L2 pool issues the IP
+    type: LoadBalancer # Cilium L2 pool issues the IP
   ingress:
-    enabled: false                    # HTTPRoute lives in gitops/
+    enabled: true # HTTPRoute lives in gitops/
+    ingressClassName: cilium
+    hostname: argo.nulcell.com
+    paths:
+      - /
+    pathType: Prefix
 
 redis-ha:
-  enabled: false                      # single-node; HA Redis is wasteful here
+  enabled: false # single-node; HA Redis is wasteful here
 
 controller:
   replicas: 1
 
 dex:
-  enabled: false                      # add later if you want SSO
+  enabled: false # add later if you want SSO
 
 repoServer:
   replicas: 1
@@ -43,6 +48,12 @@ repoServer:
         secretName: argocd-sops-age
     - name: cmp-tmp
       emptyDir: {}
+    - name: kustomize-sops-config
+      configMap:
+        name: argocd-cmp-cm
+        items:
+          - key: kustomize-sops.yaml
+            path: plugin.yaml
   volumeMounts:
     - name: sops-age
       mountPath: /sops
@@ -67,3 +78,5 @@ repoServer:
         - name: sops-age
           mountPath: /sops
           readOnly: true
+        - name: kustomize-sops-config
+          mountPath: /home/argocd/cmp-server/config

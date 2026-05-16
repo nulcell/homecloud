@@ -79,27 +79,35 @@ helm upgrade --install metrics-server metrics-server/metrics-server \
   --wait
 
 # --- ArgoCD ---------------------------------------------------------------------
-# echo "==> Argo CD ${ARGOCD_VERSION}"
-# kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+echo "==> Argo CD ${ARGOCD_VERSION}"
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+EOF
+# The SOPS age key must exist before the repo-server starts, or pods will crashloop.
+if ! kubectl -n argocd get secret argocd-sops-age >/dev/null 2>&1; then
+  echo "  -- creating argocd-sops-age from \$HOME/.config/sops/age/keys.txt"
+  kubectl -n argocd create secret generic argocd-sops-age \
+    --from-file=key.txt="${HOME}/.config/sops/age/keys.txt"
+fi
 
-# # The SOPS age key must exist before the repo-server starts, or pods will crashloop.
-# if ! kubectl -n argocd get secret argocd-sops-age >/dev/null 2>&1; then
-#   echo "  -- creating argocd-sops-age from \$HOME/.config/sops/age/keys.txt"
-#   kubectl -n argocd create secret generic argocd-sops-age \
-#     --from-file=key.txt="${HOME}/.config/sops/age/keys.txt"
-# fi
+helm upgrade --install argocd argo/argo-cd \
+  --namespace argocd \
+  --version "${ARGOCD_VERSION}" \
+  --values "${SCRIPT_DIR}/argocd-values.yaml" \
+  --wait
 
-# helm upgrade --install argocd argo/argo-cd \
-#   --namespace argocd \
-#   --version "${ARGOCD_VERSION}" \
-#   --values "${SCRIPT_DIR}/argocd-values.yaml" \
-#   --wait
-
-# echo
-# echo "Bootstrap complete."
-# echo "Next: apply gitops/root/root-app.yaml after editing the repoURL."
-# echo
-# echo "Initial ArgoCD admin password:"
-# kubectl -n argocd get secret argocd-initial-admin-secret \
-#   -o jsonpath='{.data.password}' | base64 -d
-# echo
+echo
+echo "Bootstrap complete."
+echo "Next: apply gitops/root/root-app.yaml after editing the repoURL."
+echo
+echo "Initial ArgoCD admin password:"
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath='{.data.password}' | base64 -d
+echo

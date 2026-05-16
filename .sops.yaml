@@ -10,4 +10,4 @@
 creation_rules:
   - path_regex: kubernetes-infrastructure/.*\.enc\.ya?ml$
     encrypted_regex: ^(data|stringData)$
-    age: <YOUR_AGE_PUBLIC_KEY>
+    age: age1zghrycrgnan0c7nfp5ke5csdeh9rdgtzwsd6yj4pl9rzlzjp24cspycpul
