@@ -4,7 +4,8 @@ namespace: gateway
 resources:
   - namespace.yaml
   - gatewayclass.yaml
-  - cloudflare-token.enc.yaml
   - clusterissuer.yaml
   - wildcard-certificate.yaml
   - gateway-default.yaml
+generators:
+  - secret-generator.yaml

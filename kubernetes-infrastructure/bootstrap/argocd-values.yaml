@@ -95,6 +95,10 @@ repoServer:
     - name: kustomize-sops
       image: viaductoss/ksops:v4.3.3
       command: [/var/run/argocd/argocd-cmp-server]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
       env:
         - name: SOPS_AGE_KEY_FILE
           value: /sops/key.txt
