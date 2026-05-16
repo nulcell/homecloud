@@ -2,6 +2,7 @@
 # Everything not listed here keeps the chart's default value.
 
 n8n:
+  replicaCount: 3
   timezone: Europe/Amsterdam
 
 gateway:
@@ -10,11 +11,12 @@ gateway:
 
 # Reference to the SOPS-encrypted Secret in this folder (n8n-runner-auth.enc.yaml).
 taskRunner:
+  replicaCount: 3
   authToken:
     secretName: n8n-runner-auth
     secretKey: auth-token
 
 persistence:
   storageClass: longhorn
-  accessMode: ReadWriteOnce # flip to ReadWriteMany once Longhorn RWX is desired
+  accessMode: ReadWriteMany
   size: 5Gi
