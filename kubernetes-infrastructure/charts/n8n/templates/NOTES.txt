@@ -1,4 +1,9 @@
 Welcome to n8n!
 
-Access your n8n instance by navigating to the following URL:
-  https://{{ .Values.ingress.host | default "localhost" }}/
+{{- if .Values.gateway.enabled }}
+Access your n8n instance at:
+  https://{{ .Values.gateway.hostname }}/
+{{- else }}
+n8n is reachable in-cluster at:
+  http://{{ .Values.service.name }}.{{ include "n8n.namespace" . }}.svc.cluster.local:{{ .Values.service.webPort }}
+{{- end }}
