@@ -1,0 +1,17 @@
+# CDI operator config. Reconciles importer / cloner / uploader pods that
+# convert qcow2 / OCI / VMDK sources into PVCs that KubeVirt VMs can boot from.
+# Sync wave 5 keeps it ordered after the CRD lands in wave 0.
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: CDI
+metadata:
+  name: cdi
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  imagePullPolicy: IfNotPresent
+  config:
+    # Scratch space PVCs that CDI uses while importing/cloning land on Longhorn
+    # rather than the default ephemeral local path — survives node reboots
+    # mid-import and avoids "no available storage" on slow networks.
+    scratchSpaceStorageClass: longhorn
+    featureGates: []

@@ -1,12 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# The upstream operator manifest already creates the `kubevirt` namespace with
-# `pod-security.kubernetes.io/enforce: privileged`, so we don't declare it
-# separately. The `KubeVirt` CR tells the operator what to actually install.
-namespace: kubevirt
+# No top-level `namespace:` — KubeVirt resources stay in `kubevirt`, CDI in
+# `cdi`. Each upstream operator manifest already creates and namespaces its
+# own resources. Both operators ship with `pod-security.kubernetes.io/enforce:
+# privileged` on their namespaces, so no namespace patching is needed.
+#
+# ArgoCD's repo-server fetches both operator manifests at render time. Keep
+# the two versions paired with a known-good KubeVirt/CDI combination —
+# https://github.com/kubevirt/kubevirt/blob/main/docs/compatibility.md
 
 resources:
-  # Vendor-free pin to the v1.8.2 release. ArgoCD's repo-server fetches this
-  # at render time; bump the version in lockstep with the upstream changelog.
   - https://github.com/kubevirt/kubevirt/releases/download/v1.8.2/kubevirt-operator.yaml
+  - https://github.com/kubevirt/containerized-data-importer/releases/download/v1.65.0/cdi-operator.yaml
   - kubevirt.yaml
+  - cdi.yaml

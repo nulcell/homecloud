@@ -1,15 +1,19 @@
-# Sample KubeVirt VM — Ubuntu 24.04 from the public quay.io containerdisk,
-# with SSH access via the same ed25519 key used by other/loader-ssh.yaml.
+# Sample KubeVirt VM — Ubuntu 24.04 backed by a Longhorn PVC (via CDI),
+# with SSH access exposed on a Cilium L2 LoadBalancer.
 #
 # Apply:
 #   kubectl apply -f other/sample-vm.yaml
 #
-# Watch it come up:
-#   kubectl get vm,vmi ubuntu-sample
-#   virtctl console ubuntu-sample            # serial console (Ctrl+] to exit)
-#   virtctl ssh ubuntu@ubuntu-sample         # works once qemu-guest-agent is up
+# Watch the disk import + boot:
+#   kubectl get dv,pvc,vmi ubuntu-sample-root,ubuntu-sample
+#   kubectl describe dv ubuntu-sample-root      # import progress %
 #
-# Clean up:
+# Connect:
+#   kubectl get svc ubuntu-sample-ssh           # grab the EXTERNAL-IP
+#   ssh -i ~/.ssh/id_ed25519 ubuntu@<EXTERNAL-IP>
+#   kubectl virt console ubuntu-sample          # serial console (Ctrl+] to exit)
+#
+# Clean up (also deletes the Longhorn PVC because dataVolumeTemplates owns it):
 #   kubectl delete -f other/sample-vm.yaml
 ---
 apiVersion: kubevirt.io/v1
@@ -19,6 +23,20 @@ metadata:
   namespace: default
 spec:
   runStrategy: Always # restart on crash; switch to Manual for virtctl start/stop control
+  dataVolumeTemplates:
+    - metadata:
+        name: ubuntu-sample-root
+      spec:
+        source:
+          http:
+            url: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+        storage:
+          resources:
+            requests:
+              storage: 10Gi
+          accessModes: [ReadWriteOnce]
+          # storageClassName omitted — Longhorn is the cluster default. Override
+          # here only if you want a non-default class for this VM.
   template:
     metadata:
       labels:
@@ -48,8 +66,8 @@ spec:
           pod: {}
       volumes:
         - name: rootdisk
-          containerDisk:
-            image: quay.io/containerdisks/ubuntu:24.04
+          dataVolume:
+            name: ubuntu-sample-root
         - name: cloudinitdisk
           cloudInitNoCloud:
             userData: |
@@ -62,8 +80,23 @@ spec:
                   ssh_authorized_keys:
                     - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEn9DdzGbGXbjxkvmA4n8HV1JBCNjo81dtE+Kq+tcupZ
               # qemu-guest-agent enables `virtctl ssh` and clean shutdowns.
+              # growpart + resize2fs are part of stock cloud-init and will
+              # expand the root partition to fill the 20Gi PVC on first boot.
               package_update: true
               packages:
                 - qemu-guest-agent
               runcmd:
                 - systemctl enable --now qemu-guest-agent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ubuntu-sample-ssh
+  namespace: default
+spec:
+  type: LoadBalancer # picks up a Cilium L2 pool IP, just like any other Service
+  selector:
+    kubevirt.io/vm: ubuntu-sample
+  ports:
+    - port: 22
+      targetPort: 22
