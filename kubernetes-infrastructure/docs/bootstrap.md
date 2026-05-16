@@ -1,6 +1,6 @@
 # Bootstrap Guide
 
-Manual, step-by-step bootstrap of a single-node Talos cluster with Cilium, Longhorn, cert-manager, metrics-server, Gateway API, and Argo CD. After this guide, ArgoCD will be ready to manage everything else from the [`gitops/`](../gitops/) folder — see [argocd.md](argocd.md).
+Manual, step-by-step bootstrap of a single-node Talos cluster with Cilium, Gateway API, and Argo CD. cert-manager, Longhorn, metrics-server, monitoring, gateways, and workloads are not installed here — they come up under GitOps once ArgoCD adopts the [`gitops/`](../gitops/) folder. See [argocd.md](argocd.md) for the post-bootstrap topology.
 
 > Time estimate: ~60–90 min the first time, mostly waiting on images.
 
@@ -28,30 +28,29 @@ Add the chart repos you'll need:
 
 ```bash
 helm repo add cilium https://helm.cilium.io
-helm repo add longhorn https://charts.longhorn.io
-helm repo add jetstack https://charts.jetstack.io
-helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server
 helm repo add argo https://argoproj.github.io/argo-helm
 helm repo update
 ```
+
+> The Longhorn / jetstack / metrics-server repos are only needed at GitOps-render time inside the ArgoCD repo-server, not on your workstation.
 
 ### Plan your network
 
 Pick values **before** you start and write them down — most of these are baked into the machine config.
 
-| Variable           | Example                     | Notes                                                |
-| ------------------ | --------------------------- | ---------------------------------------------------- |
-| Cluster name       | `homecloud`                 | Anything. Used in `talosconfig`.                     |
-| Node hostname      | `talos-cp-01`               | Set per-node.                                        |
-| LAN CIDR           | `10.10.16.0/20`             | Home network range.                                  |
-| Node IP (static)   | `10.10.25.10/20`            | First control plane. /20 mask matches the LAN CIDR.  |
-| Default gateway    | `10.10.31.254`              | Home gateway.                                        |
-| DNS                | `10.10.31.254`, `1.1.1.1`   | Home DNS first, public fallback second.              |
-| Kubernetes API VIP | `10.10.25.25`               | Active from day one; baked into kubeconfig + Cilium. |
-| Pod CIDR           | `10.244.0.0/16`             | No overlap with the LAN.                             |
-| Service CIDR       | `10.96.0.0/12`              | Default; no overlap with the LAN.                    |
-| Cilium L2 LB pool  | `10.10.20.0–10.10.20.254`   | Range on your LAN for `LoadBalancer` services.       |
-| Time source        | `pool.ntp.org`              | Talos needs reliable NTP.                            |
+| Variable           | Example                   | Notes                                                |
+| ------------------ | ------------------------- | ---------------------------------------------------- |
+| Cluster name       | `homecloud`               | Anything. Used in `talosconfig`.                     |
+| Node hostname      | `talos-cp-01`             | Set per-node.                                        |
+| LAN CIDR           | `10.10.16.0/20`           | Home network range.                                  |
+| Node IP (static)   | `10.10.25.10/20`          | First control plane. /20 mask matches the LAN CIDR.  |
+| Default gateway    | `10.10.31.254`            | Home gateway.                                        |
+| DNS                | `10.10.31.254`, `1.1.1.1` | Home DNS first, public fallback second.              |
+| Kubernetes API VIP | `10.10.25.25`             | Active from day one; baked into kubeconfig + Cilium. |
+| Pod CIDR           | `10.244.0.0/16`           | No overlap with the LAN.                             |
+| Service CIDR       | `10.96.0.0/12`            | Default; no overlap with the LAN.                    |
+| Cilium L2 LB pool  | `10.10.20.0–10.10.20.254` | Range on your LAN for `LoadBalancer` services.       |
+| Time source        | `pool.ntp.org`            | Talos needs reliable NTP.                            |
 
 ### Hardware sanity check
 
@@ -104,55 +103,6 @@ This produces `controlplane.yaml`, `worker.yaml`, `talosconfig`, and a `secrets.
 ### Patches
 
 Create [`talos/patches/controlplane.yaml`](../talos/patches/controlplane.yaml) with the things Cilium needs and the single-node allowances:
-
-```yaml
-# talos/patches/controlplane.yaml
-machine:
-  network:
-    hostname: talos-cp-01
-    interfaces:
-      - interface: eth0          # adjust to your NIC; check with `talosctl get links`
-        addresses:
-          - 10.10.25.10/20
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 10.10.31.254
-        vip:
-          ip: 10.10.25.25        # API VIP — shared across control planes via etcd election
-    nameservers:
-      - 10.10.31.254
-      - 1.1.1.1
-  time:
-    servers:
-      - pool.ntp.org
-  kubelet:
-    extraArgs:
-      rotate-server-certificates: "true"
-cluster:
-  allowSchedulingOnControlPlanes: true   # single-node phase
-  network:
-    cni:
-      name: none                         # Cilium replaces the built-in CNI
-    podSubnets:
-      - 10.244.0.0/16
-    serviceSubnets:
-      - 10.96.0.0/12
-  proxy:
-    disabled: true                       # Cilium replaces kube-proxy
-  apiServer:
-    certSANs:                            # cert must be valid for every IP clients might use
-      - 10.10.25.25                      # the VIP
-      - 10.10.25.10                      # node #1
-      - 10.10.25.11                      # node #2 (future)
-      - 10.10.25.12                      # node #3 (future)
-    extraArgs:
-      feature-gates: ""
-  discovery:
-    enabled: true
-  etcd:
-    advertisedSubnets:
-      - 10.10.16.0/20
-```
 
 > **Why each line matters:**
 >
@@ -220,79 +170,20 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/experimental-install.yaml  # for TLSRoute, optional
 ```
 
-> Cilium 1.19.x targets Gateway API v1.5.x. If you bump either, re-check the [Cilium Gateway API support matrix](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/gateway-api/).
+> Cilium 1.19.x targets Gateway API v1.4.x. If you bump either, re-check the [Cilium Gateway API support matrix](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/gateway-api/).
 
 ---
 
 ## 5. Install Cilium
 
-Save [`bootstrap/cilium-values.yaml`](../bootstrap/cilium-values.yaml):
+Values live in [`bootstrap/cilium-values.yaml`](../bootstrap/cilium-values.yaml). The shape worth understanding before you tweak it:
 
-```yaml
-# bootstrap/cilium-values.yaml
-kubeProxyReplacement: true
-
-# Required because kube-proxy is gone — Cilium needs to know how to reach the API server.
-# Use the VIP, not the node IP, so HA expansion doesn't require a Cilium rollout.
-k8sServiceHost: 10.10.25.25
-k8sServicePort: 6443
-
-ipam:
-  mode: kubernetes
-
-routingMode: native            # or "tunnel" if your LAN can't carry pod CIDRs
-ipv4NativeRoutingCIDR: 10.244.0.0/16
-autoDirectNodeRoutes: true
-bpf:
-  masquerade: true
-
-l2announcements:
-  enabled: true
-externalIPs:
-  enabled: true
-
-# Required by L2 announcements — bumps the rate limits so leader election works.
-k8sClientRateLimit:
-  qps: 50
-  burst: 200
-
-gatewayAPI:
-  enabled: true
-
-operator:
-  replicas: 1                  # single node
-
-hubble:
-  enabled: true
-  relay:
-    enabled: true
-  ui:
-    enabled: true
-
-# Talos-specific: cgroup v2 is on, kube-proxy is off; this avoids a stale mount.
-cgroup:
-  autoMount:
-    enabled: false
-  hostRoot: /sys/fs/cgroup
-securityContext:
-  capabilities:
-    ciliumAgent:
-      - CHOWN
-      - KILL
-      - NET_ADMIN
-      - NET_RAW
-      - IPC_LOCK
-      - SYS_ADMIN
-      - SYS_RESOURCE
-      - DAC_OVERRIDE
-      - FOWNER
-      - SETGID
-      - SETUID
-    cleanCiliumState:
-      - NET_ADMIN
-      - SYS_ADMIN
-      - SYS_RESOURCE
-```
+- **kube-proxy replacement** (`kubeProxyReplacement: true`) is the whole reason we disabled `kube-proxy` in the Talos config. `k8sServiceHost`/`k8sServicePort` point at the **VIP** rather than the node IP so that adding more control planes later does not require a Cilium rollout.
+- **Routing** is native (`routingMode: native`, `ipv4NativeRoutingCIDR: 10.244.0.0/16`, `autoDirectNodeRoutes: true`) — switch to tunnel mode only if your LAN can't carry the pod CIDR.
+- **L2 LB** (`l2announcements`, `externalIPs`, the bumped `k8sClientRateLimit`) is what lets `LoadBalancer` services pick up an IP from the pool you'll define next. Leader election for L2 needs the higher client QPS/burst.
+- **Gateway API** controller is enabled here (`gatewayAPI.enabled: true`); the CRDs themselves were already applied in step 4.
+- **Hubble** UI + relay are on for observability — turn them off if you want less surface area.
+- **Talos-specific bits**: `cgroup.autoMount.enabled: false` plus the explicit `securityContext.capabilities` block are needed because Talos manages cgroups itself and runs a tighter PSP/PSA than a stock distro.
 
 Install:
 
@@ -307,35 +198,16 @@ kubectl -n kube-system rollout status ds/cilium
 kubectl get nodes   # should now be Ready
 ```
 
-Create an L2 IP pool and announcement policy so `LoadBalancer` services get IPs:
-
-```yaml
-# bootstrap/cilium-l2.yaml
-apiVersion: "cilium.io/v2alpha1"
-kind: CiliumLoadBalancerIPPool
-metadata:
-  name: home-lan
-spec:
-  blocks:
-    - start: 10.10.20.0
-      stop: 10.10.20.254
----
-apiVersion: "cilium.io/v2alpha1"
-kind: CiliumL2AnnouncementPolicy
-metadata:
-  name: home-lan
-spec:
-  loadBalancerIPs: true
-  interfaces:
-    - ^eth.+
-  nodeSelector:
-    matchLabels:
-      kubernetes.io/os: linux
-```
+Apply the L2 IP pool and announcement policy from [`bootstrap/cilium-l2.yaml`](../bootstrap/cilium-l2.yaml) so `LoadBalancer` services get IPs:
 
 ```bash
 kubectl apply -f bootstrap/cilium-l2.yaml
 ```
+
+What that file defines:
+
+- A `CiliumLoadBalancerIPPool` carving out the `10.10.20.0–10.10.20.254` range from the LAN. Update the `blocks` range if your network plan differs.
+- A `CiliumL2AnnouncementPolicy` that announces those IPs over any `eth*` interface on every Linux node. Tighten the interface regex or node selector if you don't want every node ARPing for LB IPs.
 
 Smoke test:
 
@@ -351,148 +223,20 @@ If this works, networking is sound.
 
 ---
 
-## 6. Install cert-manager
+## 6. Install ArgoCD
 
-Longhorn's webhooks and KubeVirt later both want a working cert-manager, so install it before Longhorn. It will also serve as the issuer for `nulcell.com` Let's Encrypt certificates via Cloudflare DNS-01 — the [`ClusterIssuer` and `Certificate`](argocd.md#cert-manager--cloudflare-dns-01) are defined under GitOps once ArgoCD is up.
+Values live in [`bootstrap/argocd-values.yaml`](../bootstrap/argocd-values.yaml). The notable knobs:
 
-```yaml
-# bootstrap/cert-manager-values.yaml
-crds:
-  enabled: true
-prometheus:
-  enabled: false   # turn on after kube-prometheus-stack is in
-```
+- **`global.domain: argocd.nulcell.com`** — used in OAuth/callback URLs and matches the hostname the Gateway HTTPRoute terminates.
+- **`configs.params.server.insecure: true`** — TLS is offloaded to the Cilium Gateway via the wildcard cert; running the server in plaintext inside the cluster avoids a second internal cert chain.
+- **`configs.cm.kustomize.buildOptions: "--enable-helm"`** — lets ArgoCD render the `helmCharts:` blocks under `gitops/infrastructure/*` (cnpg, cert-manager, longhorn, metrics-server, ...).
+- **`configs.cmp.plugins.kustomize-sops`** — registers the kustomize-sops [Config Management Plugin](https://argo-cd.readthedocs.io/en/stable/operator-manual/config-management-plugins/) that the ApplicationSets reference by name.
+- **`server.service.type: LoadBalancer`** — picks up an IP from the Cilium L2 pool. `server.ingress.enabled: false` because Gateway API takes over via [`gitops/infrastructure/infra-app-httproutes/argocd.yaml`](../gitops/infrastructure/infra-app-httproutes/argocd.yaml).
+- **`redis-ha.enabled: false`** and single replicas for controller/repoServer — appropriate for a single-node homelab; bump them when you go HA.
+- **`repoServer.volumes` + `volumeMounts` + `env.SOPS_AGE_KEY_FILE`** — mount the `argocd-sops-age` Secret created in step 7 so the repo-server can decrypt `.enc.yaml` files at render time.
+- **`repoServer.initContainers.download-tools` + `extraContainers.kustomize-sops`** — the init container downloads `helm` into a shared `custom-tools` volume that the ksops sidecar then sources via `subPath` mount. That's what lets `kustomize build` shell out to Helm when rendering the chart blocks.
 
-```bash
-helm install cert-manager jetstack/cert-manager \
-  --namespace cert-manager --create-namespace \
-  --version v1.20.2 \
-  --values bootstrap/cert-manager-values.yaml
-
-kubectl -n cert-manager rollout status deploy/cert-manager-webhook
-```
-
----
-
-## 7. Install Longhorn
-
-```yaml
-# bootstrap/longhorn-values.yaml
-defaultSettings:
-  defaultReplicaCount: 1            # raise to 3 when you have 3 nodes
-  defaultDataPath: /var/lib/longhorn
-  storageMinimalAvailablePercentage: 10
-  allowRecurringJobWhileVolumeDetached: true
-persistence:
-  defaultClass: true
-  defaultClassReplicaCount: 1
-  reclaimPolicy: Retain
-ingress:
-  enabled: false                    # we'll expose via Gateway later
-```
-
-Talos exposes the `/var/lib/longhorn` path as an `extraMount` if you need a dedicated disk — for the default ephemeral case, the values above are fine.
-
-```bash
-helm install longhorn longhorn/longhorn \
-  --namespace longhorn-system --create-namespace \
-  --version 1.11.2 \
-  --values bootstrap/longhorn-values.yaml
-
-kubectl -n longhorn-system rollout status deploy/longhorn-manager   # may take a few minutes
-kubectl get storageclass                                            # 'longhorn' should be default
-```
-
-Smoke test:
-
-```bash
-cat <<'EOF' | kubectl apply -f -
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: longhorn-smoke
-spec:
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 1Gi
-EOF
-
-kubectl get pvc longhorn-smoke -w   # wait for Bound
-kubectl delete pvc longhorn-smoke
-```
-
----
-
-## 8. Install metrics-server
-
-```yaml
-# bootstrap/metrics-server-values.yaml
-args:
-  - --kubelet-insecure-tls          # Talos kubelet certs aren't in the default trust path
-  - --kubelet-preferred-address-types=InternalIP,Hostname,InternalDNS,ExternalDNS,ExternalIP
-```
-
-```bash
-helm install metrics-server metrics-server/metrics-server \
-  --namespace kube-system \
-  --version 3.13.0 \
-  --values bootstrap/metrics-server-values.yaml
-
-kubectl top nodes   # should return values within a minute
-```
-
-> Once the cluster is stable, swap `--kubelet-insecure-tls` for proper certs by enabling kubelet server cert rotation (already on via the patch in step 2) and trusting the cluster CA.
-
----
-
-## 9. Install ArgoCD
-
-```yaml
-# bootstrap/argocd-values.yaml
-global:
-  domain: argocd.home.lab           # adjust to your domain; used in callbacks
-
-configs:
-  params:
-    server.insecure: true           # TLS terminated at the Gateway later
-  cm:
-    timeout.reconciliation: 60s
-    kustomize.buildOptions: "--enable-helm"
-
-server:
-  service:
-    type: LoadBalancer              # gets an IP from the Cilium L2 pool
-  ingress:
-    enabled: false                  # we'll add a Gateway HTTPRoute in gitops/
-
-redis-ha:
-  enabled: false                    # single-node; HA Redis is wasteful here
-
-controller:
-  replicas: 1
-
-repoServer:
-  replicas: 1
-
-dex:
-  enabled: false                    # add later if you want SSO
-
-# Sync key inputs for ArgoCD-managed SOPS decryption.
-# Mount the age key as a secret named `argocd-sops-age` (created in step 11).
-repoServer:
-  volumes:
-    - name: sops-age
-      secret:
-        secretName: argocd-sops-age
-  volumeMounts:
-    - name: sops-age
-      mountPath: /sops
-      readOnly: true
-  env:
-    - name: SOPS_AGE_KEY_FILE
-      value: /sops/key.txt
-```
+Install:
 
 ```bash
 helm install argocd argo/argo-cd \
@@ -521,7 +265,7 @@ kubectl -n argocd delete secret argocd-initial-admin-secret
 
 ---
 
-## 10. Wire up SOPS
+## 7. Wire up SOPS
 
 Generate an age key (do this on your workstation, store it somewhere safe — losing it means losing all encrypted secrets in this repo):
 
@@ -539,50 +283,31 @@ kubectl -n argocd create secret generic argocd-sops-age \
   --from-file=key.txt=$HOME/.config/sops/age/keys.txt
 ```
 
-The argocd values file in step 9 already mounts this and sets `SOPS_AGE_KEY_FILE`. See [argocd.md](argocd.md) for the kustomize-sops plugin config and an example encrypted secret.
+The argocd values file in step 6 already mounts this and sets `SOPS_AGE_KEY_FILE`. See [argocd.md](argocd.md) for the kustomize-sops plugin config and an example encrypted secret.
+
+> If you ran `bootstrap/install.sh` end-to-end with the age key already present at `$HOME/.config/sops/age/keys.txt`, the script created this Secret for you before installing ArgoCD — you can skip the `kubectl create secret` above.
 
 ---
 
-## 11. Bootstrap the GitOps root Application
+## 8. Bootstrap the GitOps root Application
 
-This is the seam where Helm hands off to ArgoCD:
-
-```yaml
-# gitops/root/root-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: root
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/<you>/homecloud
-    targetRevision: main
-    path: kubernetes-infrastructure/gitops/root
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-```
+This is the seam where Helm hands off to ArgoCD. `bootstrap/install.sh` applies [`gitops/root/root-app.yaml`](../gitops/root/root-app.yaml) for you as its final step; if you skipped the script, apply it by hand:
 
 ```bash
 kubectl apply -f gitops/root/root-app.yaml
 ```
 
-From here on, anything you want in the cluster goes through git → ArgoCD. See [argocd.md](argocd.md) for the recommended app-of-apps layout.
+What the manifest does:
+
+- Points at `kubernetes-infrastructure/gitops/root` with `directory.recurse: false` so the only resources it picks up are the two ApplicationSets sitting in that directory ([`infrastructure-appset.yaml`](../gitops/root/infrastructure-appset.yaml) and [`apps-appset.yaml`](../gitops/root/apps-appset.yaml)) — not the children those AppSets generate.
+- Each ApplicationSet fans out into one `Application` per subdirectory of [`gitops/infrastructure/`](../gitops/infrastructure/) and [`gitops/apps/`](../gitops/apps/) — including cert-manager, Longhorn, and metrics-server.
+- `syncPolicy.automated.selfHeal: true` plus the default 60s reconciliation window mean any Application that initially fails (e.g. `gateway` rendering a `ClusterIssuer` before cert-manager CRDs land) retries automatically. Expect the very first sync to show ~1–2 minutes of red Applications, then green.
+
+From here on, anything you want in the cluster goes through git → ArgoCD. See [argocd.md](argocd.md) for the recommended layout.
 
 ---
 
-## 12. Verify
+## 9. Verify
 
 ```bash
 kubectl get nodes -o wide
@@ -598,13 +323,13 @@ If all of that looks healthy, you're done with the bootstrap. The next thing to 
 
 ## Common failure modes
 
-| Symptom                                           | Likely cause                                                                    | Fix                                                                           |
-| ------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Node `NotReady` after Cilium install              | `k8sServiceHost`/`k8sServicePort` not set, so Cilium can't reach the API server | Set them in `cilium-values.yaml` and `helm upgrade`                           |
-| Longhorn manager pods CrashLoopBackOff            | Missing `iscsi-tools` / `util-linux-tools` extensions                           | Rebuild Talos image with extensions and run `talosctl upgrade`                |
-| `LoadBalancer` service stuck `<pending>`          | L2 announcement policy missing or wrong interface selector                      | Check `kubectl describe ciliuml2announcementpolicy`                           |
-| `metrics-server` errors `unable to fetch metrics` | Missing `--kubelet-insecure-tls` *or* kubelet server cert not rotating          | Confirm flag is set; check `talosctl logs kubelet`                            |
-| ArgoCD repo-server `Permission denied` on age key | Secret missing or volumeMount path wrong                                        | `kubectl -n argocd describe pod -l app.kubernetes.io/name=argocd-repo-server` |
+| Symptom                                           | Likely cause                                                                    | Fix                                                                                                                                                             |
+| ------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node `NotReady` after Cilium install              | `k8sServiceHost`/`k8sServicePort` not set, so Cilium can't reach the API server | Set them in `cilium-values.yaml` and `helm upgrade`                                                                                                             |
+| Longhorn manager pods CrashLoopBackOff            | Missing `iscsi-tools` / `util-linux-tools` extensions                           | Rebuild Talos image with extensions and run `talosctl upgrade`                                                                                                  |
+| `LoadBalancer` service stuck `<pending>`          | L2 announcement policy missing or wrong interface selector                      | Check `kubectl describe ciliuml2announcementpolicy`                                                                                                             |
+| `metrics-server` errors `unable to fetch metrics` | Missing `--kubelet-insecure-tls` *or* kubelet server cert not rotating          | Confirm flag is set in [`gitops/infrastructure/metrics-server/values.yaml`](../gitops/infrastructure/metrics-server/values.yaml); check `talosctl logs kubelet` |
+| ArgoCD repo-server `Permission denied` on age key | Secret missing or volumeMount path wrong                                        | `kubectl -n argocd describe pod -l app.kubernetes.io/name=argocd-repo-server`                                                                                   |
 
 For deeper Talos debugging:
 

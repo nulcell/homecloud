@@ -2,7 +2,7 @@
 
 Everything ArgoCD needs to drive this cluster from the [`gitops/`](../gitops/) folder: app-of-apps layout, SOPS wiring, sync-wave conventions, and worked examples.
 
-The cluster bootstrap in [bootstrap.md](bootstrap.md) ends with ArgoCD installed and a single `root` Application pointed at `gitops/root/`. This doc picks up from there.
+The cluster bootstrap in [bootstrap.md](bootstrap.md) ends with ArgoCD installed and a single `root` Application pointed at `gitops/root/`. `bootstrap/install.sh` applies the root Application for you as its final step; from there ArgoCD owns cert-manager, Longhorn, metrics-server, monitoring, gateways, and the workloads under `gitops/apps/`. This doc picks up from there.
 
 ---
 
@@ -32,14 +32,14 @@ The repo is the source of truth. The only state ArgoCD itself owns that isn't in
 ```
 kubernetes-infrastructure/gitops/
 ├── root/
-│   ├── root-app.yaml                  # the Application applied by hand during bootstrap
+│   ├── root-app.yaml                  # applied by bootstrap/install.sh (or by hand if you skipped it)
 │   ├── infrastructure-appset.yaml     # ApplicationSet → one App per infrastructure/ subdir
 │   └── apps-appset.yaml               # ApplicationSet → one App per apps/ subdir
 ├── infrastructure/
-│   ├── kubevirt/
-│   │   ├── kustomization.yaml
-│   │   ├── operator.yaml              # KubeVirt operator manifest
-│   │   └── kubevirt-cr.yaml           # KubeVirt CR (feature gates, etc.)
+│   ├── cert-manager/                  # jetstack chart + values
+│   ├── longhorn/                      # longhorn chart + namespace (privileged PSA) + values
+│   ├── metrics-server/                # metrics-server chart into kube-system
+│   ├── cnpg/                          # CloudNativePG operator
 │   ├── kube-prometheus-stack/
 │   │   ├── kustomization.yaml         # uses --enable-helm to render the chart
 │   │   └── values.yaml
@@ -47,10 +47,12 @@ kubernetes-infrastructure/gitops/
 │   │   ├── gatewayclass.yaml          # CiliumGatewayClass
 │   │   ├── gateway-default.yaml       # default Gateway listening on the L2-LB IP
 │   │   └── clusterissuer.yaml         # cert-manager ClusterIssuer (Let's Encrypt or self-signed)
+│   ├── external-dns/                  # external-dns chart, reuses Cloudflare token from gateway/
+│   ├── infra-app-httproutes/          # HTTPRoutes for argocd, grafana, longhorn UIs
 │   └── sops-secrets/
 │       └── example-secret.enc.yaml    # demo encrypted secret
 └── apps/
-    └── (your workloads, added later)
+    └── (your workloads)
 ```
 
 > Every directory under `infrastructure/` and `apps/` is expected to contain a `kustomization.yaml`. The ApplicationSets use a directory generator and discover them automatically.
@@ -59,36 +61,13 @@ kubernetes-infrastructure/gitops/
 
 ## The root Application
 
-Already applied during bootstrap (step 11). For reference:
+Applied during bootstrap (step 8 of [bootstrap.md](bootstrap.md)) — either by `bootstrap/install.sh` automatically, or by hand if you ran the steps individually. The manifest lives at [`gitops/root/root-app.yaml`](../gitops/root/root-app.yaml).
 
-```yaml
-# kubernetes-infrastructure/gitops/root/root-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: root
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/<you>/homecloud
-    targetRevision: main
-    path: kubernetes-infrastructure/gitops/root
-    directory:
-      recurse: false                    # only pick up the ApplicationSets in this dir
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-```
+The important bits:
+
+- **`spec.source.path: kubernetes-infrastructure/gitops/root`** with **`directory.recurse: false`** — root-app only adopts the two ApplicationSet CRs sitting in that directory. The Applications those AppSets later generate are not children of root-app; they're created by the AppSet controller and reconcile independently.
+- **`finalizers: [resources-finalizer.argocd.argoproj.io]`** — deleting the root Application cascades a clean teardown of everything below it. Useful for a deliberate wipe, dangerous if you forget about it.
+- **`syncPolicy.automated.{prune,selfHeal}: true` + `ServerSideApply=true`** — the same policy is then inherited by every AppSet template, so the whole tree is self-healing by default.
 
 ---
 
@@ -96,83 +75,15 @@ spec:
 
 Two sets, one per top-level GitOps folder. Splitting them lets you put cluster-critical infra on stricter sync settings than workloads.
 
-```yaml
-# kubernetes-infrastructure/gitops/root/infrastructure-appset.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: infrastructure
-  namespace: argocd
-spec:
-  generators:
-    - git:
-        repoURL: https://github.com/<you>/homecloud
-        revision: main
-        directories:
-          - path: kubernetes-infrastructure/gitops/infrastructure/*
-  template:
-    metadata:
-      name: 'infra-{{path.basename}}'
-      annotations:
-        argocd.argoproj.io/sync-wave: "0"
-    spec:
-      project: default
-      source:
-        repoURL: https://github.com/<you>/homecloud
-        targetRevision: main
-        path: '{{path}}'
-        plugin:
-          name: kustomize-sops
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
-          - ServerSideApply=true
-```
+- [`gitops/root/infrastructure-appset.yaml`](../gitops/root/infrastructure-appset.yaml) — one Application per subdirectory of [`gitops/infrastructure/`](../gitops/infrastructure/), named `infra-<dir>`.
+- [`gitops/root/apps-appset.yaml`](../gitops/root/apps-appset.yaml) — one Application per subdirectory of [`gitops/apps/`](../gitops/apps/), named `app-<dir>`.
 
-```yaml
-# kubernetes-infrastructure/gitops/root/apps-appset.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: apps
-  namespace: argocd
-spec:
-  generators:
-    - git:
-        repoURL: https://github.com/<you>/homecloud
-        revision: main
-        directories:
-          - path: kubernetes-infrastructure/gitops/apps/*
-  template:
-    metadata:
-      name: 'app-{{path.basename}}'
-      annotations:
-        argocd.argoproj.io/sync-wave: "10"   # always after infrastructure
-    spec:
-      project: default
-      source:
-        repoURL: https://github.com/<you>/homecloud
-        targetRevision: main
-        path: '{{path}}'
-        plugin:
-          name: kustomize-sops
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
-          - ServerSideApply=true
-```
+Both share the same template shape; the things worth understanding:
+
+- **`generators[].git.directories.path: .../*`** — wildcard directory generator. Drop a new folder under `gitops/infrastructure/` or `gitops/apps/` and an Application is auto-created on the next AppSet reconcile. Delete the folder and the Application is removed (`prune: true` cleans up the cluster resources).
+- **`template.spec.source.plugin.name: kustomize-sops`** — render with the SOPS-aware kustomize plugin so `.enc.yaml` files are decrypted on the repo-server before apply.
+- **`template.spec.destination.namespace: '{{.path.basename}}'`** — sets the default namespace for resources that don't declare one. Most chart-rendered manifests carry their own namespace (e.g. cnpg lands in `cnpg-system`), so the directory-name namespace mostly just creates a small empty namespace alongside the real one.
+- **`template.metadata.annotations.argocd.argoproj.io/sync-wave`** — `"0"` on infra, `"10"` on apps. This annotation only orders resources **within** a single Application's sync, so AppSet-generated Applications run independently of each other (see "Cross-Application ordering" below).
 
 ### Sync waves
 
@@ -186,21 +97,23 @@ Within an app's manifests, set `argocd.argoproj.io/sync-wave` annotations to ord
 | `5`   | Custom Resources for those operators (KubeVirt CR, Certificate, Gateway) |
 | `10`  | Workloads                                                                |
 
+### Cross-Application ordering
+
+There is none, by design. AppSet-generated Applications each have their own reconcile loop; sync-waves only order resources inside a single Application. When `gateway` boots before cert-manager is ready (its `ClusterIssuer` references a `cert-manager.io/v1` kind that doesn't exist yet), the sync fails with `no matches for kind ClusterIssuer` — and then `selfHeal: true` retries on the next 60s tick, at which point cert-manager's CRDs are present and it succeeds. Same for `kube-prometheus-stack` PVCs waiting on Longhorn's StorageClass. First bootstrap is noisy for ~1–2 minutes; everything converges without intervention.
+
 ---
 
 ## SOPS with kustomize-sops
 
-ArgoCD's repo-server runs `kustomize build` — to make it transparently decrypt SOPS-encrypted secrets, register a Config Management Plugin (CMP).
+ArgoCD's repo-server runs `kustomize build` — to make it transparently decrypt SOPS-encrypted secrets, a Config Management Plugin (CMP) is registered as a sidecar on the repo-server.
 
 ### 1. Repo-level config
 
-```yaml
-# .sops.yaml  (at the repo root, NOT inside kubernetes-infrastructure/)
-creation_rules:
-  - path_regex: kubernetes-infrastructure/.*\.enc\.ya?ml$
-    encrypted_regex: ^(data|stringData)$
-    age: <YOUR_AGE_PUBLIC_KEY>
-```
+[`.sops.yaml`](../../.sops.yaml) at the repo root drives `sops --encrypt`:
+
+- **`path_regex: kubernetes-infrastructure/.*\.enc\.ya?ml$`** — only files matching the `.enc.yaml` suffix are picked up by SOPS rules, so a stray Secret with a normal `.yaml` name will never be silently encrypted (or worse, expected to be).
+- **`encrypted_regex: ^(data|stringData)$`** — only the `data`/`stringData` keys get encrypted, leaving `metadata`, `type`, etc. legible in git diffs.
+- **`age: <public-key>`** — the public half of the age key you generated during bootstrap. The private half lives in `~/.config/sops/age/keys.txt` on your workstation *and* as the `argocd-sops-age` Secret inside the cluster.
 
 Encrypt a secret in-place:
 
@@ -208,136 +121,32 @@ Encrypt a secret in-place:
 sops --encrypt --in-place gitops/infrastructure/sops-secrets/example-secret.enc.yaml
 ```
 
-`.sops.yaml` makes the `--encrypt` invocation pick the right key and only encrypt the `data`/`stringData` fields, so the rest of the manifest stays readable in git diffs.
-
 ### 2. CMP sidecar on the repo-server
 
-Add a CMP sidecar to the ArgoCD repo-server. Patch `bootstrap/argocd-values.yaml`:
+Wired up in [`bootstrap/argocd-values.yaml`](../bootstrap/argocd-values.yaml) under `repoServer.extraContainers` (the `kustomize-sops` sidecar) and `configs.cmp.plugins.kustomize-sops`. The pieces:
 
-```yaml
-repoServer:
-  extraContainers:
-    - name: kustomize-sops
-      image: viaductoss/ksops:v4.3.3       # bundles kustomize + sops
-      command: [/var/run/argocd/argocd-cmp-server]
-      env:
-        - name: SOPS_AGE_KEY_FILE
-          value: /sops/key.txt
-      volumeMounts:
-        - name: var-files
-          mountPath: /var/run/argocd
-        - name: plugins
-          mountPath: /home/argocd/cmp-server/plugins
-        - name: cmp-tmp
-          mountPath: /tmp
-        - name: cmp-config
-          mountPath: /home/argocd/cmp-server/config/plugin.yaml
-          subPath: plugin.yaml
-        - name: sops-age
-          mountPath: /sops
-          readOnly: true
-  volumes:
-    - name: cmp-tmp
-      emptyDir: {}
-    - name: cmp-config
-      configMap:
-        name: argocd-cmp-kustomize-sops
+- **Sidecar image `viaductoss/ksops:v4.3.3`** — bundles `kustomize` + `sops` + `ksops` and runs the `argocd-cmp-server` binary so ArgoCD can RPC into it.
+- **`sops-age` volume** — mounts the in-cluster Secret created during bootstrap; `SOPS_AGE_KEY_FILE=/sops/key.txt` points sops at it for decryption.
+- **`custom-tools` volume** — a `download-tools` initContainer drops the `helm` binary in there and the sidecar `subPath`-mounts it onto its own `PATH`. This is what lets `kustomize build --enable-helm` shell out to Helm when rendering `helmCharts:` blocks (cnpg, cert-manager, longhorn, metrics-server, ...).
+- **`configs.cmp.plugins.kustomize-sops.generate.args`** — runs `kustomize build --enable-alpha-plugins --enable-exec --load-restrictor=LoadRestrictionsNone .`. The `LoadRestrictionsNone` flag is needed by kustomizations that reference files outside their own directory (e.g. `gitops/apps/n8n` → `charts/n8n`).
 
-configs:
-  cmp:
-    create: true
-    plugins:
-      kustomize-sops:
-        generate:
-          command: [sh, -c]
-          args: ["kustomize build --enable-alpha-plugins --enable-exec ."]
-```
-
-The `plugin.name: kustomize-sops` in each ApplicationSet template (above) tells ArgoCD to use this plugin when rendering manifests.
+The `plugin.name: kustomize-sops` in each ApplicationSet template tells ArgoCD to use this plugin instead of the built-in Helm/Kustomize renderers.
 
 ### 3. Example encrypted secret
 
-```yaml
-# kubernetes-infrastructure/gitops/infrastructure/sops-secrets/example-secret.enc.yaml   (BEFORE encryption)
-apiVersion: v1
-kind: Secret
-metadata:
-  name: example
-  namespace: default
-type: Opaque
-stringData:
-  username: admin
-  password: super-secret-value
-```
-
-After `sops --encrypt --in-place`, the `stringData` block is encrypted but the manifest is still a valid k8s resource — ArgoCD will decrypt it on render and apply the plaintext to the cluster.
+[`gitops/infrastructure/sops-secrets/example-secret.enc.yaml`](../gitops/infrastructure/sops-secrets/example-secret.enc.yaml) is the canonical reference. Before encryption it's just a normal `Secret` with `stringData` — after `sops --encrypt --in-place`, the `stringData` block is replaced with ciphertext but the rest of the manifest stays a valid Kubernetes resource. ArgoCD decrypts at render time and applies the plaintext.
 
 ---
 
 ## Cilium Gateway example
 
-```yaml
-# kubernetes-infrastructure/gitops/infrastructure/gateway/gatewayclass.yaml
-apiVersion: gateway.networking.k8s.io/v1
-kind: GatewayClass
-metadata:
-  name: cilium
-spec:
-  controllerName: io.cilium/gateway-controller
-```
+The Gateway tier is split across two folders:
 
-```yaml
-# kubernetes-infrastructure/gitops/infrastructure/gateway/gateway-default.yaml
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: default
-  namespace: gateway
-spec:
-  gatewayClassName: cilium
-  listeners:
-    - name: http
-      protocol: HTTP
-      port: 80
-      allowedRoutes:
-        namespaces:
-          from: All
-    - name: https
-      protocol: HTTPS
-      port: 443
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - kind: Secret
-            name: wildcard-nulcell-tls
-      allowedRoutes:
-        namespaces:
-          from: All
-```
+- [`gitops/infrastructure/gateway/gatewayclass.yaml`](../gitops/infrastructure/gateway/gatewayclass.yaml) — a single `GatewayClass` named `cilium` that registers `io.cilium/gateway-controller` as its handler. Cluster-scoped, defined once.
+- [`gitops/infrastructure/gateway/gateway-default.yaml`](../gitops/infrastructure/gateway/gateway-default.yaml) — the `default` Gateway in the `gateway` namespace, with two listeners: plain HTTP on `:80` and HTTPS on `:443` terminating against the `wildcard-nulcell-tls` Secret that cert-manager produces. Both listeners use `allowedRoutes.namespaces.from: All` so HTTPRoutes can attach from anywhere.
+- [`gitops/infrastructure/infra-app-httproutes/`](../gitops/infrastructure/infra-app-httproutes/) — per-service HTTPRoutes ([argocd.yaml](../gitops/infrastructure/infra-app-httproutes/argocd.yaml), [grafana.yaml](../gitops/infrastructure/infra-app-httproutes/grafana.yaml), [longhorn.yaml](../gitops/infrastructure/infra-app-httproutes/longhorn.yaml)). Each one attaches to `default` in the `gateway` namespace via `parentRefs` and forwards traffic to a backing Service in the app's own namespace.
 
-```yaml
-# example HTTPRoute used by ArgoCD itself (lives in gitops/infrastructure/argocd/ or similar)
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: argocd
-  namespace: argocd
-spec:
-  parentRefs:
-    - name: default
-      namespace: gateway
-  hostnames: [argocd.nulcell.com]
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: argocd-server
-          port: 80
-```
-
-The Gateway picks an IP from the Cilium `CiliumLoadBalancerIPPool` you created during bootstrap.
+The Gateway picks an IP from the `CiliumLoadBalancerIPPool` you created during bootstrap.
 
 ---
 
@@ -352,59 +161,11 @@ You need:
 3. A `ClusterIssuer` pointing at it.
 4. A `Certificate` (one wildcard is usually enough) that produces the Secret the Gateway references.
 
-```yaml
-# kubernetes-infrastructure/gitops/infrastructure/gateway/cloudflare-token.enc.yaml  (BEFORE encryption)
-apiVersion: v1
-kind: Secret
-metadata:
-  name: cloudflare-api-token
-  namespace: cert-manager
-type: Opaque
-stringData:
-  api-token: cf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-```
+All three live next to the Gateway resources under [`gitops/infrastructure/gateway/`](../gitops/infrastructure/gateway/):
 
-```yaml
-# kubernetes-infrastructure/gitops/infrastructure/gateway/clusterissuer.yaml
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-nulcell-com
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: cloud@nulcell.com
-    privateKeySecretRef:
-      name: letsencrypt-nulcell-com-account-key
-    solvers:
-      - dns01:
-          cloudflare:
-            apiTokenSecretRef:
-              name: cloudflare-api-token
-              key: api-token
-        selector:
-          dnsZones: [nulcell.com]
-```
-
-```yaml
-# kubernetes-infrastructure/gitops/infrastructure/gateway/wildcard-certificate.yaml
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: wildcard-nulcell
-  namespace: gateway
-spec:
-  secretName: wildcard-nulcell-tls   # consumed by the Gateway listener above
-  duration: 2160h    # 90 days
-  renewBefore: 720h  # renew 30 days before expiry
-  issuerRef:
-    kind: ClusterIssuer
-    name: letsencrypt-prod
-  commonName: '*.nulcell.com'
-  dnsNames:
-    - nulcell.com
-    - '*.nulcell.com'
-```
+- [`cloudflare-token.enc.yaml`](../gitops/infrastructure/gateway/cloudflare-token.enc.yaml) — the SOPS-encrypted Secret holding the Cloudflare API token. Namespaced to `cert-manager` so the `ClusterIssuer`'s `apiTokenSecretRef` can resolve it; also referenced from [`gitops/infrastructure/external-dns/secret-generator.yaml`](../gitops/infrastructure/external-dns/secret-generator.yaml), which re-points it into the `external-dns` namespace via ksops.
+- [`clusterissuer.yaml`](../gitops/infrastructure/gateway/clusterissuer.yaml) — the `letsencrypt-nulcell-com` `ClusterIssuer` against the **production** ACME endpoint. Swap the `acme.server` to `https://acme-staging-v02.api.letsencrypt.org/directory` while you're debugging the DNS-01 solver to avoid burning prod rate limits (50 certs/registered-domain/week, 5 duplicate certs/week). The `dns01.cloudflare.apiTokenSecretRef` points back at the Secret above; the `selector.dnsZones: [nulcell.com]` scopes this issuer to just that zone.
+- [`wildcard-certificate.yaml`](../gitops/infrastructure/gateway/wildcard-certificate.yaml) — the `wildcard-nulcell` `Certificate` whose `secretName: wildcard-nulcell-tls` is what the Gateway listener references for TLS termination. `commonName: *.nulcell.com` plus a `dnsNames` entry covering the apex; 90-day duration with a 30-day `renewBefore`.
 
 Use a `letsencrypt-staging` ClusterIssuer for first runs — Let's Encrypt's prod rate limit is unforgiving if you misconfigure the DNS-01 solver and burn through requests.
 
@@ -420,7 +181,7 @@ Once everything is stable, you can migrate ArgoCD's own config under GitOps so e
 2. Apply once to make ArgoCD adopt its own Application.
 3. From then on, ArgoCD reconciles itself.
 
-This is optional and recommended only after you trust the rest of the pipeline — a bad sync that breaks ArgoCD is annoying to recover from. The same caveat applies to Cilium and Longhorn; the safer pattern is to leave the **install** under Helm and put **values changes** under GitOps once the cluster is mature.
+This is optional and recommended only after you trust the rest of the pipeline — a bad sync that breaks ArgoCD is annoying to recover from. The same caveat applies to Cilium; the safer pattern is to leave its **install** under Helm and let ArgoCD reconcile only the parts of the network that can be re-applied without dropping the API.
 
 ---
 
@@ -430,20 +191,20 @@ This is optional and recommended only after you trust the rest of the pipeline �
 | ----------------------------------- | ------------------------ | ---------------------------------------------------------- |
 | Talos OS, machine config, etc.      | `talosctl` (out of band) | Image-level; can't sensibly live in K8s                    |
 | Cilium install                      | Helm (bootstrap)         | Cluster network — too dangerous to sync from git initially |
-| Longhorn install                    | Helm (bootstrap)         | Storage — same reasoning as Cilium                         |
+| Gateway API CRDs                    | `kubectl` (bootstrap)    | Need them before Cilium starts                             |
 | ArgoCD install                      | Helm (bootstrap)         | Chicken-and-egg until self-management is set up            |
-| Cilium L2 IP pool / policy          | ArgoCD                   | Pure manifests, low risk                                   |
-| Gateway API CRDs                    | Helm (bootstrap)         | Need them before Cilium starts                             |
-| Gateway / HTTPRoute / ClusterIssuer | ArgoCD                   |                                                            |
-| cert-manager install                | Helm (bootstrap)         | Required by KubeVirt webhooks                              |
+| Cilium L2 IP pool / policy          | `kubectl` (bootstrap)    | Applied alongside Cilium; pure manifests                   |
+| Longhorn install                    | ArgoCD                   | `gitops/infrastructure/longhorn/`                          |
+| cert-manager install                | ArgoCD                   | `gitops/infrastructure/cert-manager/`                      |
+| metrics-server install              | ArgoCD                   | `gitops/infrastructure/metrics-server/`                    |
 | cert-manager Issuers/Certificates   | ArgoCD                   |                                                            |
+| Gateway / HTTPRoute / GatewayClass  | ArgoCD                   |                                                            |
 | KubeVirt operator + CR              | ArgoCD                   |                                                            |
-| metrics-server                      | ArgoCD                   | Replace the helm-installed copy when ready                 |
 | kube-prometheus-stack               | ArgoCD                   |                                                            |
 | Application workloads               | ArgoCD                   |                                                            |
 | Secrets (encrypted)                 | ArgoCD via SOPS          |                                                            |
 
-The split favors safety in the bootstrap and GitOps for everything that follows.
+The split favors safety in the bootstrap (the things that, if broken, lock you out of the cluster entirely) and GitOps for everything that follows. cert-manager, Longhorn, and metrics-server used to live in the bootstrap script too; they were moved into GitOps once it was clear ArgoCD itself didn't depend on them at install time.
 
 ---
 

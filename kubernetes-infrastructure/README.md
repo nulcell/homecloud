@@ -43,29 +43,18 @@ A bare-metal Kubernetes homelab built on Talos Linux, intended as a long-running
 
 Imperative seed (one-time, via Helm and `talosctl`), then ArgoCD takes over:
 
-1. Build a custom Talos image with `iscsi-tools` and `util-linux-tools` system extensions ([Image Factory](https://factory.talos.dev/)).
-
-    ```yaml
-    customization:
-        systemExtensions:
-            officialExtensions:
-                - siderolabs/amd-ucode
-                - siderolabs/amdgpu
-                - siderolabs/iscsi-tools
-                - siderolabs/util-linux-tools
-    ```
-
+1. Build a custom Talos image at [Image Factory](https://factory.talos.dev/) with `siderolabs/iscsi-tools` and `siderolabs/util-linux-tools` (required by Longhorn), plus a CPU-matching microcode extension (`amd-ucode` / `intel-ucode`) and `siderolabs/amdgpu` if you need GPU pass-through. The full step-by-step is in [docs/bootstrap.md §1](docs/bootstrap.md#1-build-a-custom-talos-image).
 2. Boot the node, generate cluster config, apply with `talosctl`.
 3. `talosctl bootstrap` to start etcd.
-4. Helm install: Gateway API CRDs → Cilium → cert-manager → Longhorn → metrics-server → ArgoCD.
-5. Apply the ArgoCD `root` Application that points at [`gitops/`](gitops/) — ArgoCD takes over.
+4. Helm install: Gateway API CRDs → Cilium → ArgoCD.
+5. `bootstrap/install.sh` finishes by applying the ArgoCD `root` Application that points at [`gitops/`](gitops/). ArgoCD then reconciles cert-manager, Longhorn, metrics-server, and everything else under [`gitops/infrastructure/`](gitops/infrastructure/) and [`gitops/apps/`](gitops/apps/).
 
-After bootstrap, everything *except* the Talos OS itself is described in this repo. Cilium / Longhorn / cert-manager / ArgoCD are kept under Helm at install time but their values live in [`bootstrap/`](bootstrap/) for repeatability; their **upgrades** can be migrated into ArgoCD later if you want them under GitOps.
+After bootstrap, everything *except* the Talos OS itself is described in this repo. Cilium and ArgoCD are kept under Helm at install time (their values live in [`bootstrap/`](bootstrap/) for repeatability); cert-manager, Longhorn, metrics-server, monitoring, gateways, and workloads are GitOps from day one.
 
 ## Key decisions
 
 - **Cilium replaces kube-proxy and provides Gateway API + L2 announcements.** No MetalLB.
-- **Longhorn before ArgoCD.** ArgoCD doesn't strictly need persistent storage, but Prometheus/Grafana and future workloads do — provisioning a storage class up front avoids pending PVCs on day one.
+- **Only Cilium and ArgoCD are bootstrapped imperatively.** ArgoCD itself has no persistent-storage requirement, so Longhorn doesn't need to exist before it. cert-manager, Longhorn, and metrics-server come up via GitOps after the root Application is applied; downstream apps that depend on them (kube-prometheus-stack PVCs, the Cloudflare `ClusterIssuer`) self-heal within a couple of retry cycles.
 - **SOPS + age** for secrets in Git. Solo-operator friendly, no extra cluster components on the read path beyond an ArgoCD plugin.
 - **1 → 3 control-plane jump.** Avoids the 2-node split-brain trap.
 - **System extensions baked into the Talos image at install time.** Adding them later requires an OS upgrade.
@@ -83,15 +72,13 @@ kubernetes-infrastructure/
 │   └── secrets/              # talosconfig + secrets bundle (gitignored)
 ├── bootstrap/
 │   ├── cilium-values.yaml
-│   ├── longhorn-values.yaml
-│   ├── cert-manager-values.yaml
-│   ├── metrics-server-values.yaml
+│   ├── cilium-l2.yaml
 │   ├── argocd-values.yaml
-│   └── install.sh            # idempotent helm-install script
+│   └── install.sh            # idempotent helm-install script; also applies the root Application
 └── gitops/
-    ├── root/                 # the root Application that ArgoCD bootstraps from
-    ├── infrastructure/       # cert-manager extras, KubeVirt, monitoring, gateways
-    └── apps/                 # actual workloads (added later)
+    ├── root/                 # the root Application + ApplicationSets that fan out to infra/apps
+    ├── infrastructure/       # cert-manager, Longhorn, metrics-server, gateways, monitoring, KubeVirt, ...
+    └── apps/                 # actual workloads
 ```
 
 ## Documentation
