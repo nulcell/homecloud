@@ -2,5 +2,13 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: monitoring
+  labels:
+    # node-exporter needs hostNetwork/hostPID/hostPort/hostPath, all of which
+    # require the privileged PSA profile. Grafana, Prometheus, Alertmanager
+    # themselves run fine under restricted — but PSA is per-namespace, not
+    # per-pod, so the whole namespace gets bumped.
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
   annotations:
     argocd.argoproj.io/sync-wave: "-5"
