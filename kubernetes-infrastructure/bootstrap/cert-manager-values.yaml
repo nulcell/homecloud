@@ -2,4 +2,30 @@
 crds:
   enabled: true
 prometheus:
-  enabled: false   # turn on after kube-prometheus-stack is installed
+  enabled: false # turn on after kube-prometheus-stack is installed
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    cpu: 200m # Extra headroom for crypto operations / key parsing
+    memory: 128Mi
+
+cainjector:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 128Mi # Higher baseline due to memory-heavy internal API caching
+    limits:
+      cpu: 100m
+      memory: 256Mi
+
+webhook:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi

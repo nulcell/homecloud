@@ -15,7 +15,7 @@ defaultSettings:
 persistence:
   defaultClass: true
   defaultClassReplicaCount: 1
-  reclaimPolicy: Retain
+  reclaimPolicy: Delete # Retain
   defaultFsType: ext4
 
 # Resource limits
@@ -23,17 +23,27 @@ longhornManager:
   resources:
     requests:
       cpu: 250m
-      memory: 256Mi
+      memory: 512Mi # Increased baseline to handle cluster state mapping safely
+    limits:
+      memory: 1024Mi # Soft limit to shield node against heavy state synchronizations
 
 longhornDriver:
   resources:
     requests:
       cpu: 100m
       memory: 128Mi
+    limits:
+      memory: 256Mi # Prevents the CSI attacher framework from exploding
 
-# Enable the UI
 longhornUI:
-  replicas: 2
+  replicas: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m # Standard safe boundary for the web engine frontend
+      memory: 128Mi
 
 ingress:
   enabled: yes # Exposed via Gateway HTTPRoute in gitops/

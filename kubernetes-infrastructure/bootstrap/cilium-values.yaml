@@ -37,16 +37,6 @@ ingressController:
   loadbalancer:
     annotationPattern: "cilium.io/*"
 
-operator:
-  replicas: 1
-
-hubble:
-  enabled: true
-  relay:
-    enabled: true
-  ui:
-    enabled: true
-
 # Talos-specific: Cilium must not auto-mount its own cgroup root.
 cgroup:
   autoMount:
@@ -71,3 +61,61 @@ securityContext:
       - NET_ADMIN
       - SYS_ADMIN
       - SYS_RESOURCE
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi # Increased baseline because Hubble and Gateway API cache rules in memory
+  limits:
+    cpu: 1000m # Generous core limit to avoid compilation lag when eBPF maps regenerate
+    memory: 1024Mi # Safe upper bound to insulate the host from memory leaks
+
+envoy:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi # Baseline memory footprint to parse Envoy configuration filters
+    limits:
+      cpu: 500m # Capped to half a core to prevent runaway loop request overhead
+      memory: 512Mi # Generous limit to accommodate high concurrent streams/TLS buffers
+
+operator:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+hubble:
+  enabled: true
+  # Hubble Relay collects and aggregates flows from agents
+  relay:
+    enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+  # Hubble UI provides the visual network map web application
+  ui:
+    enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+    backend:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi

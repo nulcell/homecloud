@@ -15,6 +15,7 @@ spec:
   loadBalancerIPs: true
   interfaces:
     - ^enp[0-9]s[0-9].*
+    - ^eth[0-9]s[0-9].*
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux
