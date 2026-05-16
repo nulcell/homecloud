@@ -57,6 +57,19 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.vpn.credentialsSecret.name }}
                   key: {{ .Values.vpn.credentialsSecret.passwordKey }}
+            {{- else if eq .Values.vpn.type "wireguard" }}
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vpn.credentialsSecret.name }}
+                  key: {{ .Values.vpn.credentialsSecret.wireguardPrivateKeyKey }}
+            {{- if .Values.vpn.credentialsSecret.wireguardAddressesKey }}
+            - name: WIREGUARD_ADDRESSES
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.vpn.credentialsSecret.name }}
+                  key: {{ .Values.vpn.credentialsSecret.wireguardAddressesKey }}
+            {{- end }}
             {{- end }}
             {{- with .Values.vpn.extraEnv }}
             {{- toYaml . | nindent 12 }}

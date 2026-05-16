@@ -17,12 +17,15 @@ persistence:
 vpn:
   enabled: true
   provider: nordvpn
-  type: openvpn
+  # Switch between openvpn / wireguard freely — both sets of credentials live
+  # in the same Secret, so flipping type and resyncing is enough.
+  type: wireguard
   serverCountries: Netherlands
   credentialsSecret:
     name: media-stack-vpn
     userKey: openvpn-user
     passwordKey: openvpn-password
+    wireguardPrivateKeyKey: wireguard-private-key
 
 # Hostnames published via external-dns. Omit any to keep that app internal-only.
 jellyfin:

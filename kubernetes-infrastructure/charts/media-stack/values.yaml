@@ -83,10 +83,17 @@ vpn:
   firewallInputPorts: "9696,8080,6881"
   dnsUpstreamResolvers: "cloudflare,google"
   updaterPeriod: 24h
+  # Secret keys are wired conditionally based on `vpn.type`:
+  #   openvpn   → userKey + passwordKey
+  #   wireguard → wireguardPrivateKeyKey (plus wireguardAddressesKey if your
+  #               provider requires per-account client addresses; nordvpn does
+  #               not — Gluetun infers them.)
   credentialsSecret:
     name: media-stack-vpn
     userKey: openvpn-user
     passwordKey: openvpn-password
+    wireguardPrivateKeyKey: wireguard-private-key
+    wireguardAddressesKey: "" # optional; set if your provider needs it
   # Gluetun needs /dev/net/tun. By default we mount it from the host as a
   # CharDevice — Talos (and most distros) load the tun kernel module out of
   # the box, so the device exists on the node. Set `useHostPath: false` if you
