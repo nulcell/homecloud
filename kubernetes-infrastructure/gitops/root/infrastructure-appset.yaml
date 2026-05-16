@@ -8,26 +8,26 @@ spec:
   goTemplateOptions: ["missingkey=error"]
   generators:
     - git:
-        repoURL: https://github.com/<you>/homecloud
+        repoURL: https://github.com/nulcell/homecloud
         revision: main
         directories:
           - path: kubernetes-infrastructure/gitops/infrastructure/*
   template:
     metadata:
-      name: 'infra-{{.path.basename}}'
+      name: "infra-{{.path.basename}}"
       annotations:
         argocd.argoproj.io/sync-wave: "0"
     spec:
       project: default
       source:
-        repoURL: https://github.com/<you>/homecloud
+        repoURL: https://github.com/nulcell/homecloud
         targetRevision: main
-        path: '{{.path.path}}'
+        path: "{{.path.path}}"
         plugin:
           name: kustomize-sops
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{.path.basename}}'
+        namespace: "{{.path.basename}}"
       syncPolicy:
         automated:
           prune: true
