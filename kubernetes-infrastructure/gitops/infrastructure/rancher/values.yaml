@@ -32,8 +32,3 @@ resources:
 # only if you intend to use this Rancher purely as a control plane for *other*
 # clusters and never want it self-managing.
 addLocal: "true"
-
-# Pin a known bootstrap password so you can always recover the admin login,
-# even if the rancher-webhook is mid-bootstrap and login flows are flaking.
-# Encrypt this with SOPS once the cluster is stable.
-bootstrapPassword: "homecloud-bootstrap"
