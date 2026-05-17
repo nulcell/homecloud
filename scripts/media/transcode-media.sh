@@ -168,7 +168,7 @@ process_file() {
         ${HWACCEL_ARGS[@]+"${HWACCEL_ARGS[@]}"} \
         -i "$file" \
         -map 0:v -map '0:a?' -map '0:s?' \
-        -map_metadata 0 -map_chapters 0 \
+        -map_metadata 0 -map_chapters -1 \
         -c:v hevc_videotoolbox -q:v "$QUALITY" -tag:v hvc1 \
         ${FAST_ENCODER_ARGS[@]+"${FAST_ENCODER_ARGS[@]}"} \
         "${profile_args[@]}" \
