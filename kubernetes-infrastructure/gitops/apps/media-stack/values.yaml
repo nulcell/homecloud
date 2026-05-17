@@ -44,7 +44,7 @@ jellyfin:
     tag: latest
   publishedServerUrl: https://jellyfin.nulcell.com
   hwAccel:
-    enabled: true
+    enabled: false
   gateway:
     hostname: jellyfin.nulcell.com
 
@@ -75,7 +75,7 @@ qbittorrent:
     hostname: qbittorrent.nulcell.com
 
 tdarr:
-  enabled: true
+  enabled: false
   # All cluster nodes carry an AMD iGPU exposed at /dev/dri, so no nodeName
   # pin — tdarr can land anywhere and use VAAPI from whichever node hosts it.
   hwAccel:
