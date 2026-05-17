@@ -305,7 +305,7 @@ spec:
             - name: JOBS
               value: "1" # bump to 2 once you've confirmed VAAPI works end-to-end
             - name: QP
-              value: "23" # lower=better quality (range ~18-28)
+              value: "28" # lower=better quality (range ~18-28)
             - name: MIN_FREE_GB
               value: "10"
             - name: DRY_RUN
