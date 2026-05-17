@@ -1,44 +1,36 @@
-# Ubuntu 26.04 LTS "VPS" — a long-running privileged container with a
-# persistent /data volume so files survive pod restarts/reschedules.
+# Ubuntu 26.04 LTS "VPS" — a KubeVirt VM with a Longhorn-backed root disk
+# (imported once by CDI) and SSH exposed via a Cilium L2 LoadBalancer.
 #
-# The `vps` namespace is labelled `privileged` for Pod Security Admission,
-# the pod runs with privileged: true, and the container is granted ALL
-# capabilities — treat this as a root-equivalent workload.
+# The `vps` namespace is labelled `privileged` for Pod Security Admission
+# because KubeVirt's virt-launcher pod needs elevated capabilities to run
+# the QEMU process; this is required even though the guest is unprivileged.
 #
-# Apply:
+# Apply (the first apply triggers a one-time image download — watch progress
+# with `kubectl describe dv ubuntu-vps-root`):
 #   kubectl apply -f other/vps.yaml
 #
-# Connect — interactive shell (this is the everyday entrypoint):
-#   kubectl -n vps exec -it vps-0 -- bash
+# Connect — SSH over the LoadBalancer (everyday entrypoint):
+#   VPS_IP=$(kubectl -n vps get svc vps-ssh -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+#   ssh ubuntu@$VPS_IP
 #
-# Connect — one-off command without a TTY:
-#   kubectl -n vps exec vps-0 -- uname -a
+# Connect — SSH via virtctl (no LoadBalancer needed; uses the API server proxy):
+#   kubectl virt -n vps ssh ubuntu@vm/vps
 #
-# Copy files in/out (paths are inside the container; /data is the persisted mount):
-#   kubectl -n vps cp ./localfile.txt vps-0:/data/localfile.txt
-#   kubectl -n vps cp vps-0:/data/remotefile.txt ./remotefile.txt
+# Serial console (Ctrl+] to exit):
+#   kubectl virt -n vps console vps
 #
-# Forward a port from the pod to your laptop (e.g. if you start a service inside
-# the VPS on :8000, this exposes it at http://localhost:8000):
-#   kubectl -n vps port-forward pod/vps-0 8000:8000
+# Inspect / lifecycle:
+#   kubectl -n vps get vm,vmi,dv,pvc                  # high-level state
+#   kubectl -n vps describe vmi vps                   # live VM details
+#   kubectl virt -n vps stop vps                           # graceful shutdown
+#   kubectl virt -n vps start vps                          # power on (runStrategy=Always restarts on crash anyway)
+#   kubectl virt -n vps restart vps                        # power cycle
 #
-# Reach the pod from other workloads in the cluster via the headless Service.
-# Stable DNS name (only resolves from inside the cluster):
-#   vps-0.vps.vps.svc.cluster.local
-#   │     │   │
-#   │     │   └─ namespace
-#   │     └─ Service name (headless)
-#   └─ pod ordinal (always 0 since replicas: 1)
+# Disk persistence: the Longhorn PVC behind `ubuntu-vps-root` owns the full
+# rootfs and survives reboots, restarts, and node failures. Cleanup below
+# deletes it too because dataVolumeTemplates owns it.
 #
-# Watch pod state during first boot or restarts:
-#   kubectl -n vps get pods -w
-#   kubectl -n vps describe pod vps-0
-#   kubectl -n vps logs vps-0
-#
-# Restart (pod comes back with /data intact because the PVC outlives the pod):
-#   kubectl -n vps delete pod vps-0
-#
-# Clean up (also deletes the PVC because volumeClaimTemplates owns it):
+# Clean up:
 #   kubectl delete -f other/vps.yaml
 ---
 apiVersion: v1
@@ -50,62 +42,93 @@ metadata:
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged
 ---
-# Headless Service required by the StatefulSet for stable network identity.
-apiVersion: v1
-kind: Service
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
 metadata:
   name: vps
   namespace: vps
 spec:
-  clusterIP: None
-  selector:
-    app.kubernetes.io/name: vps
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: vps
-  namespace: vps
-  labels:
-    app.kubernetes.io/name: vps
-spec:
-  replicas: 1
-  serviceName: vps
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: vps
+  runStrategy: Always # restart on crash; switch to Manual for virtctl start/stop control
+  dataVolumeTemplates:
+    - metadata:
+        name: ubuntu-vps-root
+      spec:
+        source:
+          http:
+            url: https://cloud-images.ubuntu.com/releases/26.04/release/ubuntu-26.04-server-cloudimg-amd64.img
+        storage:
+          resources:
+            requests:
+              storage: 20Gi
+          accessModes: [ReadWriteOncePod]
+          # storageClassName omitted — Longhorn is the cluster default. Override
+          # here only if you want a non-default class for this VM.
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: vps
+        kubevirt.io/vm: vps
+      annotations:
+        kubevirt.io/allow-pod-bridge-network-live-migration: "true"
     spec:
-      containers:
-        - name: vps
-          image: ubuntu:26.04
-          imagePullPolicy: IfNotPresent
-          command: ["sleep", "infinity"]
-          resources:
-            requests:
-              cpu: 250m
-              memory: 512Mi
-            limits:
-              cpu: 2000m
-              memory: 4Gi
-          securityContext:
-            privileged: true
-            allowPrivilegeEscalation: true
-            capabilities:
-              add:
-                - ALL
-          volumeMounts:
-            - name: data
-              mountPath: /data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes: [ReadWriteOncePod]
-        resources:
-          requests:
-            storage: 20Gi
-        # storageClassName omitted — uses the cluster default (Longhorn).
+      evictionStrategy: LiveMigrate
+      domain:
+        cpu:
+          cores: 4
+        memory:
+          guest: 8Gi
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              bridge: {}
+          rng: {}
+        machine:
+          type: q35
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: ubuntu-vps-root
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              hostname: vps
+              users:
+                - name: ubuntu
+                  sudo: ALL=(ALL) NOPASSWD:ALL
+                  groups: [users, sudo, adm]
+                  shell: /bin/bash
+                  ssh_authorized_keys:
+                    - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEn9DdzGbGXbjxkvmA4n8HV1JBCNjo81dtE+Kq+tcupZ
+              # qemu-guest-agent enables `virtctl ssh` and clean shutdowns.
+              # growpart + resize2fs are part of stock cloud-init and will
+              # expand the root partition to fill the PVC on first boot.
+              package_update: true
+              package_upgrade: true
+              package_reboot_if_required: true
+              packages:
+                - qemu-guest-agent
+              runcmd:
+                - systemctl enable --now qemu-guest-agent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vps-ssh
+  namespace: vps
+spec:
+  type: LoadBalancer
+  selector:
+    kubevirt.io/vm: vps
+  ports:
+    - port: 22
+      targetPort: 22
