@@ -58,6 +58,8 @@ cluster:
   proxy:
     disabled: true # Cilium replaces kube-proxy
   apiServer:
+    extraArgs:
+      enable-aggregator-routing: "true"
     certSANs: # API server cert must cover every address clients hit
       - k8s.nulcell.com # the VIP's DNS name
       - 10.10.25.25 # the VIP
