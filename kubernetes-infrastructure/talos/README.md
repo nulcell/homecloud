@@ -25,7 +25,7 @@ Record the **schematic ID** somewhere you'll find it again — you need it for `
 ## Common commands
 
 ```bash
-export TALOSCONFIG=$(pwd)/generated/talosconfig
+export TALOSCONFIG_PATH=$(pwd)/generated/talosconfig
 export INSTALLER=metal-installer-secureboot
 export SCHEMATIC_ID=65cf8364cd0de4cf7b851dc7067a2db83d0ba04f11d8635c6cd3334be6ffb825
 export TALOS_VERSION=v1.13.2
@@ -45,7 +45,7 @@ talosctl gen config homecloud https://k8s.nulcell.com:6443 \
   --install-disk /dev/nvme0n1 \
   --with-secrets secrets/secret.yaml \
   --output-dir ./generated --force
-
+talosctl config merge --config $TALOSCONFIG_PATH --context homecloud
 talosctl config endpoints  ${NODE_IP} --context homecloud
 talosctl config nodes ${NODE_IP} --context homecloud
 
@@ -60,7 +60,10 @@ talosctl apply-config --insecure --nodes ${NODE_IP} --file controlplane-final.ya
 talosctl bootstrap --nodes ${NODE_IP}
 talosctl config endpoints 10.10.25.25 k8s.nulcell.com --context homecloud
 
+
 # Pull kubeconfig
+talosctl kubeconfig --merge
+# OR, if you want to keep it separate:
 talosctl kubeconfig ./kubeconfig
 export KUBECONFIG=$(pwd)/kubeconfig
 
