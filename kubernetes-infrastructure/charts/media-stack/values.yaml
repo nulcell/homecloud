@@ -115,6 +115,9 @@ vpn:
 # ---------- Jellyfin (media server) ----------
 jellyfin:
   enabled: true
+  # Deployment | StatefulSet. StatefulSet gives a stable pod identity (jellyfin-0)
+  # which keeps library/metadata paths stable across restarts.
+  workloadKind: StatefulSet
   image:
     repository: lscr.io/linuxserver/jellyfin
     tag: latest
@@ -139,6 +142,9 @@ jellyfin:
 # ---------- Jellyseerr (request manager) ----------
 seerr:
   enabled: true
+  # Deployment | StatefulSet. StatefulSet gives a stable pod identity (seerr-0)
+  # which keeps the sqlite request DB on stable paths across restarts.
+  workloadKind: StatefulSet
   image:
     repository: ghcr.io/seerr-team/seerr
     tag: latest
