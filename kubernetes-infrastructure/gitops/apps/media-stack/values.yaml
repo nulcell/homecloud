@@ -17,7 +17,7 @@ persistence:
 vpn:
   enabled: true
   image:
-    repository: qdm12/gluetun
+    repository: qmcgaw/gluetun
     tag: v3.41.1
   provider: nordvpn
   # Switch between openvpn / wireguard freely — both sets of credentials live
