@@ -1,6 +1,5 @@
-# Rancher 2.14.1 values for a homelab cluster, following the official install
-# guide for an in-cluster Ingress with cert-manager-issued TLS:
-# https://ranchermanager.docs.rancher.com/getting-started/installation-and-upgrade/install-upgrade-on-a-kubernetes-cluster
+# Rancher 2.14.1 values for a homelab cluster.
+# Docs: https://github.com/rancher/rancher/blob/release/v2.14/chart/values.yaml
 
 hostname: rancher.nulcell.com
 
@@ -8,24 +7,15 @@ hostname: rancher.nulcell.com
 # failure anyway in a homelab. Bump to 3 when you have a 3-node HA control plane.
 replicas: 1
 
-# Let the chart create its own Ingress. Cilium's ingressController.default is
-# true, so the Cilium Ingress controller picks it up and provisions a dedicated
-# LoadBalancer Service from the L2 pool.
+# Ingress disabled — exposed via Gateway HTTPRoute in
+# gitops/infrastructure/infra-app-httproutes/rancher.yaml.
 ingress:
-  enabled: true
-  ingressClassName: cilium
-  tls:
-    # `secret` = the Ingress declares spec.tls and expects a Secret named
-    # `tls-rancher-ingress` in cattle-system. cert-manager's ingress-shim sees
-    # the annotation below and mints that Secret from our existing DNS-01
-    # ClusterIssuer — no chart-internal Let's Encrypt machinery needed.
-    source: secret
-  extraAnnotations:
-    cert-manager.io/cluster-issuer: letsencrypt-nulcell-com
+  enabled: false
 
-# Top-level `tls: ingress` (the default) tells Rancher itself to expect TLS to
-# be terminated at the Ingress. privateCA stays false — Let's Encrypt's chain
-# is trusted natively, so downstream cluster agents won't need a custom CA.
+# TLS terminated at the Cilium Gateway with the wildcard *.nulcell.com cert.
+# Rancher itself serves HTTP behind the Gateway; downstream cluster agents
+# trust the public Let's Encrypt chain natively, so no privateCA bundle.
+tls: external
 privateCA: false
 
 # Resource budget — Rancher idles around 600Mi–1Gi and spikes on cluster
@@ -41,6 +31,7 @@ resources:
 # Keep the local-cluster registration so Rancher manages itself.
 addLocal: "true"
 
-# Pin a known bootstrap password so the admin login is recoverable even if
-# rancher-webhook is mid-bootstrap. Encrypt with SOPS once the cluster is stable.
+# Pin a known bootstrap password so the admin login is recoverable in future
+# re-installs. Only consumed on first install — changing it later is a no-op.
+# Encrypt with SOPS once the cluster is stable.
 bootstrapPassword: "homecloud-bootstrap"

@@ -1,6 +1,5 @@
-# Watch HTTPRoutes (Gateway API) and classic Ingresses. Rancher 2.x ships its
-# own chart-managed Ingress (cattle-system), so we need the `ingress` source
-# alongside the Gateway one. Add other gateway-* sources if you adopt them.
+# Watch HTTPRoutes (Gateway API) and classic Ingresses.
+# Add other gateway-* sources if you adopt them.
 sources:
   - gateway-httproute
   - ingress
