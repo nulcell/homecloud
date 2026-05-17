@@ -12,7 +12,7 @@ sources:
 keywords:
   - media
   - jellyfin
-  - jellyseerr
+  - seerr
   - sonarr
   - radarr
   - bazarr

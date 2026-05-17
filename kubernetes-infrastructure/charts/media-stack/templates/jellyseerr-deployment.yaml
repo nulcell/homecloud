@@ -1,37 +1,37 @@
-{{- if .Values.jellyseerr.enabled }}
+{{- if .Values.seerr.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jellyseerr
+  name: seerr
   namespace: {{ include "mediaStack.namespace" . }}
   labels:
-    {{- include "mediaStack.labels" (dict "ctx" . "app" "jellyseerr") | nindent 4 }}
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "seerr") | nindent 4 }}
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "jellyseerr") | nindent 6 }}
+      {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "seerr") | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "jellyseerr") | nindent 8 }}
+        {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "seerr") | nindent 8 }}
     spec:
       securityContext:
         {{- include "mediaStack.podSecurityContext" . | nindent 8 }}
       containers:
-        - name: jellyseerr
-          image: "{{ .Values.jellyseerr.image.repository }}:{{ .Values.jellyseerr.image.tag }}"
-          imagePullPolicy: {{ .Values.jellyseerr.image.pullPolicy }}
+        - name: seerr
+          image: "{{ .Values.seerr.image.repository }}:{{ .Values.seerr.image.tag }}"
+          imagePullPolicy: {{ .Values.seerr.image.pullPolicy }}
           env:
             {{- include "mediaStack.commonEnv" . | nindent 12 }}
           ports:
-            - containerPort: {{ .Values.jellyseerr.service.ports.web }}
+            - containerPort: {{ .Values.seerr.service.ports.web }}
               name: web
               protocol: TCP
           resources:
-            {{- toYaml .Values.jellyseerr.resources | nindent 12 }}
+            {{- toYaml .Values.seerr.resources | nindent 12 }}
           securityContext:
             {{- include "mediaStack.containerSecurityContext" . | nindent 12 }}
           volumeMounts:

@@ -1,42 +1,42 @@
-{{- if and .Values.jellyseerr.enabled .Values.gateway.enabled .Values.jellyseerr.gateway.hostname }}
+{{- if and .Values.seerr.enabled .Values.gateway.enabled .Values.seerr.gateway.hostname }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: jellyseerr
+  name: seerr
   namespace: {{ include "mediaStack.namespace" . }}
   labels:
-    {{- include "mediaStack.labels" (dict "ctx" . "app" "jellyseerr") | nindent 4 }}
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "seerr") | nindent 4 }}
 spec:
   parentRefs:
     - name: {{ .Values.gateway.parentRef.name }}
       namespace: {{ .Values.gateway.parentRef.namespace }}
       sectionName: {{ .Values.gateway.parentRef.sectionName | default "https" }}
   hostnames:
-    - {{ .Values.jellyseerr.gateway.hostname }}
+    - {{ .Values.seerr.gateway.hostname }}
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: jellyseerr
-          port: {{ .Values.jellyseerr.service.ports.web }}
+        - name: seerr
+          port: {{ .Values.seerr.service.ports.web }}
 {{- if .Values.gateway.httpRedirect }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: jellyseerr-http-redirect
+  name: seerr-http-redirect
   namespace: {{ include "mediaStack.namespace" . }}
   labels:
-    {{- include "mediaStack.labels" (dict "ctx" . "app" "jellyseerr") | nindent 4 }}
+    {{- include "mediaStack.labels" (dict "ctx" . "app" "seerr") | nindent 4 }}
 spec:
   parentRefs:
     - name: {{ .Values.gateway.parentRef.name }}
       namespace: {{ .Values.gateway.parentRef.namespace }}
       sectionName: {{ .Values.gateway.parentRef.httpSectionName | default "http" }}
   hostnames:
-    - {{ .Values.jellyseerr.gateway.hostname }}
+    - {{ .Values.seerr.gateway.hostname }}
   rules:
     - filters:
         - type: RequestRedirect
