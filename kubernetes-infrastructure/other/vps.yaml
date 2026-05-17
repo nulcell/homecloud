@@ -93,7 +93,7 @@ spec:
               memory: 4Gi
           securityContext:
             privileged: true
-            allowPrivilegeEscalation: false
+            allowPrivilegeEscalation: true
             capabilities:
               add:
                 - ALL
