@@ -33,12 +33,14 @@ STATS_FILE=$(mktemp -t transcode-stats.XXXXXX)
 FFMPEG_STATS="-stats"
 (( JOBS > 1 )) && FFMPEG_STATS="-nostats"
 
-# FAST=1: GPU decode keeps frames on the media engine end-to-end (no CPU<->GPU copy),
-# -realtime hints the encoder to prioritize throughput, -bf 0 skips B-frame analysis.
+# FAST=1: -hwaccel gives GPU decode (frames are auto-downloaded to CPU after decode;
+# pinning them on GPU with -hwaccel_output_format requires an hwdownload filter chain
+# and didn't pan out — the CPU round-trip is cheap on Apple Silicon). -realtime hints
+# the encoder to prioritize throughput, -bf 0 skips B-frame analysis.
 HWACCEL_ARGS=()
 FAST_ENCODER_ARGS=()
 if [[ "$FAST" == "1" ]]; then
-  HWACCEL_ARGS=(-hwaccel videotoolbox -hwaccel_output_format videotoolbox_vld)
+  HWACCEL_ARGS=(-hwaccel videotoolbox)
   FAST_ENCODER_ARGS=(-realtime true -bf 0)
 fi
 
