@@ -1,6 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: cattle-system
+# No top-level `namespace:` — Rancher lives in `cattle-system`, the SUSE
+# KubeVirt dashboard extension in `cattle-ui-plugin-system`. Each helmCharts
+# entry sets its own release namespace; each Namespace resource declares its
+# own metadata.
 
 helmCharts:
   - name: rancher
@@ -11,5 +14,16 @@ helmCharts:
     valuesFile: values.yaml
     includeCRDs: true
 
+  # SUSE Edge KubeVirt dashboard extension — adds a VM management UI plugin
+  # that Rancher's dashboard discovers via the cattle-ui-plugin-system
+  # namespace. Pulled as an OCI artifact from registry.suse.com.
+  # https://documentation.suse.com/suse-edge/3.1/html/edge/components-rancher-dashboard-extensions.html
+  - name: kubevirt-dashboard-extension-chart
+    repo: oci://registry.suse.com/edge/3.1
+    version: 1.1.0
+    releaseName: kubevirt-dashboard-extension
+    namespace: cattle-ui-plugin-system
+
 resources:
   - namespace.yaml
+  - cattle-ui-plugin-system-namespace.yaml
