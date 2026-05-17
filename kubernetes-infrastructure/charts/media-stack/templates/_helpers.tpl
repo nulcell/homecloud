@@ -117,3 +117,29 @@ The shared config + data volumes block, referenced by every pod.
     claimName: {{ include "mediaStack.fullname" . }}-data
 {{- end -}}
 
+{{/*
+hostPath volume for the iGPU render device(s) (DRM / VAAPI / QSV). Mounted
+into pods that do hardware-accelerated video work (jellyfin, tdarr). Pass
+the per-app hwAccel block as the context.
+Usage: {{ include "mediaStack.hwAccelVolume" .Values.jellyfin.hwAccel | nindent 8 }}
+*/}}
+{{- define "mediaStack.hwAccelVolume" -}}
+{{- if .enabled }}
+- name: dri
+  hostPath:
+    path: {{ .devicePath | default "/dev/dri" }}
+    type: Directory
+{{- end }}
+{{- end -}}
+
+{{/*
+Container volumeMount paired with mediaStack.hwAccelVolume.
+Usage: {{ include "mediaStack.hwAccelMount" .Values.jellyfin.hwAccel | nindent 12 }}
+*/}}
+{{- define "mediaStack.hwAccelMount" -}}
+{{- if .enabled }}
+- name: dri
+  mountPath: {{ .devicePath | default "/dev/dri" }}
+{{- end }}
+{{- end -}}
+

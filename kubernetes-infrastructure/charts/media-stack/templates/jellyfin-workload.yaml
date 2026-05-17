@@ -25,8 +25,15 @@ spec:
       labels:
         {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "jellyfin") | nindent 8 }}
     spec:
+      {{- with .Values.jellyfin.nodeName }}
+      nodeName: {{ . }}
+      {{- end }}
       securityContext:
         {{- include "mediaStack.podSecurityContext" . | nindent 8 }}
+        {{- if .Values.jellyfin.hwAccel.enabled }}
+        supplementalGroups:
+          {{- toYaml .Values.jellyfin.hwAccel.supplementalGroups | nindent 10 }}
+        {{- end }}
       containers:
         - name: jellyfin
           image: "{{ .Values.jellyfin.image.repository }}:{{ .Values.jellyfin.image.tag }}"
@@ -57,7 +64,9 @@ spec:
               subPath: jellyfin
             - mountPath: /data
               name: data
+            {{- include "mediaStack.hwAccelMount" .Values.jellyfin.hwAccel | nindent 12 }}
       volumes:
         {{- include "mediaStack.volumes" . | nindent 8 }}
+        {{- include "mediaStack.hwAccelVolume" .Values.jellyfin.hwAccel | nindent 8 }}
       restartPolicy: Always
 {{- end }}
