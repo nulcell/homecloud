@@ -37,7 +37,7 @@ spec:
           volumeMounts:
             - mountPath: /app/config
               name: config
-              subPath: jellyseerr
+              subPath: seerr
       volumes:
         {{- include "mediaStack.volumes" . | nindent 8 }}
       restartPolicy: Always
