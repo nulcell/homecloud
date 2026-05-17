@@ -30,7 +30,7 @@ spec:
       {{- end }}
       securityContext:
         {{- include "mediaStack.podSecurityContext" . | nindent 8 }}
-        {{- if .Values.jellyfin.hwAccel.enabled }}
+        {{- if and .Values.jellyfin.hwAccel.enabled .Values.jellyfin.hwAccel.supplementalGroups }}
         supplementalGroups:
           {{- toYaml .Values.jellyfin.hwAccel.supplementalGroups | nindent 10 }}
         {{- end }}

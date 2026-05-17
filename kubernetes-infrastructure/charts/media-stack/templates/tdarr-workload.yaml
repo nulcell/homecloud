@@ -30,7 +30,7 @@ spec:
       {{- end }}
       securityContext:
         {{- include "mediaStack.podSecurityContext" . | nindent 8 }}
-        {{- if .Values.tdarr.hwAccel.enabled }}
+        {{- if and .Values.tdarr.hwAccel.enabled .Values.tdarr.hwAccel.supplementalGroups }}
         supplementalGroups:
           {{- toYaml .Values.tdarr.hwAccel.supplementalGroups | nindent 10 }}
         {{- end }}

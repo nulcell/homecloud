@@ -128,14 +128,15 @@ jellyfin:
   # to let the scheduler pick.
   nodeName: ""
   # Hardware-accelerated transcoding via /dev/dri (VAAPI/QSV). When enabled,
-  # the pod mounts the render node from the host and the pod's supplemental
-  # groups include the render GID(s) so jellyfin's PUID can open the device.
-  # Common render group GIDs: 44 (older Debian/Ubuntu), 104 (newer Ubuntu),
-  # 989 (RHEL family). Including all three is harmless.
+  # the pod mounts the render node from the host. /dev/dri/renderD* is
+  # world-accessible on most Linux hosts (mode 0666 by kernel/udev convention,
+  # including Talos) so no group membership is needed by default. If your host
+  # restricts the render node to a specific group, list those GIDs here —
+  # common values are 44 (older Debian/Ubuntu), 104 (newer Ubuntu), 989 (RHEL).
   hwAccel:
     enabled: false
     devicePath: /dev/dri
-    supplementalGroups: [44, 104, 989]
+    supplementalGroups: []
   service:
     type: ClusterIP
     ports:
@@ -291,7 +292,7 @@ tdarr:
   hwAccel:
     enabled: false
     devicePath: /dev/dri
-    supplementalGroups: [44, 104, 989]
+    supplementalGroups: []
   service:
     type: ClusterIP
     ports:
