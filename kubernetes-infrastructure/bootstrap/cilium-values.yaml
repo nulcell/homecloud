@@ -15,19 +15,24 @@ routingMode: native
 ipv4NativeRoutingCIDR: 10.244.0.0/16
 autoDirectNodeRoutes: true
 
+enableIPv4Masquerade: true
+
 bpf:
   masquerade: true
+  hostLegacyRouting: true
 
-# Transparent WireGuard encryption for all pod-to-pod traffic between nodes.
-# nodeEncryption also covers host-network pods (Cilium agent, node-exporter,
-# Hubble) so cross-node traffic on the LAN is encrypted end-to-end without any
-# per-workload mTLS plumbing. No-op on single-node; live the moment a second
-# node joins. Compatible with routingMode: native — Cilium routes through the
-# cilium_wg0 interface it creates on each node.
+# Transparent WireGuard encryption for pod-to-pod traffic between nodes.
+# nodeEncryption (covering host-network pods like the Cilium agent, node-exporter,
+# Hubble) is intentionally OFF: with bpf.hostLegacyRouting=true above, host-
+# originated packets follow the kernel routing table directly to the peer node
+# rather than through cilium_wg0 — which is required for kube-apiserver to
+# reach extension APIServer pods on remote nodes (metrics-server,
+# rancher's imperative-api-extension, etc.). Trusted home LAN, so plaintext
+# host-network traffic between nodes is acceptable.
 encryption:
   enabled: true
   type: wireguard
-  nodeEncryption: true
+  nodeEncryption: false
 
 l2announcements:
   enabled: true

@@ -31,7 +31,7 @@ resources:
 # Keep the local-cluster registration so Rancher manages itself.
 addLocal: "true"
 
-# Pin a known bootstrap password so the admin login is recoverable in future
-# re-installs. Only consumed on first install — changing it later is a no-op.
-# Encrypt with SOPS once the cluster is stable.
-bootstrapPassword: "homecloud-bootstrap"
+# # Pin a known bootstrap password so the admin login is recoverable in future
+# # re-installs. Only consumed on first install — changing it later is a no-op.
+# # Encrypt with SOPS once the cluster is stable.
+# bootstrapPassword: "homecloud-bootstrap"
