@@ -1,0 +1,341 @@
+# One-shot HEVC transcode of the media-stack data PVC, in-place, using the
+# Talos node's AMD iGPU via VAAPI. Mounts the same `media-stack-data` PVC
+# Jellyfin uses, so paths line up — files keep their basenames, only the
+# extension may change (.avi/.mp4 → .mkv). Already-efficient codecs (hevc,
+# av1, vp9, vvc) are skipped.
+#
+# Test-bed in `other/` for now; once stable this graduates into the
+# media-stack Helm chart as a CronJob.
+#
+# Apply:
+#   kubectl apply -f other/transcode-media.yaml
+#
+# Watch progress (stdout of the job pod):
+#   kubectl -n media logs -f job/transcode-media
+#
+# Per-file status / summary lines (mirrors the local script):
+#   kubectl -n media logs job/transcode-media | grep -E '^\[|TRANSCODE|SKIP|OK|FAIL|summary'
+#
+# Dry-run (probe + log only, no encodes):
+#   set DRY_RUN=1 in the Job env, re-apply, re-watch.
+#
+# Re-run (Jobs are immutable — delete then re-apply):
+#   kubectl -n media delete job transcode-media --ignore-not-found
+#   kubectl apply -f other/transcode-media.yaml
+#
+# Stop early (the script's trap cleans temp files and prints a summary):
+#   kubectl -n media delete job transcode-media
+#
+# Caveats:
+# - Jellyfin reads the same PVC. A file that's mid-stream when this Job
+#   replaces it will give the client an I/O error. Run during off-hours
+#   or pause playback while it's active.
+# - `/dev/dri/renderD128` is hostPath-mounted from talos-control-1 (pinned
+#   via spec.nodeName). Change the nodeName if your iGPU lives elsewhere.
+# - VAAPI 10-bit HEVC encode requires a GPU that supports it (Vega/RDNA+).
+#   Older iGPUs will fail on 10-bit sources; those files will be logged
+#   FAIL and left untouched.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: transcode-media-script
+  namespace: media
+data:
+  transcode-media.sh: |
+    #!/bin/bash
+    # Linux + VAAPI port of scripts/media/transcode-media.sh.
+    # Differences from the macOS original:
+    #   - stat -c%s (GNU) instead of stat -f%z (BSD)
+    #   - hevc_vaapi encoder + hwupload filter chain instead of hevc_videotoolbox
+    #   - -qp for VAAPI quality (lower=better, ~18-28 useful range)
+
+    set -uo pipefail
+
+    ROOT="${ROOT:-/data}"
+    DRY_RUN="${DRY_RUN:-0}"
+    QP="${QP:-23}"
+    JOBS="${JOBS:-1}"
+    MIN_FREE_GB="${MIN_FREE_GB:-5}"
+    VAAPI_DEVICE="${VAAPI_DEVICE:-/dev/dri/renderD128}"
+    LOGFILE="${LOGFILE:-/tmp/transcode-media.log}"
+
+    start_ts=$(date +%s)
+    STATS_FILE=$(mktemp /tmp/transcode-stats.XXXXXX)
+
+    FFMPEG_STATS="-stats"
+    (( JOBS > 1 )) && FFMPEG_STATS="-nostats"
+
+    log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$LOGFILE"; }
+
+    # Pure-bash integer math — linuxserver/ffmpeg doesn't ship `bc`.
+    human() {
+      local b=$1 whole frac
+      if   (( b >= 1073741824 )); then whole=$((b/1073741824)); frac=$(( (b%1073741824)*100/1073741824 )); printf '%d.%02d GB' "$whole" "$frac"
+      elif (( b >= 1048576 ));    then whole=$((b/1048576));    frac=$(( (b%1048576)*100/1048576 ));       printf '%d.%02d MB' "$whole" "$frac"
+      elif (( b >= 1024 ));       then whole=$((b/1024));       frac=$(( (b%1024)*100/1024 ));             printf '%d.%02d KB' "$whole" "$frac"
+      else                             printf '%d B' "$b"
+      fi
+    }
+
+    on_interrupt() {
+      log "INTERRUPTED — waiting for in-flight workers to exit"
+      wait
+      local leftover
+      leftover=$(find "$ROOT" -type f -name '*.transcoding.mkv' 2>/dev/null)
+      if [[ -n "$leftover" ]]; then
+        log "removing leftover temp files:"
+        while IFS= read -r f; do
+          log "  $f"
+          rm -f "$f"
+        done <<< "$leftover"
+      fi
+      exit 130
+    }
+
+    on_exit() {
+      local processed=0 skipped=0 failed=0 bytes_before=0 bytes_after=0
+      local kind a b
+      if [[ -f "$STATS_FILE" ]]; then
+        while read -r kind a b; do
+          case "$kind" in
+            ok)   processed=$((processed+1)); bytes_before=$((bytes_before+a)); bytes_after=$((bytes_after+b)) ;;
+            skip) skipped=$((skipped+1)) ;;
+            fail) failed=$((failed+1)) ;;
+          esac
+        done < "$STATS_FILE"
+        rm -f "$STATS_FILE"
+      fi
+      local elapsed=$(( $(date +%s) - start_ts ))
+      local saved=$(( bytes_before - bytes_after ))
+      log "=== summary === processed=$processed skipped=$skipped failed=$failed saved=$(human "$saved") elapsed=${elapsed}s"
+    }
+
+    trap on_interrupt INT TERM
+    trap on_exit EXIT
+
+    command -v ffmpeg  >/dev/null || { echo "ffmpeg not installed"  >&2; exit 1; }
+    command -v ffprobe >/dev/null || { echo "ffprobe not installed" >&2; exit 1; }
+    [[ -d "$ROOT" ]] || { echo "directory not found: $ROOT" >&2; exit 1; }
+    [[ -e "$VAAPI_DEVICE" ]] || { echo "VAAPI device not found: $VAAPI_DEVICE" >&2; exit 1; }
+
+    process_file() {
+      local file="$1"
+      local base codec pix_fmt size_before avail_bytes min_free_bytes
+      local upload_format profile bit_label dir stem tmp final out_codec size_after pct
+
+      base=$(basename "$file")
+
+      [[ "$base" == *.transcoding.mkv ]] && return 0
+
+      codec=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name \
+                -of default=nw=1:nk=1 "$file" 2>/dev/null || true)
+      if [[ -z "$codec" ]]; then
+        log "SKIP no video stream: $file"
+        echo "skip" >> "$STATS_FILE"
+        return 0
+      fi
+      case "$codec" in
+        hevc|h265|av1|vp9|vvc|h266)
+          log "SKIP already efficient ($codec): $file"
+          echo "skip" >> "$STATS_FILE"
+          return 0
+          ;;
+      esac
+
+      pix_fmt=$(ffprobe -v error -select_streams v:0 -show_entries stream=pix_fmt \
+                  -of default=nw=1:nk=1 "$file" 2>/dev/null || true)
+      if [[ "$pix_fmt" == *10le* || "$pix_fmt" == *10be* || "$pix_fmt" == p010* || "$pix_fmt" == yuv420p10* ]]; then
+        upload_format="p010"
+        profile="main10"
+        bit_label="10-bit"
+      else
+        upload_format="nv12"
+        profile="main"
+        bit_label="8-bit"
+      fi
+
+      # Capture the original file's owner/group/mode/mtime so the transcoded
+      # output keeps the exact perms jellyfin (and the *arr stack) expect.
+      # Without this, the new file would inherit container defaults (root:root,
+      # umask-derived mode) and break jellyfin's read/scan.
+      local orig_uid orig_gid orig_mode orig_mtime
+      orig_uid=$(stat -c%u "$file")
+      orig_gid=$(stat -c%g "$file")
+      orig_mode=$(stat -c%a "$file")
+      orig_mtime=$(stat -c%Y "$file")
+
+      size_before=$(stat -c%s "$file")
+      avail_bytes=$(df -k "$(dirname "$file")" | awk 'NR==2 {print $4 * 1024}')
+      min_free_bytes=$(( MIN_FREE_GB * 1024 * 1024 * 1024 ))
+
+      if (( avail_bytes < size_before + min_free_bytes )); then
+        log "SKIP insufficient free space (need $(human $((size_before + min_free_bytes))), have $(human "$avail_bytes")): $file"
+        echo "fail" >> "$STATS_FILE"
+        return 0
+      fi
+
+      dir=$(dirname "$file")
+      stem="${base%.*}"
+      tmp="$dir/${stem}.transcoding.mkv"
+      final="$dir/${stem}.mkv"
+
+      if [[ "$file" != "$final" && -e "$final" ]]; then
+        log "SKIP destination already exists: $final (source: $file)"
+        echo "skip" >> "$STATS_FILE"
+        return 0
+      fi
+
+      log "TRANSCODE [$codec $bit_label, $(human "$size_before")]: $file"
+
+      if [[ "$DRY_RUN" == "1" ]]; then
+        log "[dry-run] would write: $final"
+        echo "skip" >> "$STATS_FILE"
+        return 0
+      fi
+
+      rm -f "$tmp"
+
+      # -init_hw_device + -filter_hw_device register a named VAAPI device that
+      # the hwupload filter resolves against. Software decode, then upload to
+      # GPU for encode — robust across input codecs (AMD VAAPI decode coverage
+      # is uneven, especially for older formats). For full GPU pipeline (faster,
+      # but can fail on some sources), prepend:
+      #   -hwaccel vaapi -hwaccel_device va -hwaccel_output_format vaapi
+      # and change -vf to "scale_vaapi=format=${upload_format}".
+      if ffmpeg -hide_banner -loglevel error $FFMPEG_STATS -nostdin -y \
+            -init_hw_device "vaapi=va:$VAAPI_DEVICE" -filter_hw_device va \
+            -i "$file" \
+            -map 0:v -map '0:a?' -map '0:s?' \
+            -map_metadata 0 -map_chapters -1 \
+            -vf "format=${upload_format},hwupload" \
+            -c:v hevc_vaapi -profile:v "$profile" -qp "$QP" \
+            -c:a copy -c:s copy \
+            "$tmp"; then
+
+        out_codec=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name \
+                      -of default=nw=1:nk=1 "$tmp" 2>/dev/null || true)
+        size_after=0
+        [[ -f "$tmp" ]] && size_after=$(stat -c%s "$tmp")
+
+        if [[ "$out_codec" != "hevc" ]]; then
+          log "FAIL output codec was '$out_codec', not hevc: $tmp"
+          rm -f "$tmp"
+          echo "fail" >> "$STATS_FILE"
+        elif (( size_after < 1048576 )); then
+          log "FAIL output suspiciously small ($(human "$size_after")): $tmp"
+          rm -f "$tmp"
+          echo "fail" >> "$STATS_FILE"
+        elif (( size_after > size_before * 12 / 10 )); then
+          log "FAIL output larger than source by >20% ($(human "$size_after") vs $(human "$size_before")) — keeping original: $tmp"
+          rm -f "$tmp"
+          echo "fail" >> "$STATS_FILE"
+        else
+          rm -f "$file"
+          mv "$tmp" "$final"
+          # Restore the exact ownership/permissions/mtime captured above.
+          chown "$orig_uid:$orig_gid" "$final"
+          chmod "$orig_mode" "$final"
+          touch -d "@$orig_mtime" "$final"
+          pct=$(( (size_before - size_after) * 100 / size_before ))
+          log "OK -${pct}% [$(human "$size_before") → $(human "$size_after")]: $final"
+          echo "ok $size_before $size_after" >> "$STATS_FILE"
+        fi
+      else
+        log "FAIL ffmpeg error on: $file"
+        rm -f "$tmp"
+        echo "fail" >> "$STATS_FILE"
+      fi
+    }
+
+    log "starting transcode under $ROOT (dry_run=$DRY_RUN qp=$QP min_free=${MIN_FREE_GB}GB jobs=$JOBS vaapi=$VAAPI_DEVICE)"
+
+    while IFS= read -r -d '' file; do
+      if (( JOBS > 1 )); then
+        while (( $(jobs -r -p | wc -l) >= JOBS )); do
+          sleep 0.5
+        done
+        process_file "$file" &
+      else
+        process_file "$file"
+      fi
+    done < <(find "$ROOT" -type f \( \
+                -iname '*.mkv' -o -iname '*.mp4' -o -iname '*.avi' \
+             -o -iname '*.mov' -o -iname '*.m4v' -o -iname '*.wmv' \
+             -o -iname '*.ts'  -o -iname '*.m2ts' -o -iname '*.mpg' \
+             -o -iname '*.mpeg' -o -iname '*.flv' -o -iname '*.webm' \
+             \) -print0 | sort -z)
+
+    wait
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: transcode-media
+  namespace: media
+  labels:
+    app.kubernetes.io/name: transcode-media
+    app.kubernetes.io/component: maintenance
+spec:
+  backoffLimit: 0 # never retry — the script logs FAIL per-file and continues
+  activeDeadlineSeconds: 86400 # 24h ceiling on a single run
+  ttlSecondsAfterFinished: 604800 # auto-delete the Job 7 days after completion
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: transcode-media
+        app.kubernetes.io/component: maintenance
+    spec:
+      restartPolicy: Never
+      # Pinned to the node that exposes /dev/dri (the iGPU-bearing host).
+      nodeName: talos-control-1
+      containers:
+        - name: transcode
+          image: linuxserver/ffmpeg:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "/scripts/transcode-media.sh"]
+          env:
+            - name: ROOT
+              value: /data
+            - name: JOBS
+              value: "1" # bump to 2 once you've confirmed VAAPI works end-to-end
+            - name: QP
+              value: "23" # lower=better quality (range ~18-28)
+            - name: MIN_FREE_GB
+              value: "10"
+            - name: DRY_RUN
+              value: "0" # set "1" to probe + log without encoding
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+          securityContext:
+            # /dev/dri/renderD128 needs the render group (typically GID 44 or 104
+            # depending on distro). Talos exposes the device with the host's
+            # render group — supplementing both common values keeps this portable.
+            # If access fails, swap for `privileged: true` to confirm it's the
+            # group and not something else.
+            privileged: true
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: script
+              mountPath: /scripts
+              readOnly: true
+            - name: dri
+              mountPath: /dev/dri
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: media-stack-data
+        - name: script
+          configMap:
+            name: transcode-media-script
+            defaultMode: 0755
+        - name: dri
+          hostPath:
+            path: /dev/dri
+            type: Directory
