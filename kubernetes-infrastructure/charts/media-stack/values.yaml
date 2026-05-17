@@ -128,10 +128,10 @@ jellyfin:
       dlna: 1900
   resources:
     requests:
-      cpu: 500m
+      cpu: 1000m
       memory: 1Gi
     limits:
-      cpu: "4"
+      cpu: 4000m
       memory: 4Gi
   gateway:
     hostname: "" # e.g. jellyfin.example.com
@@ -149,7 +149,7 @@ seerr:
       web: 5055
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 128Mi
     limits:
       cpu: 500m
@@ -170,10 +170,10 @@ sonarr:
       web: 8989
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 1
+      cpu: 1000m
       memory: 1Gi
   gateway:
     hostname: ""
@@ -191,10 +191,10 @@ radarr:
       web: 7878
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 1
+      cpu: 1000m
       memory: 1Gi
   gateway:
     hostname: ""
@@ -212,10 +212,10 @@ bazarr:
       web: 6767
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 128Mi
     limits:
-      cpu: 500m
+      cpu: 1000m
       memory: 512Mi
   gateway:
     hostname: ""
@@ -240,11 +240,11 @@ prowlarr:
       web: 9696
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 128Mi
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 1000m
+      memory: 1Gi
   gateway:
     hostname: ""
 
@@ -263,10 +263,10 @@ qbittorrent:
       bt: 6881
   resources:
     requests:
-      cpu: 100m
-      memory: 256Mi
+      cpu: 500m
+      memory: 512Mi
     limits:
-      cpu: 2
-      memory: 1Gi
+      cpu: 2000m
+      memory: 2Gi
   gateway:
     hostname: ""
