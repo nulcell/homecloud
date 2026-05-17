@@ -259,12 +259,17 @@ data:
       else
         process_file "$file"
       fi
-    done < <(find "$ROOT" -type f \( \
-                -iname '*.mkv' -o -iname '*.mp4' -o -iname '*.avi' \
-             -o -iname '*.mov' -o -iname '*.m4v' -o -iname '*.wmv' \
-             -o -iname '*.ts'  -o -iname '*.m2ts' -o -iname '*.mpg' \
-             -o -iname '*.mpeg' -o -iname '*.flv' -o -iname '*.webm' \
-             \) -print0 | sort -z)
+    # Prune $ROOT/downloads — qBittorrent writes there live; transcoding an
+    # in-progress download would either corrupt the destination or race the
+    # *arr stack's hardlink/move into the library.
+    done < <(find "$ROOT" \
+                -type d -path "$ROOT/downloads" -prune -o \
+                -type f \( \
+                   -iname '*.mkv' -o -iname '*.mp4' -o -iname '*.avi' \
+                -o -iname '*.mov' -o -iname '*.m4v' -o -iname '*.wmv' \
+                -o -iname '*.ts'  -o -iname '*.m2ts' -o -iname '*.mpg' \
+                -o -iname '*.mpeg' -o -iname '*.flv' -o -iname '*.webm' \
+                \) -print0 | sort -z)
 
     wait
 ---
