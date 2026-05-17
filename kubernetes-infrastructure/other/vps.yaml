@@ -60,7 +60,7 @@ spec:
           resources:
             requests:
               storage: 20Gi
-          accessModes: [ReadWriteOncePod]
+          accessModes: [ReadWriteMany]
           # storageClassName omitted — Longhorn is the cluster default. Override
           # here only if you want a non-default class for this VM.
   template:
