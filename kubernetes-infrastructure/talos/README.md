@@ -67,7 +67,17 @@ export KUBECONFIG=$(pwd)/kubeconfig
 # Approve CSRs if any are pending
 kubectl get csr -o json | jq -r '.items[] | select(.status == {}) | .metadata.name' | xargs -r kubectl certificate approve
 
+# Optional, add the worker node to the cluster (repeat for each worker)
+export WORKER_IP=10.10.27.254
+talosctl machineconfig patch generated/worker.yaml \
+  --patch @patches/worker.yaml \
+  --output worker-final.yaml
+talosctl validate --config worker-final.yaml --mode metal
+talosctl apply-config --insecure --nodes ${WORKER_IP} --file worker-final.yaml
+kubectl get csr -o json | jq -r '.items[] | select(.status == {}) | .metadata.name' | xargs -r kubectl certificate approve
+
 # Go ahead and install the CNI and other addons
+../bootstrap/install.sh
 
 # Day-2
 talosctl get links

@@ -4,6 +4,15 @@ crds:
 prometheus:
   enabled: false # turn on after kube-prometheus-stack is installed
 
+# Lease defaults to `kube-system`, but the kustomize helmCharts wrapper rewrites
+# every namespaced resource to `cert-manager` — including the leader-election
+# Role / RoleBinding the chart ships for kube-system. Keeping the lease in the
+# cert-manager namespace means the controller can actually acquire it. Without
+# this override the controller crashloops on `leases ... forbidden in kube-system`.
+global:
+  leaderElection:
+    namespace: cert-manager
+
 # DNS-01 self-check uses these recursors instead of the pod's resolv.conf.
 # Bypasses the home DNS at 10.10.31.254, which may shadow the nulcell.com zone
 # and mask the TXT records cert-manager just created in Cloudflare.
