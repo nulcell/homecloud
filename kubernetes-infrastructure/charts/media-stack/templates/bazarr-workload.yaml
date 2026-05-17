@@ -1,6 +1,7 @@
 {{- if .Values.bazarr.enabled }}
+{{- $kind := .Values.bazarr.workloadKind | default "Deployment" }}
 apiVersion: apps/v1
-kind: Deployment
+kind: {{ $kind }}
 metadata:
   name: bazarr
   namespace: {{ include "mediaStack.namespace" . }}
@@ -8,8 +9,14 @@ metadata:
     {{- include "mediaStack.labels" (dict "ctx" . "app" "bazarr") | nindent 4 }}
 spec:
   replicas: 1
+  {{- if eq $kind "StatefulSet" }}
+  serviceName: bazarr
+  updateStrategy:
+    type: RollingUpdate
+  {{- else }}
   strategy:
     type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "bazarr") | nindent 6 }}

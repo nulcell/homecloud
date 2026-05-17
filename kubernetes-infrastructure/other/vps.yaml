@@ -1,0 +1,111 @@
+# Ubuntu 26.04 LTS "VPS" — a long-running privileged container with a
+# persistent /data volume so files survive pod restarts/reschedules.
+#
+# The `vps` namespace is labelled `privileged` for Pod Security Admission,
+# the pod runs with privileged: true, and the container is granted ALL
+# capabilities — treat this as a root-equivalent workload.
+#
+# Apply:
+#   kubectl apply -f other/vps.yaml
+#
+# Connect — interactive shell (this is the everyday entrypoint):
+#   kubectl -n vps exec -it vps-0 -- bash
+#
+# Connect — one-off command without a TTY:
+#   kubectl -n vps exec vps-0 -- uname -a
+#
+# Copy files in/out (paths are inside the container; /data is the persisted mount):
+#   kubectl -n vps cp ./localfile.txt vps-0:/data/localfile.txt
+#   kubectl -n vps cp vps-0:/data/remotefile.txt ./remotefile.txt
+#
+# Forward a port from the pod to your laptop (e.g. if you start a service inside
+# the VPS on :8000, this exposes it at http://localhost:8000):
+#   kubectl -n vps port-forward pod/vps-0 8000:8000
+#
+# Reach the pod from other workloads in the cluster via the headless Service.
+# Stable DNS name (only resolves from inside the cluster):
+#   vps-0.vps.vps.svc.cluster.local
+#   │     │   │
+#   │     │   └─ namespace
+#   │     └─ Service name (headless)
+#   └─ pod ordinal (always 0 since replicas: 1)
+#
+# Watch pod state during first boot or restarts:
+#   kubectl -n vps get pods -w
+#   kubectl -n vps describe pod vps-0
+#   kubectl -n vps logs vps-0
+#
+# Restart (pod comes back with /data intact because the PVC outlives the pod):
+#   kubectl -n vps delete pod vps-0
+#
+# Clean up (also deletes the PVC because volumeClaimTemplates owns it):
+#   kubectl delete -f other/vps.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vps
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+# Headless Service required by the StatefulSet for stable network identity.
+apiVersion: v1
+kind: Service
+metadata:
+  name: vps
+  namespace: vps
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: vps
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vps
+  namespace: vps
+  labels:
+    app.kubernetes.io/name: vps
+spec:
+  replicas: 1
+  serviceName: vps
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vps
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vps
+    spec:
+      containers:
+        - name: vps
+          image: ubuntu:26.04
+          imagePullPolicy: IfNotPresent
+          command: ["sleep", "infinity"]
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              add:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOncePod]
+        resources:
+          requests:
+            storage: 20Gi
+        # storageClassName omitted — uses the cluster default (Longhorn).

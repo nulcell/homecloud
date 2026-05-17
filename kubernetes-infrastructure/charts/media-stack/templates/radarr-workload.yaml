@@ -1,6 +1,7 @@
 {{- if .Values.radarr.enabled }}
+{{- $kind := .Values.radarr.workloadKind | default "Deployment" }}
 apiVersion: apps/v1
-kind: Deployment
+kind: {{ $kind }}
 metadata:
   name: radarr
   namespace: {{ include "mediaStack.namespace" . }}
@@ -8,8 +9,14 @@ metadata:
     {{- include "mediaStack.labels" (dict "ctx" . "app" "radarr") | nindent 4 }}
 spec:
   replicas: 1
+  {{- if eq $kind "StatefulSet" }}
+  serviceName: radarr
+  updateStrategy:
+    type: RollingUpdate
+  {{- else }}
   strategy:
     type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       {{- include "mediaStack.selectorLabels" (dict "ctx" . "app" "radarr") | nindent 6 }}

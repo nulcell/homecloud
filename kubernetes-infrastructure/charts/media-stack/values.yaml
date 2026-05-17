@@ -166,6 +166,8 @@ seerr:
 # ---------- Sonarr (TV) ----------
 sonarr:
   enabled: true
+  # Deployment | StatefulSet.
+  workloadKind: Deployment
   image:
     repository: lscr.io/linuxserver/sonarr
     tag: latest
@@ -187,6 +189,8 @@ sonarr:
 # ---------- Radarr (movies) ----------
 radarr:
   enabled: true
+  # Deployment | StatefulSet.
+  workloadKind: Deployment
   image:
     repository: lscr.io/linuxserver/radarr
     tag: latest
@@ -208,6 +212,8 @@ radarr:
 # ---------- Bazarr (subtitles) ----------
 bazarr:
   enabled: true
+  # Deployment | StatefulSet.
+  workloadKind: Deployment
   image:
     repository: lscr.io/linuxserver/bazarr
     tag: latest
