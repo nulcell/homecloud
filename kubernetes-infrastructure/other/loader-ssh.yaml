@@ -1,7 +1,9 @@
-# Connect using `ssh -p 2222 -o "StrictHostKeyChecking=accept-new" -o "PubkeyAuthentication=no" loader@10.10.20.3` if a public key is not set
+# Connect:
+# - `ssh -p 2222 loader@10.10.20.4` if a public key is not set
+# - `ssh -p 2222 -o "StrictHostKeyChecking=accept-new" -o "PubkeyAuthentication=no" loader@10.10.20.4` if a public key is not set
 # Move media
 # - `kubectl -n media exec data-loader -- apk add --no-cache rsync`
-# - `rsync -avhP --info=progress2 -e "ssh -p 2222" /Volumes/nulcell/media-server-data/downloads  loader@10.10.20.1:/data/downloads/ -n `
+# - `rsync -azvhP --info=progress2 -e "ssh -p 2222" /Volumes/nulcell/media-server-data/downloads  loader@10.10.20.4:/data/downloads/ -n`
 ---
 apiVersion: v1
 kind: Pod
