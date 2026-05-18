@@ -15,8 +15,10 @@ spec:
     repoURL: https://github.com/nulcell/homecloud
     targetRevision: main
     path: gitops/root
-    directory:
-      recurse: false # only pick up the ApplicationSets in this directory
+    # Note: directory.recurse defaults to false, so we only pick up the
+    # ApplicationSets sitting directly in gitops/root/ — not anything they
+    # generate. Setting recurse: false explicitly causes a phantom OutOfSync
+    # because ArgoCD strips the default from the live object on apply.
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
