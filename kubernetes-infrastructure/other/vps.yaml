@@ -1,12 +1,26 @@
-# Ubuntu 26.04 LTS "VPS" — a KubeVirt VM with a Longhorn-backed root disk
-# (imported once by CDI) and SSH exposed via a Cilium L2 LoadBalancer.
+# Ubuntu 26.04 LTS "VPS" — KubeVirt VM whose rootfs is sparsely cloned (via
+# CDI) from the shared `ubuntu-server-26.04-amd64` DataSource in
+# `other/vm-templates.yaml`, so the cloud image isn't re-downloaded per VM.
+# Sizing comes from the upstream `cx1.xlarge` cluster instancetype
+# (compute-optimized class, ~4 vCPU); OS defaults (virtio bus, q35 machine,
+# EFI, NIC model) come from the upstream `ubuntu` cluster preference. Both
+# bundles are installed by the kubevirt ArgoCD app.
 #
-# The `vps` namespace is labelled `privileged` for Pod Security Admission
-# because KubeVirt's virt-launcher pod needs elevated capabilities to run
-# the QEMU process; this is required even though the guest is unprivileged.
+# Inspect the actual sizing the upstream chose:
+#   kubectl get vmcinstancetype cx1.xlarge -o yaml
 #
-# Apply (the first apply triggers a one-time image download — watch progress
-# with `kubectl describe dv ubuntu-vps-root`):
+# Heads up: the `cx` (compute) class in common-instancetypes typically sets
+# `dedicatedCPUPlacement: true` and `isolateEmulatorThread: true`, which
+# require the kubelet CPU Manager static policy on every node it might land
+# on. Talos doesn't enable that by default. If this VM stays Pending with
+# `pod has unbound immediate PersistentVolumeClaims` cleared but no schedule,
+# `kubectl -n vps describe vmi vps` will say "node(s) had untolerated taint
+# {nodes.kubernetes.io/cpumanager-disabled: }" or similar — switch to a
+# `u1.*` or `o1.*` size (no dedicated CPU) or enable CPU Manager via a Talos
+# machine patch.
+#
+# Apply order (templates first):
+#   kubectl apply -f other/vm-templates.yaml
 #   kubectl apply -f other/vps.yaml
 #
 # Connect — SSH over the LoadBalancer (everyday entrypoint):
@@ -22,15 +36,26 @@
 # Inspect / lifecycle:
 #   kubectl -n vps get vm,vmi,dv,pvc                  # high-level state
 #   kubectl -n vps describe vmi vps                   # live VM details
-#   kubectl virt -n vps stop vps                           # graceful shutdown
-#   kubectl virt -n vps start vps                          # power on (runStrategy=Always restarts on crash anyway)
-#   kubectl virt -n vps restart vps                        # power cycle
+#   kubectl virt -n vps stop vps                      # graceful shutdown
+#   kubectl virt -n vps start vps                     # power on
+#   kubectl virt -n vps restart vps                   # power cycle
 #
-# Disk persistence: the Longhorn PVC behind `ubuntu-vps-root` owns the full
-# rootfs and survives reboots, restarts, and node failures. Cleanup below
-# deletes it too because dataVolumeTemplates owns it.
+# Adding more VMs: copy this file, change the metadata.name (vm + dataVolume
+# + service), tweak the cloud-init userData, and `kubectl apply -f`. Pick a
+# different instancetype (u1.small = 1/2, cx1.large = 2/4, cx1.2xlarge =
+# 8/16, etc.) if the VPS shape doesn't fit — the `ubuntu` preference works
+# with any of them.
 #
-# Clean up:
+# QoS notes:
+#   - Memory:  Guaranteed by default (KubeVirt sets request == limit, plus
+#              ~512Mi overhead for QEMU/virt-launcher).
+#   - CPU:     Burstable. cpuAllocationRatio=1 (KubeVirt CR) makes the pod
+#              CPU request match the guest vCPU count, but no CPU limit is
+#              set. For fully Guaranteed CPU, add `cpu.dedicatedCPUPlacement:
+#              true` to the instancetype AND enable kubelet CPU Manager
+#              static policy on every node.
+#
+# Clean up (delete the VM AND its rootfs PVC, since dataVolumeTemplates owns it):
 #   kubectl delete -f other/vps.yaml
 ---
 apiVersion: v1
@@ -49,20 +74,27 @@ metadata:
   namespace: vps
 spec:
   runStrategy: Always # restart on crash; switch to Manual for virtctl start/stop control
+  instancetype:
+    kind: VirtualMachineClusterInstancetype
+    name: cx1.xlarge # upstream common-instancetypes (compute-optimized)
+  preference:
+    kind: VirtualMachineClusterPreference
+    name: ubuntu
   dataVolumeTemplates:
     - metadata:
-        name: ubuntu-vps-root
+        name: vps-root
       spec:
-        source:
-          http:
-            url: https://cloud-images.ubuntu.com/releases/26.04/release/ubuntu-26.04-server-cloudimg-amd64.img
+        # Sparse CSI clone of `vps/ubuntu-server-26.04-amd64` (DataSource).
+        # First-boot cloud-init grows the partition + filesystem to fill 20Gi.
+        sourceRef:
+          kind: DataSource
+          name: ubuntu-server-26.04-amd64
+          namespace: vps
         storage:
+          accessModes: [ReadWriteMany] # RWX so the VM can live-migrate
           resources:
             requests:
               storage: 20Gi
-          accessModes: [ReadWriteMany]
-          # storageClassName omitted — Longhorn is the cluster default. Override
-          # here only if you want a non-default class for this VM.
   template:
     metadata:
       labels:
@@ -72,31 +104,20 @@ spec:
     spec:
       evictionStrategy: LiveMigrate
       domain:
-        cpu:
-          cores: 4
-        memory:
-          guest: 8Gi
         devices:
           disks:
             - name: rootdisk
-              disk:
-                bus: virtio
             - name: cloudinitdisk
-              disk:
-                bus: virtio
           interfaces:
             - name: default
               bridge: {}
-          rng: {}
-        machine:
-          type: q35
       networks:
         - name: default
           pod: {}
       volumes:
         - name: rootdisk
           dataVolume:
-            name: ubuntu-vps-root
+            name: vps-root
         - name: cloudinitdisk
           cloudInitNoCloud:
             userData: |
@@ -110,8 +131,8 @@ spec:
                   ssh_authorized_keys:
                     - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEn9DdzGbGXbjxkvmA4n8HV1JBCNjo81dtE+Kq+tcupZ
               # qemu-guest-agent enables `virtctl ssh` and clean shutdowns.
-              # growpart + resize2fs are part of stock cloud-init and will
-              # expand the root partition to fill the PVC on first boot.
+              # growpart + resize2fs (stock cloud-init) expand the root
+              # partition to fill the 20Gi PVC on first boot.
               package_update: true
               package_upgrade: true
               package_reboot_if_required: true

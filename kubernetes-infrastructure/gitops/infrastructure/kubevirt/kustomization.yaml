@@ -19,5 +19,12 @@ resources:
   # (matchLabels said `version: nightly` while template labels said `v1.5.3`,
   # so the API server rejected it). Fixed upstream in v1.5.4 — stay on .4+.
   - https://github.com/kubevirt-manager/kubevirt-manager/releases/download/v1.5.4/bundled-v1.5.4.yaml
+  # Common cluster instancetypes (sizing — u1.small, cx1.large, …) and
+  # preferences (OS defaults — ubuntu, fedora, windows.11, …). Lets VMs
+  # express their shape via `spec.instancetype` + `spec.preference` instead
+  # of inlining ~60 lines of domain config. Bump alongside KubeVirt.
+  # Names + sizes: https://github.com/kubevirt/common-instancetypes
+  - https://github.com/kubevirt/common-instancetypes/releases/download/v1.4.0/common-clusterinstancetypes-bundle-v1.4.0.yaml
+  - https://github.com/kubevirt/common-instancetypes/releases/download/v1.4.0/common-clusterpreferences-bundle-v1.4.0.yaml
   - kubevirt.yaml
   - cdi.yaml

@@ -1,0 +1,66 @@
+# Shared Ubuntu cloud-image cache for KubeVirt VMs.
+#
+# CDI downloads the cloud image into one Longhorn PVC ONCE; each VM then
+# `sourceRef`s the DataSource to get a sparse CSI clone instead of
+# redownloading ~600 MB every time. Cloning is fast (seconds) and only
+# diverging blocks consume new storage.
+#
+# Sizing comes from the upstream common-instancetypes bundle (installed by
+# the kubevirt ArgoCD app) — e.g. `cx1.xlarge` (4 vCPU / 8 GiB) for the
+# VPS, `u1.small` (1/2) for quick tests, etc. See:
+#   https://github.com/kubevirt/common-instancetypes
+#
+# Apply:
+#   kubectl apply -f other/vm-templates.yaml
+#
+# Use from any VM:
+#   spec:
+#     instancetype: { kind: VirtualMachineClusterInstancetype, name: cx1.xlarge }
+#     preference:   { kind: VirtualMachineClusterPreference,   name: ubuntu     }
+#     dataVolumeTemplates:
+#       - metadata: { name: <vm>-root }
+#         spec:
+#           sourceRef:
+#             kind: DataSource
+#             name: ubuntu-server-26.04-amd64
+#             namespace: vps
+#           storage:
+#             accessModes: [ReadWriteMany]
+#             resources: { requests: { storage: 20Gi } }
+#
+# Test VMs in OTHER namespaces can reference this DataSource too — CDI
+# handles cross-namespace cloning. Each target namespace just needs the
+# `pod-security.kubernetes.io/enforce: privileged` label that KubeVirt
+# virt-launcher pods require.
+---
+# Source PVC. CDI populates it from the upstream URL exactly once. Changing
+# `source.http.url` or recreating this DataVolume triggers a fresh import;
+# existing clones are unaffected.
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: ubuntu-server-26.04-amd64
+  namespace: vps
+spec:
+  source:
+    http:
+      url: https://cloud-images.ubuntu.com/releases/26.04/release/ubuntu-26.04-server-cloudimg-amd64.img
+  storage:
+    accessModes: [ReadWriteMany]
+    resources:
+      requests:
+        storage: 5Gi
+---
+# Stable named reference for `dataVolumeTemplates.sourceRef`. Lets you roll
+# all consuming VMs forward by repointing this at a new source PVC (e.g.
+# `ubuntu-server-26.04-amd64-patched`) without editing each VM.
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataSource
+metadata:
+  name: ubuntu-server-26.04-amd64
+  namespace: vps
+spec:
+  source:
+    pvc:
+      name: ubuntu-server-26.04-amd64
+      namespace: vps

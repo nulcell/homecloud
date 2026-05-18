@@ -10,6 +10,14 @@ metadata:
     argocd.argoproj.io/sync-wave: "5"
 spec:
   configuration:
+    # 1 guest vCPU == 1 pod CPU request. Default is 10 (10x overcommit).
+    # With `1`, the virt-launcher pod's CPU request equals the VMI's vCPU
+    # count, so VMs land in at least Burstable QoS (memory is already 1:1
+    # by default → Guaranteed memory). For *truly* Guaranteed pod QoS
+    # (CPU request == limit), the instancetype must set
+    # `cpu.dedicatedCPUPlacement: true`, which requires the kubelet's CPU
+    # Manager static policy to be enabled on every node.
+    cpuAllocationRatio: 1
     developerConfiguration:
       featureGates:
         - LiveMigration
