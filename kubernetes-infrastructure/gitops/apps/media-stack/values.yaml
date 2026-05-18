@@ -44,7 +44,7 @@ jellyfin:
     tag: latest
   publishedServerUrl: https://jellyfin.nulcell.com
   hwAccel:
-    enabled: false
+    enabled: true
   gateway:
     hostname: jellyfin.nulcell.com
 
