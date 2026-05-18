@@ -6,7 +6,9 @@ metadata:
   namespace: longhorn-system
 spec:
   parentRefs:
-    - name: default
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: default
       namespace: gateway
       sectionName: https
   hostnames:
@@ -15,8 +17,11 @@ spec:
     - matches:
         - path: { type: PathPrefix, value: / }
       backendRefs:
-        - name: longhorn-frontend
+        - group: ""
+          kind: Service
+          name: longhorn-frontend
           port: 80
+          weight: 1
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -25,7 +30,9 @@ metadata:
   namespace: longhorn-system
 spec:
   parentRefs:
-    - name: default
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: default
       namespace: gateway
       sectionName: http
   hostnames:
