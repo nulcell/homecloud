@@ -20,7 +20,8 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - kind: Secret
+          - group: ""
+            kind: Secret
             name: wildcard-nulcell-tls
       allowedRoutes:
         namespaces:
