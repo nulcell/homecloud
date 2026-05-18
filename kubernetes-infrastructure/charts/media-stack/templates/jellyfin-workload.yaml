@@ -57,7 +57,11 @@ spec:
           resources:
             {{- toYaml .Values.jellyfin.resources | nindent 12 }}
           securityContext:
+            {{- if .Values.jellyfin.hwAccel.privileged }}
+            privileged: true
+            {{- else }}
             {{- include "mediaStack.containerSecurityContext" . | nindent 12 }}
+            {{- end }}
           volumeMounts:
             - mountPath: /config
               name: config

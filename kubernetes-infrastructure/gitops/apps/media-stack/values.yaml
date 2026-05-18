@@ -45,6 +45,10 @@ jellyfin:
   publishedServerUrl: https://jellyfin.nulcell.com
   hwAccel:
     enabled: true
+    # TEMPORARY — proves VAAPI by bypassing the Kubernetes device cgroup.
+    # Revert to `privileged: false` once we wire up a device plugin (e.g.
+    # squat/generic-device-plugin) for proper, non-privileged GPU access.
+    privileged: true
   gateway:
     hostname: jellyfin.nulcell.com
 

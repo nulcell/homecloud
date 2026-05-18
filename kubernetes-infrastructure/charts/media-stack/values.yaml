@@ -137,6 +137,11 @@ jellyfin:
     enabled: false
     devicePath: /dev/dri
     supplementalGroups: []
+    # privileged: true grants the container access to host devices that the
+    # Kubernetes device cgroup would otherwise block — needed when /dev/dri/*
+    # is exposed via hostPath but no device plugin is wired up. Heavy hammer;
+    # prefer a device plugin (e.g. squat/generic-device-plugin) for production.
+    privileged: false
   service:
     type: ClusterIP
     ports:
