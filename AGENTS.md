@@ -1,191 +1,109 @@
-# HomeCloud Lab — Agent Instructions
+# HomeCloud — Agent Instructions
 
-## Mandatory: Keep Docs in Sync
-
-**After completing any task that modifies this repository, update both:**
-
-- `AGENTS.md` (this file)
-- `.github/copilot-instructions.md`
-
-Reflect any changes to architecture, file structure, naming conventions, tooling, or workflows. Both files must stay accurate at all times.
+Keep this file accurate. If a task changes the architecture, structure, naming, tooling, or workflow, update AGENTS.md in the same change.
 
 ---
 
-## Project Summary
+## What this repo is
 
-Self-hosted private cloud infrastructure repository. Layers bottom to top:
+A self-hosted private cloud running on bare metal. Single-node today, designed to scale to a 3-node HA control plane.
 
-1. **MaaS** (`maas/`) — bare-metal OS provisioning
-2. **Apache CloudStack** (`cloudstack/`) — IaaS/KVM hypervisor layer (Ubuntu 24.04, CloudStack 4.20.1)
-3. **Kubernetes** — **Talos Linux** clusters on CloudStack VMs (not CKS / Cluster API)
-4. **Workloads** — Helm charts (`charts/`) delivered via ArgoCD (GitOps)
+- **OS**: Talos Linux (immutable, API-managed).
+- **Cluster**: Kubernetes via Talos, bootstrapped imperatively for Cilium + ArgoCD only.
+- **CNI / LB / Gateway**: Cilium with kube-proxy replacement, Gateway API, L2 announcements. No MetalLB.
+- **Storage**: Longhorn (replicated block).
+- **Virtualization**: KubeVirt (VMs as Kubernetes resources).
+- **GitOps**: ArgoCD reads this repo. App-of-apps + ApplicationSets.
+- **Certs**: cert-manager with Cloudflare DNS-01 (`ClusterIssuer` per environment).
+- **Secrets in Git**: SOPS + age. 1Password CLI (`op://homecloud/...`) for things that need injection at runtime.
+- **Remote access**: Tailscale.
+- **Domain**: `nulcell.com`.
 
-Terragrunt migration in progress. See `infrastructure/PLAN.md`. Tool versions managed by `.mise.toml` at repo root.
-
----
-
-## Key Facts for Agents
-
-| Fact | Value |
-|------|-------|
-| Domain | `nulcell.com` |
-| CloudStack zone | `zone-homecloud` |
-| VPC network | `homecloud-vpc_pub-net-1` |
-| Management gateway | `10.10.31.254/20` |
-| K8s control plane | `10.10.20.40:6443` |
-| Pod CIDR | `10.128.0.0/16` (Cilium cluster-pool) |
-| StorageClass | `cloudstack-custom-disk-offering` |
-| Ingress class | `traefik` |
-| TLS cert resolver | `le` (Let's Encrypt via Cloudflare DNS challenge) |
-| DNS provider | Cloudflare (secret: `cloudflare-api-token`) |
-| Secrets manager | 1Password (`op://homecloud/...` URIs) |
+The deep reference is [kubernetes-infrastructure/README.md](kubernetes-infrastructure/README.md). The Talos-specific commands live in [kubernetes-infrastructure/talos/README.md](kubernetes-infrastructure/talos/README.md). The bootstrap and ArgoCD docs are in [kubernetes-infrastructure/docs/](kubernetes-infrastructure/docs/).
 
 ---
 
-## Commands
+## Directory map
 
-### Helm
+| Path                                                                                                   | Contents                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`kubernetes-infrastructure/bootstrap/`](kubernetes-infrastructure/bootstrap/)                         | Imperative seed: `install.sh`, `cilium-values.yaml`, `cilium-l2.yaml`, `argocd-values.yaml`.                                                                   |
+| [`kubernetes-infrastructure/talos/`](kubernetes-infrastructure/talos/)                                 | Talos machine-config patches; `generated/` and `secrets/` are gitignored.                                                                                      |
+| [`kubernetes-infrastructure/gitops/root/`](kubernetes-infrastructure/gitops/root/)                     | The root `Application` and `ApplicationSet`s ArgoCD reconciles first.                                                                                          |
+| [`kubernetes-infrastructure/gitops/infrastructure/`](kubernetes-infrastructure/gitops/infrastructure/) | Platform components: cert-manager, Longhorn, KubeVirt, metrics-server, kube-prometheus-stack, external-dns, gateway, sops-secrets, cnpg, infra-app-httproutes. |
+| [`kubernetes-infrastructure/gitops/apps/`](kubernetes-infrastructure/gitops/apps/)                     | User workloads (currently `media-stack`, `n8n`).                                                                                                               |
+| [`kubernetes-infrastructure/gitops/deprecated/`](kubernetes-infrastructure/gitops/deprecated/)         | Holding area for retired manifests — do not reference from active ApplicationSets.                                                                             |
+| [`kubernetes-infrastructure/charts/`](kubernetes-infrastructure/charts/)                               | Helm umbrella charts (`media-stack`, `n8n`).                                                                                                                   |
+| [`kubernetes-infrastructure/other/`](kubernetes-infrastructure/other/)                                 | Ad-hoc / one-shot manifests: VM templates, VPS, transcode-media job, loader SSH.                                                                               |
+| [`kubernetes-infrastructure/docs/`](kubernetes-infrastructure/docs/)                                   | `bootstrap.md`, `argocd.md`.                                                                                                                                   |
+| [`maas/`](maas/)                                                                                       | Canonical MaaS single-node script. Slated for replacement with Pi-hole + netboot + Tailscale on a Raspberry Pi. Avoid expanding it.                            |
+| [`scripts/`](scripts/)                                                                                 | Standalone operator utilities (`media/transcode-media.sh`, `rancher/cleanup-rancher.sh`).                                                                      |
+| [`.mise.toml`](.mise.toml)                                                                             | Pinned local CLIs. `mise install` sets up the full toolchain.                                                                                                  |
+| [`.sops.yaml`](.sops.yaml)                                                                             | SOPS encryption policy.                                                                                                                                        |
+| `infrastructure.drawio`                                                                                | Architecture diagram — currently stale.                                                                                                                        |
+
+---
+
+## Conventions
+
+### Workload changes
+
+- Production workloads belong as Helm charts under `kubernetes-infrastructure/charts/<name>/` following the **umbrella pattern**: `Chart.yaml` declaring the upstream chart as a dependency, vendored `.tgz` under `charts/`, and a `values.yaml` with overrides.
+- Wire a new chart in by adding it to the relevant ApplicationSet under `kubernetes-infrastructure/gitops/apps/` or `gitops/infrastructure/`.
+- Ad-hoc / one-shot manifests go in `kubernetes-infrastructure/other/` and are *not* picked up by ArgoCD — they're applied manually.
+
+### Do not `kubectl apply` from the repo
+
+ArgoCD owns reconciliation for everything under `gitops/`. To validate changes, use `helm template`, `helm lint`, or `kubectl diff -f` — not `apply`. The user runs apply themselves when needed.
+
+### Helm chart values
+
+- Ingress / routing: prefer Gateway API `HTTPRoute` over Ingress where possible (Cilium is the Gateway provider).
+- TLS: cert-manager `ClusterIssuer` with Cloudflare DNS-01.
+- Persistence: `storageClassName: longhorn` (Longhorn is the default storage class).
+- Container security context: `runAsNonRoot: true`, explicit `runAsUser` / `runAsGroup`.
+- Always set both `resources.requests` and `resources.limits`.
+
+### Secrets
+
+- In-cluster manifests use SOPS + age (`.sops.yaml` defines the policy).
+- Local `.env` files are generated from `.env.example` via `op inject -i .env.example -o .env --force` and are gitignored.
+- Never commit a `.env`, a decrypted secret, or a raw token.
+
+### Talos changes
+
+- Machine-config changes go through `kubernetes-infrastructure/talos/patches/` — never edit `generated/` directly.
+- System extensions (Longhorn's `iscsi-tools`, `util-linux-tools`; microcode; AMD GPU firmware) are baked into the Talos image at install time. Adding extensions later requires an OS upgrade — note this when proposing changes.
+
+### Bootstrap order
+
+Imperative for Cilium + ArgoCD only. Everything else (cert-manager, Longhorn, KubeVirt, metrics-server, monitoring, ...) comes up via GitOps once `bootstrap/install.sh` applies the root `Application`. See [kubernetes-infrastructure/docs/bootstrap.md](kubernetes-infrastructure/docs/bootstrap.md).
+
+### Shell scripts
+
+- Target Ubuntu 24.04 LTS unless otherwise noted.
+- Idempotent where possible.
+
+---
+
+## Common commands
 
 ```bash
-# Vendor/update chart dependencies
-helm dependency update charts/<chart-name>/
+# Vendor / refresh a chart's dependencies
+helm dependency update kubernetes-infrastructure/charts/<chart>/
 
-# Deploy or upgrade a chart
-helm upgrade --install <release-name> charts/<chart-name>/ \
-  -n <namespace> \
-  -f charts/<chart-name>/values.yaml
+# Validate a chart without applying
+helm template <release> kubernetes-infrastructure/charts/<chart>/ \
+  -f kubernetes-infrastructure/charts/<chart>/values.yaml
+helm lint kubernetes-infrastructure/charts/<chart>/
 
-# Lint a chart
-helm lint charts/<chart-name>/
-```
-
-### Kubernetes
-
-```bash
-kubectl apply -f <manifest.yaml>
-kubectl get all -n <namespace>
-```
-
-### Docker Compose (media-server)
-
-```bash
-# Regenerate .env from 1Password secrets
-op inject -i docker-compose/media-server/.env.example \
-          -o docker-compose/media-server/.env --force
-
-# Start stack
-docker compose -f docker-compose/media-server/media-server.yaml up -d
-```
-
-### CloudStack CLI (cloudmonkey / cmk)
-
-```bash
-cmk list virtualmachines
-cmk list zones
+# Talos config workflow lives in kubernetes-infrastructure/talos/README.md.
 ```
 
 ---
 
-## Conventions to Follow
+## Roadmap notes for agents
 
-### Helm `values.yaml`
-
-- Always set `ingress.className: traefik`
-- Always set `ingress.certIssuer: le`
-- Always set `persistence.storageClass: cloudstack-custom-disk-offering`
-- Always include both `resources.requests` and `resources.limits`
-- Security context: `runAsUser: 1000`, `runAsGroup: 1000`, `runAsNonRoot: true`
-- Never commit secrets; use `op://homecloud/<vault>/<item>/<field>` placeholders in `.env.example`
-
-### New Helm Charts
-
-Follow the **umbrella chart pattern**:
-
-```
-charts/<chart-name>/
-  Chart.yaml       # declares upstream chart as dependency
-  Chart.lock       # generated by helm dependency update
-  values.yaml      # overrides for this environment
-  charts/          # vendored .tgz from helm dependency update
-```
-
-### Kubernetes Manifests
-
-- Place ad-hoc/testing manifests in `kubernetes/`
-- Production workloads belong as Helm charts in `charts/` and deployed via ArgoCD
-- Always define `resources.requests` and `resources.limits`
-- Drop unnecessary capabilities; avoid `allowPrivilegeEscalation: true` in production
-
-### Shell Scripts
-
-- Target Ubuntu 24.04 LTS unless otherwise noted
-- CloudStack scripts target KVM hosts with Linux bridge interfaces (`cbr0`, `cbr1`, ...)
-- All setup scripts are idempotent where possible
-
-### `.env` Files
-
-- `.env` is gitignored — never commit it
-- `.env.example` is the source of truth; all secret values use `op://homecloud/...` URIs
-
----
-
-## Directory Map
-
-```
-charts/              Helm umbrella charts (cilium, traefik, external-dns, monitoring, n8n)
-cloudstack/
-  docs/              Step-by-step CloudStack setup guides (00-CLI.md is the authoritative source)
-  setup/             Management server + KVM install scripts
-  compute/
-    cni-config/      Cilium CNI config reference
-    cloud-init/      cloud-init templates (cloud-default, tailscale-router-debian)
-  scripts/           Utility scripts (GPU SR-IOV check, metadata URL)
-docker-compose/
-  media-server/      *arr media stack (Jellyfin, Sonarr, Radarr, qBittorrent, Gluetun)
-infrastructure/              Gruntwork catalog + live pattern (BrainIAC model)
-  PLAN.md            Full Terragrunt implementation plan — read this before any infra work
-  catalog/modules/   Granular: smallest reusable Terraform modules (single resource or tightly coupled set)
-  catalog/stacks/    Baseline: full infrastructure components (compose granular modules)
-  live/root.hcl      Terragrunt root config: local state backend, provider version pins, common inputs
-  live/homecloud/    Single live environment: units wire stacks together with explicit dependency graph
-kubernetes/          Ad-hoc manifests and test resources
-maas/                MaaS single-node setup script
-```
-
-## Infrastructure Conventions (`infrastructure/`)
-
-- **Always read `infrastructure/PLAN.md`** before working on any infrastructure task.
-- Three-layer catalog+live pattern: `catalog/modules/` → `catalog/stacks/` → `live/homecloud/` (Gruntwork / BrainIAC model).
-- State is local (`.tfstate/` gitignored), migrating to S3 later.
-- **Two CloudStack provider aliases**: `cloudstack.admin` (root admin) and `cloudstack.homecloud` (homecloud-admin user). Both read credentials from the 1Password Terraform provider at plan/apply time.
-- **`cloudstack-admin` is the only live unit that uses admin credentials**. Scope follows `00-CLI.md` profile: anything run with `cmk -p admin` → `cloudstack-admin` stack; anything with `cmk -p homecloud-admin` → `cloudstack-homecloud` stack or downstream units.
-- **Stack credential scope**: `cloudstack-admin` (zone, domain, account, offerings, templates); `cloudstack-homecloud` (VPC, networks, isolated net, keypair, userdata, NFS); all other units use `cloudstack.homecloud` only.
-- **Offerings and images are input maps** (`for_each`). Images have `lifecycle { prevent_destroy = true }` — never deleted even if removed from the map.
-- **SSH keypair is domain-scoped** — registered by `homecloud-admin` in the homecloud domain. Lives in `cloudstack-homecloud`, not `cloudstack-admin`.
-- **`is_enabled` flag** on all optional components (`count = var.is_enabled ? 1 : 0`).
-- Resources not covered by the CloudStack Terraform provider use `null_resource` + `local-exec` calling `cmk`.
-- Kubernetes clusters use **Talos Linux** (not CKS / Cluster API). Machine config passed as base64 `user_data` at VM deploy time. kube-apiserver = CloudStack public IP + LB rule (port 6443).
-- **Ops cluster** runs in `iso-net-shared` (isolated network, 10.1.1.0/24). **Workload cluster** runs in VPC `pub-net-1` (10.0.0.0/26). Reason: CloudStack VPCs support only one `public-lb` subnet; two clusters need two separate public-lb endpoints.
-- **Tailscale subnet router VM** (`homecloud-vpn-router`, Ubuntu 24.04) connected to all networks, advertises `10.0.0.0/15` into tailnet for operator access. Not involved in k8s traffic.
-- **ArgoCD** (ops cluster) registers and manages both ops and workload clusters.
-- **Workload cluster** additionally has cert-manager and external-dns (Cloudflare).
-- Bootstrap Helm charts (Cilium, CCM, CSI, ArgoCD, cert-manager) via Terraform `helm_release`; all application charts managed by ArgoCD GitOps from `charts/`.
-- **Media server** is an ArgoCD Helm chart (`charts/media-server/`), NOT a Terraform-managed VM. NFS SharedFileSystems for its PVs are managed in `cloudstack-homecloud` (`enable_shared_storage = true`).
-- All existing CloudStack resources are imported via `import {}` blocks (Terraform 1.5+), not recreated. Run `terragrunt plan` to verify zero unintended replacements.
-- Generated credentials (talosconfig, kubeconfig) are written back to 1Password via `catalog/modules/onepassword-item`.
-- Provider versions pinned in `live/root.hcl`; tool versions in `.mise.toml`. Run `mise install` to set up.
-
-### CloudStack Provider Conventions
-
-- **Pass resource names, not UUIDs**, to all CloudStack resource fields that accept names (`network_offering`, `service_offering`, `template`, `vpc_offering`). The API returns names when reading back; passing names avoids UUID↔name drift between plan runs.
-- **No data sources needed** for `cloudstack_network_offering`, `cloudstack_service_offering`, or `cloudstack_template` — pass names directly to the resource fields.
-- **`cloudstack_disk_offering` has no data source** in provider v0.6. Disk offering IDs must be passed as explicit UUIDs.
-- **Lifecycle `ignore_changes` conventions** for imported resources:
-  - `cloudstack_vpc`: `[display_text]`
-  - `cloudstack_network` (VPC tier): `[display_text, name]` — CloudStack prepends VPC name when `vpc.tier.name.prepend = true`
-  - `cloudstack_network` (isolated): `[display_text]`
-  - `cloudstack_instance`: `[user_data, service_offering, keypair, disk_offering]` — API may return scoped names; keypair changes require stop/reimage
-  - `cloudstack_physical_network`: `[network_speed]`
-  - `cloudstack_traffic_type`: `[traffic_type, kvm_network_label, xen_network_label]`
-  - `cloudstack_pod`: `[allocation_state]`
-  - `cloudstack_storage_pool`: `[url, hypervisor]`
+- **HA**: jump from 1 → 3 control planes, never via 2. Two-node etcd is *worse* than single-node.
+- **MaaS replacement**: in planning. Future bare-metal provisioning will be Pi-hole (DNS + DHCP) + netboot + Tailscale on a Raspberry Pi. Don't deepen the investment in `maas/`.
+- **Renovate**: planned for managing tool and chart versions. New charts should use upstream versions that Renovate can track.

@@ -5,10 +5,6 @@
 
 [tools]
 
-# ── Infrastructure as Code ────────────────────────────────────────────────────
-terraform   = "1.15.3"
-terragrunt  = "1.0.4"
-
 # ── Kubernetes ───────────────────────────────────────────────────────────────
 kubectl  = "1.36.1"
 helm     = "4.2.0"
@@ -16,35 +12,30 @@ argocd   = "3.4.2"
 
 # ── Talos Linux ──────────────────────────────────────────────────────────────
 # talosctl manages Talos Linux nodes and clusters.
-# talhelper is a helper for generating Talos configs.
+# talhelper generates Talos machine configs from a single source of truth.
 talosctl  = "1.13.2"
 talhelper = "3.1.10"
 
-# ── Tailscale ────────────────────────────────────────────────────────────────
-# CLI for interacting with the Tailscale control plane during debugging.
+# ── Networking ───────────────────────────────────────────────────────────────
+# cilium-cli: debug Cilium / Gateway API / L2 announcements.
+# tailscale CLI: interact with the tailnet during operator work.
+cilium-cli                 = "0.19.2"
 "aqua:tailscale/tailscale" = "1.96.2"
 
-# ── CloudStack ───────────────────────────────────────────────────────────────
-# cloudmonkey: CloudStack CLI.
-"github:apache/cloudstack-cloudmonkey" = "6.5.0"
-
-# ── Cloud / Secrets ──────────────────────────────────────────────────────────
-# 1Password CLI: used by Terraform 1Password provider at plan/apply time.
-# Install via: brew install 1password-cli  (not managed by mise — system-level)
-
-# ── Networking / DNS ──────────────────────────────────────────────────────────
-cilium-cli  = "0.19.2"
-
 # ── Data processing ──────────────────────────────────────────────────────────
-yq  = "4.53.2"
-jq  = "1.8.1"
-sops = "3.13.0"
-age = "1.3.1"
+yq   = "4.53.2"
+jq   = "1.8.1"
 
-# ── Language runtimes ─────────────────────────────────────────────────────────
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# SOPS encrypts manifests in-repo; age provides the key material.
+# 1Password CLI is installed system-wide via Homebrew (not managed by mise).
+sops = "3.13.0"
+age  = "1.3.1"
+
+# ── Language runtimes ────────────────────────────────────────────────────────
 python = "3.13"
 
-# ── Local testing ─────────────────────────────────────────────────────────────
+# ── Local testing ────────────────────────────────────────────────────────────
 kind = "0.31.0"
 
 [settings]
