@@ -4,7 +4,7 @@
 #
 # Usage:
 #   export KUBECONFIG=/path/to/kubeconfig
-#   ./bootstrap/install.sh
+#   ./cluster/bootstrap/install.sh
 
 set -euo pipefail
 
@@ -69,7 +69,7 @@ helm upgrade --install argocd argo/argo-cd \
 # Hands the cluster off to GitOps. cert-manager, Longhorn, and metrics-server
 # come up via gitops/infrastructure/* from here on.
 echo "==> Root Application"
-kubectl apply -f "${SCRIPT_DIR}/../gitops/root/root-app.yaml"
+kubectl apply -f "${SCRIPT_DIR}/../../gitops/root/root-app.yaml"
 
 echo
 echo "Bootstrap complete."

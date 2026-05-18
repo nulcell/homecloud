@@ -1,5 +1,5 @@
 # ⚠ Plaintext placeholder — encrypt before committing real values:
-#   sops --encrypt --in-place kubernetes-infrastructure/gitops/infrastructure/gateway/cloudflare-token.enc.yaml
+#   sops --encrypt --in-place gitops/infrastructure/gateway/cloudflare-token.enc.yaml
 #
 # Token scope: Zone → DNS → Edit, restricted to the nulcell.com zone only.
 apiVersion: v1

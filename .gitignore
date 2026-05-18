@@ -86,13 +86,14 @@ charts/*/charts/
 # Kubernetes
 *.kubeconfig
 
-# Talos — secrets bundle, generated configs, and final machine configs never go in git
-kubernetes-infrastructure/talos/generated/
-kubernetes-infrastructure/talos/secrets/
-kubernetes-infrastructure/talos/controlplane-final.yaml
-kubernetes-infrastructure/talos/worker-final.yaml
-kubernetes-infrastructure/talos/talosconfig
-kubernetes-infrastructure/talos/kubeconfig
+# Talos — secrets bundle, generated configs, and final machine configs never go in git.
+# (cluster/talos/.gitignore handles the local ones; these are an extra safety net.)
+cluster/talos/generated/
+cluster/talos/secrets/
+cluster/talos/controlplane-final.yaml
+cluster/talos/worker-final.yaml
+cluster/talos/talosconfig
+cluster/talos/kubeconfig
 
 # SOPS / age — private keys NEVER in git. Encrypted *.enc.yaml files are fine.
 *.agekey

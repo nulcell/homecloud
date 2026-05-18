@@ -4,11 +4,11 @@
 # extension may change (.avi/.mp4 → .mkv). Already-efficient codecs (hevc,
 # av1, vp9, vvc) are skipped.
 #
-# Test-bed in `other/` for now; once stable this graduates into the
+# Test-bed in `manifests/` for now; once stable this graduates into the
 # media-stack Helm chart as a CronJob.
 #
 # Apply:
-#   kubectl apply -f other/transcode-media.yaml
+#   kubectl apply -f manifests/transcode-media.yaml
 #
 # Watch progress (stdout of the job pod):
 #   kubectl -n media logs -f job/transcode-media
@@ -21,7 +21,7 @@
 #
 # Re-run (Jobs are immutable — delete then re-apply):
 #   kubectl -n media delete job transcode-media --ignore-not-found
-#   kubectl apply -f other/transcode-media.yaml
+#   kubectl apply -f manifests/transcode-media.yaml
 #
 # Stop early (the script's trap cleans temp files and prints a summary):
 #   kubectl -n media delete job transcode-media
@@ -44,7 +44,7 @@ metadata:
 data:
   transcode-media.sh: |
     #!/bin/bash
-    # Linux + VAAPI port of scripts/media/transcode-media.sh.
+    # Linux + VAAPI port of scripts/transcode-media.sh.
     # Differences from the macOS original:
     #   - stat -c%s (GNU) instead of stat -f%z (BSD)
     #   - hevc_vaapi encoder + hwupload filter chain instead of hevc_videotoolbox

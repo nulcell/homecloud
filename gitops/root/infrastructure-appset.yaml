@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: apps
+  name: infrastructure
   namespace: argocd
 spec:
   goTemplate: true
@@ -11,12 +11,12 @@ spec:
         repoURL: https://github.com/nulcell/homecloud
         revision: main
         directories:
-          - path: kubernetes-infrastructure/gitops/apps/*
+          - path: gitops/infrastructure/*
   template:
     metadata:
-      name: "app-{{.path.basename}}"
+      name: "infra-{{.path.basename}}"
       annotations:
-        argocd.argoproj.io/sync-wave: "10" # always after infrastructure
+        argocd.argoproj.io/sync-wave: "0"
     spec:
       project: default
       source:

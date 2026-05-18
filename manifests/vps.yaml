@@ -1,6 +1,6 @@
 # Ubuntu 26.04 LTS "VPS" — KubeVirt VM whose rootfs is sparsely cloned (via
 # CDI) from the shared `ubuntu-server-26.04-amd64` DataSource in
-# `other/vm-templates.yaml`, so the cloud image isn't re-downloaded per VM.
+# `manifests/vm-templates.yaml`, so the cloud image isn't re-downloaded per VM.
 # Sizing comes from the upstream `cx1.xlarge` cluster instancetype
 # (4 vCPU / 8 GiB, compute-optimized — dedicated CPU placement); OS defaults
 # (virtio bus, q35 machine, EFI, NIC model) come from the upstream `ubuntu`
@@ -17,8 +17,8 @@
 #   - Or enable CPU Manager via a Talos machine patch (reserve CPUs for system).
 #
 # Apply order (templates first):
-#   kubectl apply -f other/vm-templates.yaml
-#   kubectl apply -f other/vps.yaml
+#   kubectl apply -f manifests/vm-templates.yaml
+#   kubectl apply -f manifests/vps.yaml
 #
 # Connect — SSH over the LoadBalancer (everyday entrypoint):
 #   VPS_IP=$(kubectl -n vps get svc vps-ssh -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
@@ -53,7 +53,7 @@
 #              static policy on every node.
 #
 # Clean up (delete the VM AND its rootfs PVC, since dataVolumeTemplates owns it):
-#   kubectl delete -f other/vps.yaml
+#   kubectl delete -f manifests/vps.yaml
 ---
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine

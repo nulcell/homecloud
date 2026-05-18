@@ -1,5 +1,5 @@
 # Plaintext placeholder — encrypt before committing:
-#   sops --encrypt --in-place kubernetes-infrastructure/gitops/infrastructure/kube-prometheus-stack/grafana-admin.enc.yaml
+#   sops --encrypt --in-place gitops/infrastructure/kube-prometheus-stack/grafana-admin.enc.yaml
 apiVersion: v1
 kind: Secret
 metadata:

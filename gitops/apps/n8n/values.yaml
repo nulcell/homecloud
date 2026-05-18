@@ -1,4 +1,4 @@
-# Overrides for the n8n chart at kubernetes-infrastructure/charts/n8n/.
+# Overrides for the n8n chart at charts/n8n/.
 # Everything not listed here keeps the chart's default value.
 
 n8n:

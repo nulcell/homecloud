@@ -1,4 +1,4 @@
-# Overrides for the media-stack chart at kubernetes-infrastructure/charts/media-stack/.
+# Overrides for the media-stack chart at charts/media-stack/.
 # Everything not listed here keeps the chart's default value.
 
 common:

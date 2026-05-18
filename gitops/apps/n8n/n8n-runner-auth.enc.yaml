@@ -1,5 +1,5 @@
 # Plaintext placeholder — encrypt before committing:
-#   sops --encrypt --in-place kubernetes-infrastructure/gitops/apps-testing/n8n/n8n-runner-auth.enc.yaml
+#   sops --encrypt --in-place gitops/apps/n8n/n8n-runner-auth.enc.yaml
 #
 # Generate a token first:
 #   openssl rand -hex 32

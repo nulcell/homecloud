@@ -8,6 +8,6 @@
 # encrypted_regex limits encryption to the data/stringData fields of Secrets,
 # so the rest of the manifest stays human-readable in git diffs.
 creation_rules:
-  - path_regex: kubernetes-infrastructure/.*\.enc\.ya?ml$
+  - path_regex: ^(gitops|charts|manifests)/.*\.enc\.ya?ml$
     encrypted_regex: ^(data|stringData)$
     age: age1zghrycrgnan0c7nfp5ke5csdeh9rdgtzwsd6yj4pl9rzlzjp24cspycpul

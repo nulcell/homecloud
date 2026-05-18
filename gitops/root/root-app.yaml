@@ -1,5 +1,5 @@
 # Applied once during bootstrap:
-#   kubectl apply -f kubernetes-infrastructure/gitops/root/root-app.yaml
+#   kubectl apply -f gitops/root/root-app.yaml
 #
 # Edit `repoURL` before applying.
 apiVersion: argoproj.io/v1alpha1
@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/nulcell/homecloud
     targetRevision: main
-    path: kubernetes-infrastructure/gitops/root
+    path: gitops/root
     directory:
       recurse: false # only pick up the ApplicationSets in this directory
   destination:

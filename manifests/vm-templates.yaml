@@ -11,7 +11,7 @@
 #   https://github.com/kubevirt/common-instancetypes
 #
 # Apply:
-#   kubectl apply -f other/vm-templates.yaml
+#   kubectl apply -f manifests/vm-templates.yaml
 #
 # Use from any VM:
 #   spec:
