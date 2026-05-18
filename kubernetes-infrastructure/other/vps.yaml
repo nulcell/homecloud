@@ -2,22 +2,19 @@
 # CDI) from the shared `ubuntu-server-26.04-amd64` DataSource in
 # `other/vm-templates.yaml`, so the cloud image isn't re-downloaded per VM.
 # Sizing comes from the upstream `cx1.xlarge` cluster instancetype
-# (compute-optimized class, ~4 vCPU); OS defaults (virtio bus, q35 machine,
-# EFI, NIC model) come from the upstream `ubuntu` cluster preference. Both
-# bundles are installed by the kubevirt ArgoCD app.
+# (4 vCPU / 8 GiB, compute-optimized — dedicated CPU placement); OS defaults
+# (virtio bus, q35 machine, EFI, NIC model) come from the upstream `ubuntu`
+# cluster preference. Both bundles are installed by the kubevirt ArgoCD app.
+# Reference: https://github.com/kubevirt/common-instancetypes#resources
 #
-# Inspect the actual sizing the upstream chose:
-#   kubectl get vmcinstancetype cx1.xlarge -o yaml
-#
-# Heads up: the `cx` (compute) class in common-instancetypes typically sets
-# `dedicatedCPUPlacement: true` and `isolateEmulatorThread: true`, which
-# require the kubelet CPU Manager static policy on every node it might land
-# on. Talos doesn't enable that by default. If this VM stays Pending with
-# `pod has unbound immediate PersistentVolumeClaims` cleared but no schedule,
-# `kubectl -n vps describe vmi vps` will say "node(s) had untolerated taint
-# {nodes.kubernetes.io/cpumanager-disabled: }" or similar — switch to a
-# `u1.*` or `o1.*` size (no dedicated CPU) or enable CPU Manager via a Talos
-# machine patch.
+# Heads up — the `cx` class sets `dedicatedCPUPlacement: true` and
+# `isolateEmulatorThread: true`. Both require the kubelet's CPU Manager
+# static policy enabled on every node the VM might land on. Talos doesn't
+# enable that by default. If the VMI stays Pending, `kubectl -n vps describe
+# vmi vps` will say something about CPU Manager / dedicated CPUs being
+# unavailable. Fallbacks:
+#   - Switch to `u1.xlarge` (4 vCPU / 16 GiB, shared CPU) — no kubelet changes.
+#   - Or enable CPU Manager via a Talos machine patch (reserve CPUs for system).
 #
 # Apply order (templates first):
 #   kubectl apply -f other/vm-templates.yaml
