@@ -3,7 +3,9 @@
 # - `ssh -p 2222 -o "StrictHostKeyChecking=accept-new" -o "PubkeyAuthentication=no" loader@10.10.20.4` if a public key is not set
 # Move media
 # - `kubectl -n media exec data-loader -- apk add --no-cache rsync`
-# - `rsync -azvhP --info=progress2 -e "ssh -p 2222" /Volumes/nulcell/media-server-data/downloads  loader@10.10.20.4:/data/downloads/ -n`
+# - `rsync -azvhP --info=progress2 --ignore-existing -e "ssh -p 2222" /Volumes/nulcell/media-server-data/downloads/  loader@10.10.20.4:/data/downloads/ -n`
+#   `--ignore-existing`: only copy files that aren't already on the receiver
+#   trailing slash on source: copy CONTENTS of downloads/ into target (not the dir itself)
 ---
 apiVersion: v1
 kind: Pod
