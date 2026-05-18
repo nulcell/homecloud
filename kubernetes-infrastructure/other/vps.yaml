@@ -55,15 +55,6 @@
 # Clean up (delete the VM AND its rootfs PVC, since dataVolumeTemplates owns it):
 #   kubectl delete -f other/vps.yaml
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: vps
-  labels:
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/audit: privileged
-    pod-security.kubernetes.io/warn: privileged
----
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
@@ -73,7 +64,9 @@ spec:
   runStrategy: Always # restart on crash; switch to Manual for virtctl start/stop control
   instancetype:
     kind: VirtualMachineClusterInstancetype
-    name: cx1.xlarge # upstream common-instancetypes (compute-optimized)
+    name: u1.xlarge # 4 vCPU / 16 GiB, shared CPU — no kubelet CPU Manager needed.
+    # cx1.xlarge (4/8, dedicated CPU) requires `kubevirt.io/cpumanager=true`
+    # on nodes; Talos doesn't enable CPU Manager static policy by default.
   preference:
     kind: VirtualMachineClusterPreference
     name: ubuntu
@@ -88,7 +81,11 @@ spec:
           name: ubuntu-server-26.04-amd64
           namespace: vps
         storage:
-          accessModes: [ReadWriteMany] # RWX so the VM can live-migrate
+          accessModes: [ReadWriteOnce] # no live-migration; node drain restarts the VM
+          # Filesystem mode (default). The clone is done by Longhorn's CSI
+          # driver thanks to the `csi-clone` strategy set on the longhorn
+          # StorageProfile in vm-templates.yaml — no userspace cloner pod
+          # spawns, so the lost+found permission issue doesn't apply.
           resources:
             requests:
               storage: 20Gi
@@ -96,10 +93,10 @@ spec:
     metadata:
       labels:
         kubevirt.io/vm: vps
-      annotations:
-        kubevirt.io/allow-pod-bridge-network-live-migration: "true"
     spec:
-      evictionStrategy: LiveMigrate
+      # No evictionStrategy — RWO PVC can't be live-migrated; on node drain
+      # the VM is shut down and restarted (the PVC re-attaches wherever it
+      # lands). Set back to `LiveMigrate` if/when the rootfs becomes RWX.
       domain:
         devices:
           disks:

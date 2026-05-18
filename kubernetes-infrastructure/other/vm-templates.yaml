@@ -25,13 +25,22 @@
 #             name: ubuntu-server-26.04-amd64
 #             namespace: vps
 #           storage:
-#             accessModes: [ReadWriteMany]
+#             accessModes: [ReadWriteOnce]
 #             resources: { requests: { storage: 20Gi } }
 #
 # Test VMs in OTHER namespaces can reference this DataSource too — CDI
 # handles cross-namespace cloning. Each target namespace just needs the
 # `pod-security.kubernetes.io/enforce: privileged` label that KubeVirt
 # virt-launcher pods require.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vps
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
 ---
 # Source PVC. CDI populates it from the upstream URL exactly once. Changing
 # `source.http.url` or recreating this DataVolume triggers a fresh import;
@@ -46,10 +55,29 @@ spec:
     http:
       url: https://cloud-images.ubuntu.com/releases/26.04/release/ubuntu-26.04-server-cloudimg-amd64.img
   storage:
-    accessModes: [ReadWriteMany]
+    accessModes: [ReadWriteOnce]
+    # Filesystem mode (default) — the importer pod is happy with it. The
+    # lost+found permission issue we'd otherwise hit on clone is avoided by
+    # the StorageProfile below forcing `cloneStrategy: csi-clone`, which
+    # means Longhorn clones the volume at the CSI layer without spawning a
+    # userspace cdi-cloner pod at all. (Block mode was a dead end on
+    # Talos+Longhorn because the importer pod, running as UID 107, can't
+    # `open()` the raw block device — it'd need to be in the `disk` group.)
     resources:
       requests:
         storage: 5Gi
+---
+# Override CDI's auto-generated StorageProfile for the `longhorn` class so
+# all clones from a Longhorn-backed source use Longhorn's native CSI
+# VolumeContentSource clone instead of CDI's host-assisted copy. Same
+# `lost+found` / permission errors that plague the userspace cloner go away.
+# Longhorn ≥ 1.4 supports CSI volume cloning.
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: StorageProfile
+metadata:
+  name: longhorn
+spec:
+  cloneStrategy: csi-clone
 ---
 # Stable named reference for `dataVolumeTemplates.sourceRef`. Lets you roll
 # all consuming VMs forward by repointing this at a new source PVC (e.g.
