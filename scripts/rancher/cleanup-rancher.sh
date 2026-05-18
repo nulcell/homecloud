@@ -53,6 +53,27 @@ if [[ "$DRY_RUN" == "1" ]]; then
   echo ">>> DRY RUN — nothing will be modified. Re-run with DRY_RUN=0 to apply."
 fi
 
+# ----- 0. ArgoCD applications referencing rancher --------------------------
+# Argo's Application has a `resources-finalizer.argocd.argoproj.io` finalizer
+# that blocks deletion until reconciliation succeeds. If the git source path
+# has been removed, reconciliation fails forever and the Application is stuck.
+# Strip the finalizer so Argo just deletes the Application object directly —
+# the managed resources are being cleaned up by the sections below anyway.
+say "0. Stuck ArgoCD applications (rancher)"
+if kubectl get crd applications.argoproj.io >/dev/null 2>&1; then
+  for kind in application applicationset; do
+    kubectl get "$kind" -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}{"\n"}{end}' 2>/dev/null \
+      | grep -iE '/.*rancher' \
+      | while IFS=/ read -r ns name; do
+          [[ -z "$ns" || -z "$name" ]] && continue
+          run kubectl -n "$ns" patch "$kind" "$name" --type=merge -p '{"metadata":{"finalizers":null}}'
+          run kubectl -n "$ns" delete "$kind" "$name" --ignore-not-found
+        done
+  done
+else
+  echo "  (no ArgoCD CRDs found — skipping)"
+fi
+
 # ----- 1. Webhooks ----------------------------------------------------------
 say "1. Admission webhooks (rancher.cattle.io.*)"
 kubectl get validatingwebhookconfiguration,mutatingwebhookconfiguration -o name \
@@ -83,12 +104,12 @@ for crd in $crds; do
        -o jsonpath='{range .items[*]}{.metadata.namespace}{"\t"}{.metadata.name}{"\n"}{end}' 2>/dev/null \
     | while IFS=$'\t' read -r ns name; do
         [[ -z "${ns:-}" || -z "${name:-}" ]] && continue
-        run kubectl -n "$ns" patch "$crd_name" "$name" --type=merge -p '{"metadata":{"finalizers":[]}}'
+        run kubectl -n "$ns" patch "$crd_name" "$name" --type=merge -p '{"metadata":{"finalizers":null}}'
       done
 
   # Cluster-scoped CRs of this kind.
   for n in $(kubectl get "$crd_name" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
-    run kubectl patch "$crd_name" "$n" --type=merge -p '{"metadata":{"finalizers":[]}}'
+    run kubectl patch "$crd_name" "$n" --type=merge -p '{"metadata":{"finalizers":null}}'
   done
 
   # Delete the CRD (cascades to any remaining CRs).
@@ -96,12 +117,29 @@ for crd in $crds; do
 done
 
 # ----- 4. Stuck namespaces --------------------------------------------------
+# Rancher's wrangler-based controllers (auth-prov-v2, capi, etc.) add
+# finalizers like `wrangler.cattle.io/auth-prov-v2-rb` to STANDARD k8s
+# resources (Role, RoleBinding, Secret, ConfigMap, ServiceAccount). With
+# those controllers gone the finalizers stick — which keeps NS deletion
+# stuck on "Some resources are remaining: rolebindings has 2 instances".
+# Strip finalizers from these resource types in each Rancher namespace
+# before patching /finalize. Safe: the namespace is about to be deleted.
 say "4. Rancher-owned namespaces (force-terminate)"
 for ns in $(kubectl get ns -o jsonpath='{.items[*].metadata.name}'); do
   [[ "$ns" =~ $RANCHER_NS_REGEX ]] || continue
   echo "  $ns"
-  # /finalize subresource patch is the only way past 'kubernetes' finalizer
-  # on a namespace that's stuck Terminating. Requires kubectl 1.27+.
+
+  for kind in role rolebinding secret configmap serviceaccount networkpolicy; do
+    kubectl -n "$ns" get "$kind" -o name 2>/dev/null | while IFS= read -r r; do
+      [[ -z "$r" ]] && continue
+      fin=$(kubectl -n "$ns" get "$r" -o jsonpath='{.metadata.finalizers}' 2>/dev/null)
+      [[ -z "$fin" || "$fin" == '[]' ]] && continue
+      run kubectl -n "$ns" patch "$r" --type=merge -p '{"metadata":{"finalizers":null}}'
+    done
+  done
+
+  # /finalize subresource patch clears the 'kubernetes' NS-level finalizer.
+  # Requires kubectl 1.27+.
   run kubectl patch ns "$ns" --subresource=finalize --type=merge -p '{"spec":{"finalizers":[]}}'
   run kubectl delete ns "$ns" --ignore-not-found --wait=false
 done
