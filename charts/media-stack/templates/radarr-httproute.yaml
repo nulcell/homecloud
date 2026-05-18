@@ -8,7 +8,9 @@ metadata:
     {{- include "mediaStack.labels" (dict "ctx" . "app" "radarr") | nindent 4 }}
 spec:
   parentRefs:
-    - name: {{ .Values.gateway.parentRef.name }}
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.gateway.parentRef.name }}
       namespace: {{ .Values.gateway.parentRef.namespace }}
       sectionName: {{ .Values.gateway.parentRef.sectionName | default "https" }}
   hostnames:
@@ -19,8 +21,11 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: radarr
+        - group: ""
+          kind: Service
+          name: radarr
           port: {{ .Values.radarr.service.ports.web }}
+          weight: 1
 {{- if .Values.gateway.httpRedirect }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -32,13 +37,19 @@ metadata:
     {{- include "mediaStack.labels" (dict "ctx" . "app" "radarr") | nindent 4 }}
 spec:
   parentRefs:
-    - name: {{ .Values.gateway.parentRef.name }}
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.gateway.parentRef.name }}
       namespace: {{ .Values.gateway.parentRef.namespace }}
       sectionName: {{ .Values.gateway.parentRef.httpSectionName | default "http" }}
   hostnames:
     - {{ .Values.radarr.gateway.hostname }}
   rules:
-    - filters:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
         - type: RequestRedirect
           requestRedirect:
             scheme: https
