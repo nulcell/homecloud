@@ -24,7 +24,7 @@ resources:
   # express their shape via `spec.instancetype` + `spec.preference` instead
   # of inlining ~60 lines of domain config. Bump alongside KubeVirt.
   # Names + sizes: https://github.com/kubevirt/common-instancetypes
-  - https://github.com/kubevirt/common-instancetypes/releases/download/v1.4.0/common-clusterinstancetypes-bundle-v1.4.0.yaml
-  - https://github.com/kubevirt/common-instancetypes/releases/download/v1.4.0/common-clusterpreferences-bundle-v1.4.0.yaml
+  - https://github.com/kubevirt/common-instancetypes/releases/download/v1.6.0/common-clusterinstancetypes-bundle-v1.6.0.yaml
+  - https://github.com/kubevirt/common-instancetypes/releases/download/v1.6.0/common-clusterpreferences-bundle-v1.6.0.yaml
   - kubevirt.yaml
   - cdi.yaml
