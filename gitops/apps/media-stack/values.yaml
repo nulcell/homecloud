@@ -49,6 +49,13 @@ jellyfin:
     # Revert to `privileged: false` once we wire up a device plugin (e.g.
     # squat/generic-device-plugin) for proper, non-privileged GPU access.
     privileged: true
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 2Gi
+    limits:
+      cpu: 8000m
+      memory: 8Gi
   gateway:
     hostname: jellyfin.nulcell.com
 
