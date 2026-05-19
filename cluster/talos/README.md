@@ -20,6 +20,21 @@ The custom Talos image is built at [factory.talos.dev](https://factory.talos.dev
 - `siderolabs/amd-ucode` — AMD CPU microcode updates
 - `siderolabs/amdgpu` — AMD GPU firmware (drop if not on AMD GPU hardware)
 
+Kernel customizations:
+
+```yaml
+customization:
+    extraKernelArgs:
+        - -lockdown
+        - --lockdown=integrity
+    systemExtensions:
+        officialExtensions:
+            - siderolabs/amd-ucode
+            - siderolabs/amdgpu
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
+```
+
 Record the **schematic ID** somewhere you'll find it again — you need it for `talosctl upgrade`.
 
 ## Common commands
@@ -27,7 +42,7 @@ Record the **schematic ID** somewhere you'll find it again — you need it for `
 ```bash
 export TALOSCONFIG_PATH=$(pwd)/generated/talosconfig
 export INSTALLER=metal-installer-secureboot
-export SCHEMATIC_ID=65cf8364cd0de4cf7b851dc7067a2db83d0ba04f11d8635c6cd3334be6ffb825
+export SCHEMATIC_ID=d78c7cda9fda387e6420896d82d50d5cc97d004feeece7812703c5e1582b82f7
 export TALOS_VERSION=v1.13.2
 export KUBERNETES_VERSION=v1.35.5
 export INSTALL_IMAGE=factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION}
