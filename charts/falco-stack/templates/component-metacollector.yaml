@@ -1,7 +1,4 @@
 {{- if and .Values.plugins.k8smeta.enabled .Values.plugins.k8smeta.metacollector.enabled }}
-# k8s-metacollector — paired with the k8smeta plugin above. Single Deployment
-# watching the apiserver for pod / namespace / replicaset metadata, serving
-# it over gRPC on :45000 to every Falco that loaded the k8smeta plugin.
 apiVersion: instance.falcosecurity.dev/v1alpha1
 kind: Component
 metadata:

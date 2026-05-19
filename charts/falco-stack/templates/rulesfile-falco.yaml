@@ -1,7 +1,4 @@
 {{- if .Values.rules.falco.enabled }}
-# Upstream falco-rules — the maintained stable detection ruleset. Layer
-# custom rules on top with additional Rulesfile CRs (configMapRef or
-# inlineRules) at a different priority — lower number wins on conflicts.
 apiVersion: artifact.falcosecurity.dev/v1alpha1
 kind: Rulesfile
 metadata:

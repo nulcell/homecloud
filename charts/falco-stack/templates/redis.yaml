@@ -1,7 +1,4 @@
 {{- if .Values.redis.enabled }}
-# Single-replica Redis backing the Falcosidekick UI. Persistent volume
-# (default 1 Gi on longhorn) — the UI uses Redis as an event log, not a
-# critical data store, so single-replica is fine for a homelab.
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:

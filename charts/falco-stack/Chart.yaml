@@ -23,9 +23,8 @@ maintainers:
   - name: Salimon Ayanleye
     email: cloud@nulcell.com
 
-# Upstream falco-talon chart vendored as a .tgz under charts/. The dependency
-# `condition` lets `falco-talon.enabled` in our parent values.yaml toggle the
-# whole subchart on/off without disturbing its native value tree.
+# falco-talon is fetched at render time by the ArgoCD CMP (see
+# `cluster/bootstrap/argocd-values.yaml`).
 dependencies:
   - name: falco-talon
     version: 0.4.0

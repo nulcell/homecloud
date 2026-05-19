@@ -1,7 +1,4 @@
 {{- if .Values.plugins.k8smeta.enabled }}
-# k8smeta plugin — adds k8s.* fields via gRPC to the metacollector below.
-# Disable the parent `plugins.k8smeta` entry to drop both the plugin and the
-# metacollector.
 apiVersion: artifact.falcosecurity.dev/v1alpha1
 kind: Plugin
 metadata:

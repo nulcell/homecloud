@@ -1,8 +1,6 @@
 {{- if .Values.monitoring.serviceMonitors.enabled }}
-# IMPORTANT: the selector + port name below are *unverified* against the live
-# Services the Falco Operator creates. After the rest of the stack is up, run
-# the commands in the values.yaml comment block and adjust to match. Then
-# `monitoring.serviceMonitors.enabled: true` in your overlay.
+# Ports + selectors are unverified against the live Services the operator
+# creates — see `monitoring:` in values.yaml.
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -64,8 +62,4 @@ spec:
       interval: {{ .Values.monitoring.serviceMonitors.interval }}
       scrapeTimeout: {{ .Values.monitoring.serviceMonitors.scrapeTimeout }}
 {{- end }}
-# Note: no ServiceMonitor for falco-talon — Talon exports metrics over
-# OpenTelemetry, not a Prometheus /metrics endpoint. See the falco-talon
-# subchart's config.otel block to wire an otel-collector if you want metrics
-# in Prometheus.
 {{- end }}

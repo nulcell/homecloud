@@ -3,7 +3,6 @@
 {{- if and .Values.outputs.http.enabled (not $httpURL) -}}
   {{- $httpURL = printf "http://falcosidekick.%s.svc:2801" $ns -}}
 {{- end -}}
-# Falco runtime config — wires outputs and the /metrics webserver.
 apiVersion: artifact.falcosecurity.dev/v1alpha1
 kind: Config
 metadata:

@@ -14,10 +14,19 @@ configs:
       kustomize-sops:
         generate:
           command: [sh, -c]
-          # --load-restrictor=LoadRestrictionsNone lets kustomizations reference
-          # files outside their own directory — needed by helmGlobals.chartHome
-          # paths like ../../../charts (e.g. gitops/apps/n8n -> charts/n8n).
-          args: ["kustomize build --enable-alpha-plugins --enable-exec --load-restrictor=LoadRestrictionsNone ."]
+          # 1. `helm dependency update` on any local chart that declares
+          #    dependencies — vendored .tgz files are gitignored, so they're
+          #    fetched at render time.
+          # 2. `kustomize build` with --load-restrictor=LoadRestrictionsNone so
+          #    kustomizations can reference files above their own directory
+          #    (helmGlobals.chartHome: ../../../charts).
+          args:
+            - |
+              set -e
+              for d in ../../../charts/*/; do
+                [ -f "${d}Chart.yaml" ] && grep -q '^dependencies:' "${d}Chart.yaml" && helm dependency update "$d" >/dev/null
+              done
+              kustomize build --enable-alpha-plugins --enable-exec --load-restrictor=LoadRestrictionsNone .
 
 server:
   service:

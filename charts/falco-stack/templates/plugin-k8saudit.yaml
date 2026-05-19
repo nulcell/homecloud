@@ -1,0 +1,22 @@
+{{- if .Values.plugins.k8saudit.enabled }}
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Plugin
+metadata:
+  name: k8saudit
+  namespace: {{ include "falcoStack.namespace" . }}
+  labels:
+    {{- include "falcoStack.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  ociArtifact:
+    image:
+      repository: {{ .Values.plugins.k8saudit.plugin.ociArtifact.repository }}
+      tag: {{ .Values.plugins.k8saudit.plugin.ociArtifact.tag }}
+    registry:
+      name: {{ .Values.plugins.k8saudit.plugin.ociArtifact.registry }}
+  {{- with .Values.plugins.k8saudit.plugin.openParams }}
+  config:
+    openParams: {{ . | quote }}
+  {{- end }}
+{{- end }}

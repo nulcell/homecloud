@@ -1,7 +1,4 @@
 {{- if .Values.plugins.container.enabled }}
-# container plugin — enriches events with container.id / container.image.*
-# fields. Required by the official falco-rules. The artifact-operator pulls
-# the OCI image into the Falco Pod at startup.
 apiVersion: artifact.falcosecurity.dev/v1alpha1
 kind: Plugin
 metadata:

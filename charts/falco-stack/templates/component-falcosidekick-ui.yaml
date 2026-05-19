@@ -3,9 +3,6 @@
 {{- if and .Values.redis.enabled (not $redisAddr) -}}
   {{- $redisAddr = printf "%s.%s.svc:6379" .Values.redis.serviceName (include "falcoStack.namespace" .) -}}
 {{- end }}
-# Falcosidekick UI — web dashboard exposed at falcosidekickUi.gateway.hostname.
-# Defaults its Redis address to the in-chart Redis Service unless an external
-# one is configured via falcosidekickUi.redisAddr.
 apiVersion: instance.falcosecurity.dev/v1alpha1
 kind: Component
 metadata:
