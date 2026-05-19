@@ -14,17 +14,26 @@ configs:
       kustomize-sops:
         generate:
           command: [sh, -c]
-          # 1. `helm dependency update` on any local chart that declares
-          #    dependencies — vendored .tgz files are gitignored, so they're
-          #    fetched at render time.
-          # 2. `kustomize build` with --load-restrictor=LoadRestrictionsNone so
-          #    kustomizations can reference files above their own directory
-          #    (helmGlobals.chartHome: ../../../charts).
+          # The sidecar runs as uid 999 with no $HOME, so point helm's caches
+          # at /tmp. Then for every local chart that declares dependencies,
+          # register each `repository:` URL with helm (a one-time `helm repo
+          # add`) before running `helm dependency update` to vendor the .tgz —
+          # vendored deps + Chart.lock are gitignored and fetched at render
+          # time. Finally, `kustomize build` with --load-restrictor=
+          # LoadRestrictionsNone so kustomizations can reference files above
+          # their own directory (helmGlobals.chartHome: ../../../charts).
           args:
             - |
               set -e
+              export HOME=/tmp HELM_CACHE_HOME=/tmp/helm/cache HELM_CONFIG_HOME=/tmp/helm/config HELM_DATA_HOME=/tmp/helm/data
+              mkdir -p "$HELM_CACHE_HOME" "$HELM_CONFIG_HOME" "$HELM_DATA_HOME"
               for d in ../../../charts/*/; do
-                [ -f "${d}Chart.yaml" ] && grep -q '^dependencies:' "${d}Chart.yaml" && helm dependency update "$d" >/dev/null
+                [ -f "${d}Chart.yaml" ] || continue
+                grep -q '^dependencies:' "${d}Chart.yaml" || continue
+                awk '/^[[:space:]]*repository:[[:space:]]*https?:/{print $2}' "${d}Chart.yaml" | sort -u | while read -r url; do
+                  helm repo add "$(printf '%s' "$url" | sed 's|[^A-Za-z0-9]|-|g')" "$url" --force-update >/dev/null
+                done
+                helm dependency update "$d" >/dev/null
               done
               kustomize build --enable-alpha-plugins --enable-exec --load-restrictor=LoadRestrictionsNone .
 
