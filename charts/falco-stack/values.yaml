@@ -81,6 +81,9 @@ rules:
 # Falco output config (Config CR). Defaults forward events to the in-chart
 # falcosidekick over HTTP.
 outputs:
+  # Set to "debug" temporarily to surface libscap/BPF errors during driver
+  # initialization. Default empty => Falco's default ("info").
+  logLevel: ""
   stdout:
     enabled: true
   json: true

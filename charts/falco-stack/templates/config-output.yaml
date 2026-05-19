@@ -14,6 +14,9 @@ metadata:
     argocd.argoproj.io/sync-wave: "-5"
 spec:
   config:
+    {{- with .Values.outputs.logLevel }}
+    log_level: {{ . }}
+    {{- end }}
     json_output: {{ .Values.outputs.json }}
     stdout_output:
       enabled: {{ .Values.outputs.stdout.enabled }}
