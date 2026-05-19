@@ -50,7 +50,9 @@ spec:
             - name: redis-data
               mountPath: /data
   volumeClaimTemplates:
-    - metadata:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
         name: redis-data
       spec:
         accessModes: ["ReadWriteOnce"]
