@@ -34,7 +34,6 @@ spec:
       kernel_event_counters_enabled: true
       libbpf_stats_enabled: true
       convert_memory_to_mb: true
-      prometheus_text_format: {{ .Values.outputs.metrics.promTextFormat }}
     {{- end }}
     {{- if .Values.outputs.webserver.enabled }}
     webserver:

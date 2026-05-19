@@ -90,7 +90,6 @@ outputs:
   metrics:
     enabled: true
     interval: 1h
-    promTextFormat: true
   webserver:
     enabled: true
     listenPort: 8765
@@ -167,6 +166,22 @@ falco-talon:
       leaderElection: false
       timeWindowSeconds: 5
     printAllEvents: false
+
+# HTTPRoute on top of the falco-talon subchart Service. Empty hostname => no
+# HTTPRoute (talon stays internal). Service name matches `fullnameOverride`
+# in the subchart values above.
+falcoTalon:
+  service:
+    name: falco-talon
+    port: 2803
+  gateway:
+    hostname: talon.nulcell.com
+    httpRedirect: true
+    parentRef:
+      name: default
+      namespace: gateway
+      sectionName: https
+      httpSectionName: http
 
 # ServiceMonitors for kube-prometheus-stack. Default off until the live Service
 # shapes are confirmed:
