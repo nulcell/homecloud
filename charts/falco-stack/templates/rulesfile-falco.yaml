@@ -1,0 +1,22 @@
+{{- if .Values.rules.falco.enabled }}
+# Upstream falco-rules — the maintained stable detection ruleset. Layer
+# custom rules on top with additional Rulesfile CRs (configMapRef or
+# inlineRules) at a different priority — lower number wins on conflicts.
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Rulesfile
+metadata:
+  name: falco-rules
+  namespace: {{ include "falcoStack.namespace" . }}
+  labels:
+    {{- include "falcoStack.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  ociArtifact:
+    image:
+      repository: {{ .Values.rules.falco.ociArtifact.repository }}
+      tag: {{ .Values.rules.falco.ociArtifact.tag }}
+    registry:
+      name: {{ .Values.rules.falco.ociArtifact.registry }}
+  priority: {{ .Values.rules.falco.priority }}
+{{- end }}

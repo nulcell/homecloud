@@ -1,0 +1,24 @@
+{{- if and .Values.plugins.k8smeta.enabled .Values.plugins.k8smeta.metacollector.enabled }}
+# k8s-metacollector — paired with the k8smeta plugin above. Single Deployment
+# watching the apiserver for pod / namespace / replicaset metadata, serving
+# it over gRPC on :45000 to every Falco that loaded the k8smeta plugin.
+apiVersion: instance.falcosecurity.dev/v1alpha1
+kind: Component
+metadata:
+  name: metacollector
+  namespace: {{ include "falcoStack.namespace" . }}
+  labels:
+    {{- include "falcoStack.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  component:
+    type: metacollector
+  replicas: {{ .Values.plugins.k8smeta.metacollector.replicas }}
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: k8s-metacollector
+          resources:
+            {{- toYaml .Values.plugins.k8smeta.metacollector.resources | nindent 12 }}
+{{- end }}

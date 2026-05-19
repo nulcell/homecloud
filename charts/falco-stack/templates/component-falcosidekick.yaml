@@ -1,0 +1,55 @@
+{{- if .Values.falcosidekick.enabled }}
+{{- $ns := include "falcoStack.namespace" . -}}
+{{- $env := .Values.falcosidekick.env | default list -}}
+{{- /* Auto-wire WEBUI_URL when the in-chart UI is on and the user hasn't
+       supplied one. */ -}}
+{{- if .Values.falcosidekickUi.enabled -}}
+  {{- $hasWebui := false -}}
+  {{- range $env }}{{- if eq .name "WEBUI_URL" }}{{- $hasWebui = true }}{{- end }}{{- end -}}
+  {{- if not $hasWebui -}}
+    {{- $env = append $env (dict "name" "WEBUI_URL" "value" (printf "http://falcosidekick-ui.%s.svc:2802" $ns)) -}}
+  {{- end -}}
+{{- end -}}
+{{- /* Auto-wire WEBHOOK_ADDRESS to the in-chart falco-talon when enabled.
+       Talon receives events on /events. The subchart's fullnameOverride is
+       pinned to `falco-talon` in our parent values.yaml, so the Service name
+       is stable. */ -}}
+{{- $talon := index .Values "falco-talon" -}}
+{{- if and $talon $talon.enabled -}}
+  {{- $hasTalon := false -}}
+  {{- range $env }}{{- if eq .name "WEBHOOK_ADDRESS" }}{{- $hasTalon = true }}{{- end }}{{- end -}}
+  {{- if not $hasTalon -}}
+    {{- $talonPort := 2803 -}}
+    {{- if $talon.service -}}{{- if $talon.service.port -}}{{- $talonPort = int $talon.service.port -}}{{- end -}}{{- end -}}
+    {{- $env = append $env (dict "name" "WEBHOOK_ADDRESS" "value" (printf "http://falco-talon.%s.svc:%d/events" $ns $talonPort)) -}}
+  {{- end -}}
+{{- end }}
+# Falcosidekick — fan-out daemon. Falco POSTs JSON events to
+# falcosidekick.<ns>.svc:2801; falcosidekick forwards them to enabled outputs
+# (UI, Talon, Prometheus, Slack, webhook, …). Add more outputs via
+# `falcosidekick.env` in values.yaml. Reference:
+# https://github.com/falcosecurity/falcosidekick
+apiVersion: instance.falcosecurity.dev/v1alpha1
+kind: Component
+metadata:
+  name: falcosidekick
+  namespace: {{ $ns }}
+  labels:
+    {{- include "falcoStack.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  component:
+    type: falcosidekick
+  replicas: {{ .Values.falcosidekick.replicas }}
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: falcosidekick
+          {{- with $env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.falcosidekick.resources | nindent 12 }}
+{{- end }}

@@ -39,7 +39,7 @@ resources:
     memory: 64Mi
 
 serviceMonitor:
-  enabled: false # flip on after kube-prometheus-stack lands
+  enabled: true
 
 
 # Default chart RBAC + ServiceAccount; the chart adds Gateway API perms

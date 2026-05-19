@@ -80,8 +80,15 @@ terraform.rc
 .vscode/
 
 # Helm
-Chart.lock
+# Default: ignore vendored subchart caches (most charts have no dependencies
+# and write nothing here). Exception: falco-stack vendors falco-talon, and the
+# .tgz + Chart.lock are part of the source of truth — ArgoCD's CMP renders
+# without running `helm dependency update`.
 charts/*/charts/
+!charts/falco-stack/charts/
+!charts/falco-stack/charts/*.tgz
+Chart.lock
+!charts/falco-stack/Chart.lock
 
 # Kubernetes
 *.kubeconfig

@@ -1,0 +1,19 @@
+# Overrides for the falco-stack chart at charts/falco-stack/.
+# Everything not listed here keeps the chart's default value.
+
+falcosidekickUi:
+  gateway:
+    hostname: falco.nulcell.com
+
+# ServiceMonitors stay off until we verify the actual Service / Pod labels
+# the Falco Operator creates in this version. After first deploy, run:
+#
+#   kubectl -n falco get svc -o yaml
+#   kubectl -n falco get pod --show-labels
+#
+# Then update charts/falco-stack/values.yaml's `monitoring.serviceMonitors.*`
+# defaults (or override here) to match the real `port` names and selector
+# labels, and flip `enabled: true`.
+# monitoring:
+#   serviceMonitors:
+#     enabled: true

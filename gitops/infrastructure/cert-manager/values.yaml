@@ -2,7 +2,9 @@
 crds:
   enabled: true
 prometheus:
-  enabled: false # turn on after kube-prometheus-stack is installed
+  enabled: true
+  servicemonitor:
+    enabled: true
 
 # Lease defaults to `kube-system`, but the kustomize helmCharts wrapper rewrites
 # every namespaced resource to `cert-manager` — including the leader-election

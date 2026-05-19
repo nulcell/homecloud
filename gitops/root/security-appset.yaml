@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: security
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/nulcell/homecloud
+        revision: main
+        directories:
+          - path: gitops/security/*
+  template:
+    metadata:
+      name: "sec-{{.path.basename}}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "5" # after infrastructure (0); before apps (10)
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/nulcell/homecloud
+        targetRevision: main
+        path: "{{.path.path}}"
+        plugin:
+          name: kustomize-sops
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{.path.basename}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

@@ -1,0 +1,55 @@
+{{- if and .Values.falcosidekickUi.enabled .Values.falcosidekickUi.gateway.hostname }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: falcosidekick-ui
+  namespace: {{ include "falcoStack.namespace" . }}
+  labels:
+    {{- include "falcoStack.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.falcosidekickUi.gateway.parentRef.name }}
+      namespace: {{ .Values.falcosidekickUi.gateway.parentRef.namespace }}
+      sectionName: {{ .Values.falcosidekickUi.gateway.parentRef.sectionName }}
+  hostnames:
+    - {{ .Values.falcosidekickUi.gateway.hostname }}
+  rules:
+    - matches:
+        - path: { type: PathPrefix, value: / }
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: falcosidekick-ui
+          port: 2802
+          weight: 1
+{{- if .Values.falcosidekickUi.gateway.httpRedirect }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: falcosidekick-ui-http-redirect
+  namespace: {{ include "falcoStack.namespace" . }}
+  labels:
+    {{- include "falcoStack.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.falcosidekickUi.gateway.parentRef.name }}
+      namespace: {{ .Values.falcosidekickUi.gateway.parentRef.namespace }}
+      sectionName: {{ .Values.falcosidekickUi.gateway.parentRef.httpSectionName }}
+  hostnames:
+    - {{ .Values.falcosidekickUi.gateway.hostname }}
+  rules:
+    - matches:
+        - path: { type: PathPrefix, value: / }
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+{{- end }}
+{{- end }}

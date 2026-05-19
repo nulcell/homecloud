@@ -104,9 +104,38 @@ operator:
     limits:
       cpu: 200m
       memory: 128Mi
+  # Operator metrics on :9963/metrics — scraped via the ServiceMonitor below.
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      trustCRDsExist: true # we install Cilium before kube-prometheus-stack; skip the validate template's CRD precondition
+
+# Agent metrics on :9962/metrics. The chart auto-relabels so each pod's
+# `node` label is the Talos node name.
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    trustCRDsExist: true # we install Cilium before kube-prometheus-stack; skip the validate template's CRD precondition
 
 hubble:
   enabled: true
+  # Flow metrics emitted by every cilium-agent and aggregated by Hubble Relay.
+  # The metric list controls cardinality — keep it lean unless you actually
+  # use the data in Grafana, or Prometheus storage explodes.
+  metrics:
+    enabled:
+      - dns
+      - drop
+      - tcp
+      - flow
+      - port-distribution
+      - icmp
+      - "httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction"
+    serviceMonitor:
+      enabled: true
+      trustCRDsExist: true # we install Cilium before kube-prometheus-stack; skip the validate template's CRD precondition
   # Hubble Relay collects and aggregates flows from agents
   relay:
     enabled: true
@@ -117,6 +146,12 @@ hubble:
       limits:
         cpu: 100m
         memory: 128Mi
+    # Relay's own /metrics — scraped via the ServiceMonitor.
+    prometheus:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+        trustCRDsExist: true # we install Cilium before kube-prometheus-stack; skip the validate template's CRD precondition
   # Hubble UI provides the visual network map web application
   ui:
     enabled: true

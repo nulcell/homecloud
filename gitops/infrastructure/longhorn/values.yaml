@@ -55,6 +55,13 @@ ingress:
 preUpgradeChecker:
   jobEnabled: false
 
+# Picked up by kube-prometheus-stack because the kps values set
+# serviceMonitorSelectorNilUsesHelmValues=false (so any ServiceMonitor in any
+# namespace is scraped).
+metrics:
+  serviceMonitor:
+    enabled: true
+
 # # CRITICAL FOR TALOS:
 # # Informs the Container Storage Interface (CSI) where to mount active block devices.
 # csi:

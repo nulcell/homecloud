@@ -36,6 +36,13 @@ server:
     limits:
       cpu: 200m
       memory: 256Mi
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+    serviceMonitor:
+      enabled: true
 
 redis-ha:
   enabled: false # single-node; HA Redis is wasteful here
@@ -48,6 +55,9 @@ redis:
     limits:
       cpu: 200m
       memory: 256Mi
+  # Bundled redis-exporter sidecar on :9121/metrics.
+  exporter:
+    enabled: true
 
 controller:
   replicas: 1
@@ -58,6 +68,22 @@ controller:
     limits:
       cpu: 2000m
       memory: 2048Mi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+applicationSet:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+notifications:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
 
 dex:
   enabled: false # add later if you want SSO
@@ -71,6 +97,10 @@ repoServer:
     limits:
       cpu: 2000m # High ceiling for rapid manifest generation
       memory: 2048Mi # Extra space for massive Git checkouts
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
   # SOPS decryption: mount the age key as a Secret named argocd-sops-age.
   # Create it once during bootstrap:
   #   kubectl -n argocd create secret generic argocd-sops-age \

@@ -1,0 +1,271 @@
+# =============================================================================
+# Chart-level
+# =============================================================================
+nameOverride: ""
+namespaceOverride: ""
+
+# =============================================================================
+# Falco daemon (syscall source, modern_ebpf driver)
+# =============================================================================
+# The operator reconciles this into a DaemonSet on every node. Image / driver
+# defaults come from the operator unless overridden here.
+falco:
+  enabled: true
+  # type: DaemonSet | Deployment
+  type: DaemonSet
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  # Extra ports to expose on the falco container (the operator's auto-created
+  # Service surfaces these). The `webserver` port is already opened via the
+  # Config CR below; this is for anything additional (e.g. a sidecar).
+  extraContainerPorts: []
+
+# =============================================================================
+# Falco plugins — each top-level entry installs a Plugin CR. Resources that
+# only make sense paired with a given plugin (e.g. k8smeta's metacollector)
+# live nested under the plugin so the section is self-contained — flip the
+# plugin off and its supporting resources go too.
+# =============================================================================
+plugins:
+  # ---------------------------------------------------------------------------
+  # container plugin — enriches events with container.id / container.image.*
+  # fields. The upstream falco-rules reference these, so without it most rules
+  # are inert. Falco docs: "Always load the container plugin before adding
+  # rules."
+  # ---------------------------------------------------------------------------
+  container:
+    enabled: true
+    plugin:
+      ociArtifact:
+        repository: falcosecurity/plugins/plugin/container
+        tag: latest
+        registry: ghcr.io
+
+  # ---------------------------------------------------------------------------
+  # k8smeta plugin — adds k8s.* fields to events via gRPC to a metacollector.
+  # The plugin + the metacollector are paired; we deploy both together here.
+  # ---------------------------------------------------------------------------
+  k8smeta:
+    enabled: true
+    plugin:
+      ociArtifact:
+        repository: falcosecurity/plugins/plugin/k8smeta
+        tag: latest
+        registry: ghcr.io
+      # Hostname the plugin connects to over gRPC. The metacollector below
+      # creates a Service of this name in the release namespace (operator
+      # convention: Service name == Component CR name).
+      collectorHostname: metacollector
+      collectorPort: 45000
+    # k8s-metacollector — Component CR (type=metacollector). Single Deployment
+    # watching the apiserver for pod / namespace metadata; serves it on gRPC
+    # :45000 to every Falco instance loaded with the k8smeta plugin.
+    metacollector:
+      enabled: true
+      replicas: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+# =============================================================================
+# Detection rules (Rulesfile CRs). Stock upstream falco-rules — the syscall
+# ruleset that everything in plugins/* enriches. Plugin-specific rulesfiles
+# (e.g. k8saudit-rules paired with a k8saudit plugin) belong under their
+# plugin's section in `plugins.*`.
+# =============================================================================
+rules:
+  falco:
+    enabled: true
+    ociArtifact:
+      repository: falcosecurity/rules/falco-rules
+      tag: latest
+      registry: ghcr.io
+    priority: 50
+
+# =============================================================================
+# Outputs — turn into a Config CR. http_output forwards events to the
+# falcosidekick Service (created from the Component CR below).
+# =============================================================================
+outputs:
+  stdout:
+    enabled: true # keep on so `kubectl logs ds/falco` is useful
+  json: true
+  http:
+    enabled: true
+    # Defaults assume Falcosidekick is enabled in this chart and reachable in
+    # the release namespace. Override if forwarding elsewhere.
+    url: "" # computed below if empty
+  metrics:
+    enabled: true
+    interval: 1h
+    promTextFormat: true
+  webserver:
+    enabled: true
+    listenPort: 8765
+    sslEnabled: false
+
+# =============================================================================
+# Falcosidekick (Component CR, type=falcosidekick) — fan-out daemon. Receives
+# events from Falco's http_output, forwards to enabled outputs (UI, Talon,
+# Prometheus, Slack, webhook, …).
+# =============================================================================
+falcosidekick:
+  enabled: true
+  replicas: 1
+  # Extra env vars passed to the falcosidekick container — each output
+  # integration is opted in by setting the right env var. WEBUI_URL is wired
+  # automatically when falcosidekickUi.enabled; WEBHOOK_ADDRESS is wired
+  # automatically when falcoTalon.enabled. Reference:
+  # https://github.com/falcosecurity/falcosidekick#outputs
+  env:
+    - name: PROMETHEUS_EXTRALABELS
+      value: "cluster:homecloud"
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# =============================================================================
+# Falcosidekick UI (Component CR, type=falcosidekick-ui) — web dashboard for
+# events. Persists event history in the Redis below.
+# =============================================================================
+falcosidekickUi:
+  enabled: true
+  replicas: 1
+  # Override the UI's REDIS_ADDR + arg if you point at a different Redis.
+  redisAddr: ""
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  # HTTPRoute to publish the UI through the Gateway. Empty hostname → no
+  # HTTPRoute is rendered (UI stays internal). httpRedirect renders a second
+  # HTTPRoute that 301s plain HTTP to HTTPS.
+  gateway:
+    hostname: falco.nulcell.com
+    httpRedirect: true
+    parentRef:
+      name: default
+      namespace: gateway
+      sectionName: https
+      httpSectionName: http
+
+# =============================================================================
+# Redis (StatefulSet + Service backing Falcosidekick UI). Set
+# `falcosidekickUi.redisAddr` to point the UI at an external Redis instead.
+# =============================================================================
+redis:
+  enabled: true
+  # Service name — must match what falcosidekick-ui resolves at runtime. The
+  # upstream UI defaults to `falcosidekick-ui-redis:6379`.
+  serviceName: falcosidekick-ui-redis
+  image:
+    repository: docker.io/redis/redis-stack
+    tag: 7.2.0-v11
+  storage:
+    className: longhorn
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# =============================================================================
+# Falco-Talon — response engine. Not a Falco plugin: it sits downstream of
+# Falcosidekick (Sidekick forwards events to its webhook), evaluates rules,
+# and triggers mitigation actions (kill pod, label, network policy patch, …).
+# Reference: https://docs.falco-talon.org/
+#
+# Vendored as the upstream `falcosecurity/falco-talon` Helm subchart (see
+# Chart.yaml dependencies). Everything under the `falco-talon:` key below is
+# forwarded to the subchart per Helm's value-passing convention — the full
+# value tree is at https://github.com/falcosecurity/charts/tree/master/charts/falco-talon
+# Toggling `falco-talon.enabled` controls the dependency `condition` in
+# Chart.yaml, so flipping false drops every talon resource.
+# =============================================================================
+falco-talon:
+  # Used by the Chart.yaml `dependencies[].condition` to gate the subchart.
+  enabled: true
+  # Deterministic Service name (subchart default would be release-prefixed).
+  # `component-falcosidekick.yaml` auto-wires WEBHOOK_ADDRESS to this name.
+  fullnameOverride: falco-talon
+  replicaCount: 1
+  image:
+    pullPolicy: IfNotPresent
+  service:
+    port: 2803
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  # Talon config — listen address, rules, notifiers, actioners. The subchart
+  # renders this into the talon ConfigMap. Default ships only the upstream-
+  # provided `rulesOverride` (Terminate Pod actioner); add custom rules /
+  # notifiers here or in the overlay's values.yaml.
+  config:
+    listenAddress: 0.0.0.0
+    listenPort: 2803
+    defaultNotifiers:
+      - k8sevents
+    watchRules: true
+    deduplication:
+      # Single-replica deployment, so no need for leader election.
+      leaderElection: false
+      timeWindowSeconds: 5
+    printAllEvents: false
+
+# =============================================================================
+# Monitoring — ServiceMonitors for kube-prometheus-stack to scrape.
+#
+# DEFAULT OFF until you've verified the actual Service shapes the Falco
+# Operator creates. After the rest of the stack is up, run:
+#
+#   kubectl -n falco get svc -o yaml
+#   kubectl -n falco get pod --show-labels
+#
+# Then set the ports + selectors below to what you actually see and flip
+# `enabled: true`. The defaults below are upstream-quickstart-flavoured
+# guesses, not verified against the operator version pinned in this repo.
+# =============================================================================
+monitoring:
+  serviceMonitors:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    falco:
+      port: metrics
+      selector:
+        app.kubernetes.io/name: falco
+    falcosidekick:
+      port: http
+      selector:
+        app.kubernetes.io/name: falcosidekick
+    metacollector:
+      port: metrics
+      selector:
+        app.kubernetes.io/name: metacollector
+    # NOTE: falco-talon exposes metrics over OpenTelemetry, not a Prometheus
+    # /metrics endpoint, so no ServiceMonitor is rendered for it. If you turn
+    # on `config.otel.metricsEnabled` in the falco-talon subchart values + run
+    # an otel-collector with a Prometheus exporter, target the collector here.

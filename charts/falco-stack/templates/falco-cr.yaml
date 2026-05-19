@@ -1,0 +1,28 @@
+{{- if .Values.falco.enabled }}
+# Main Falco instance — operator defaults to DaemonSet + modern_ebpf, which
+# is what we want for syscall monitoring. The plugins / rulesfile / config in
+# this same namespace get loaded automatically by the artifact-operator
+# sidecar.
+apiVersion: instance.falcosecurity.dev/v1alpha1
+kind: Falco
+metadata:
+  name: falco
+  namespace: {{ include "falcoStack.namespace" . }}
+  labels:
+    {{- include "falcoStack.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  type: {{ .Values.falco.type }}
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: falco
+          tty: true
+          {{- with .Values.falco.extraContainerPorts }}
+          ports:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.falco.resources | nindent 12 }}
+{{- end }}
