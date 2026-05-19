@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tetragon
+  # Tetragon DaemonSet needs hostPID/hostNetwork + privileged for BPF.
+  # PSA is per-namespace, so the whole namespace is bumped. The matching
+  # cluster-wide exemption lives in cluster/talos/patches/controlplane.yaml
+  # under cluster.apiServer.admissionControl.
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"

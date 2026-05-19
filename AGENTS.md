@@ -27,8 +27,8 @@ Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap steps: [`clu
 | [`cluster/talos/`](cluster/talos/) | Machine-config patches. `generated/` and `secrets/` are gitignored. |
 | [`cluster/docs/`](cluster/docs/) | `bootstrap.md`, `argocd.md`. |
 | [`gitops/root/`](gitops/root/) | Root Application + three ApplicationSets (`infrastructure`, `security`, `apps`) ordered by sync wave. |
-| [`gitops/infrastructure/`](gitops/infrastructure/) | Base platform — every other layer can assume these are up: cert-manager, cnpg, external-dns, falco-operator, gateway, infra-app-httproutes, kube-prometheus-stack, kubevirt, longhorn, metrics-server, sops-secrets. Operator-only directories install CRDs the upper layers consume. |
-| [`gitops/security/`](gitops/security/) | Security stack — Falco (syscall source, modern_ebpf) + Falcosidekick + UI + Redis + k8s-metacollector via the umbrella [`charts/falco-stack/`](charts/falco-stack/) chart. OPA will land alongside as a sibling dir. |
+| [`gitops/infrastructure/`](gitops/infrastructure/) | Base platform — every other layer can assume these are up: cert-manager, cnpg, external-dns, gateway, infra-app-httproutes, kube-prometheus-stack, kubevirt, longhorn, metrics-server, sops-secrets. Operator-only directories install CRDs the upper layers consume. |
+| [`gitops/security/`](gitops/security/) | Security stack — Cilium Tetragon (eBPF runtime observability). OPA will land alongside as a sibling dir. |
 | [`gitops/apps/`](gitops/apps/) | Workloads (`media-stack`, `n8n`). |
 | [`gitops/deprecated/`](gitops/deprecated/) | Retired manifests — never reference from an active ApplicationSet. |
 | [`charts/`](charts/) | Helm umbrella charts referenced via `chartHome: ../../../charts` from `gitops/apps/*`. |

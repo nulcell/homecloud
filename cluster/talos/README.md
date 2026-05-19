@@ -92,4 +92,8 @@ talosctl upgrade-k8s --from ${KUBERNETES_VERSION} --to ${KUBERNETES_VERSION_UPGR
 
 # Day never
 talosctl reset --nodes ${NODE_IP} --graceful=false --reboot=true
+
+# Regular patches
+talosctl patch machineconfig --patch @cluster/talos/patches/controlplane.yaml --nodes 10.10.17.5
+talosctl patch machineconfig --patch @cluster/talos/patches/worker.yaml --nodes 10.10.27.254
 ```

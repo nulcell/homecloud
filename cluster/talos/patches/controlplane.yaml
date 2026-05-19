@@ -58,6 +58,12 @@ cluster:
   proxy:
     disabled: true # Cilium replaces kube-proxy
   apiServer:
+    admissionControl:
+      - name: PodSecurity
+        configuration:
+          exemptions:
+            namespaces:
+              - tetragon
     extraArgs:
       enable-aggregator-routing: "true"
     certSANs: # API server cert must cover every address clients hit
