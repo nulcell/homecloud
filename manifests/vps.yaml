@@ -1,23 +1,6 @@
-# Ubuntu 26.04 LTS "VPS" — KubeVirt VM whose rootfs is sparsely cloned (via
-# CDI) from the shared `ubuntu-server-26.04-amd64` DataSource in
-# `manifests/vm-templates.yaml`, so the cloud image isn't re-downloaded per VM.
-# Sizing comes from the upstream `cx1.xlarge` cluster instancetype
-# (4 vCPU / 8 GiB, compute-optimized — dedicated CPU placement); OS defaults
-# (virtio bus, q35 machine, EFI, NIC model) come from the upstream `ubuntu`
-# cluster preference. Both bundles are installed by the kubevirt ArgoCD app.
-# Reference: https://github.com/kubevirt/common-instancetypes#resources
-#
-# Heads up — the `cx` class sets `dedicatedCPUPlacement: true` and
-# `isolateEmulatorThread: true`. Both require the kubelet's CPU Manager
-# static policy enabled on every node the VM might land on. Talos doesn't
-# enable that by default. If the VMI stays Pending, `kubectl -n vps describe
-# vmi vps` will say something about CPU Manager / dedicated CPUs being
-# unavailable. Fallbacks:
-#   - Switch to `u1.xlarge` (4 vCPU / 16 GiB, shared CPU) — no kubelet changes.
-#   - Or enable CPU Manager via a Talos machine patch (reserve CPUs for system).
+# Ubuntu 26.04 LTS "VPS" — KubeVirt VM
 #
 # Apply order (templates first):
-#   kubectl apply -f manifests/vm-templates.yaml
 #   kubectl apply -f manifests/vps.yaml
 #
 # Connect — SSH over the LoadBalancer (everyday entrypoint):
@@ -43,17 +26,17 @@
 # 8/16, etc.) if the VPS shape doesn't fit — the `ubuntu` preference works
 # with any of them.
 #
-# QoS notes:
-#   - Memory:  Guaranteed by default (KubeVirt sets request == limit, plus
-#              ~512Mi overhead for QEMU/virt-launcher).
-#   - CPU:     Burstable. cpuAllocationRatio=1 (KubeVirt CR) makes the pod
-#              CPU request match the guest vCPU count, but no CPU limit is
-#              set. For fully Guaranteed CPU, add `cpu.dedicatedCPUPlacement:
-#              true` to the instancetype AND enable kubelet CPU Manager
-#              static policy on every node.
-#
 # Clean up (delete the VM AND its rootfs PVC, since dataVolumeTemplates owns it):
 #   kubectl delete -f manifests/vps.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vps
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
 ---
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
@@ -62,56 +45,54 @@ metadata:
   namespace: vps
 spec:
   runStrategy: Always # restart on crash; switch to Manual for virtctl start/stop control
-  instancetype:
-    kind: VirtualMachineClusterInstancetype
-    name: u1.xlarge # 4 vCPU / 16 GiB, shared CPU — no kubelet CPU Manager needed.
-    # cx1.xlarge (4/8, dedicated CPU) requires `kubevirt.io/cpumanager=true`
-    # on nodes; Talos doesn't enable CPU Manager static policy by default.
-  preference:
-    kind: VirtualMachineClusterPreference
-    name: ubuntu
   dataVolumeTemplates:
     - metadata:
-        name: vps-root
+        name: ubuntu-vps-root
       spec:
-        # Sparse CSI clone of `vps/ubuntu-server-26.04-amd64` (DataSource).
-        # First-boot cloud-init grows the partition + filesystem to fill 20Gi.
-        sourceRef:
-          kind: DataSource
-          name: ubuntu-server-26.04-amd64
-          namespace: vps
+        source:
+          http:
+            url: https://cloud-images.ubuntu.com/releases/26.04/release/ubuntu-26.04-server-cloudimg-amd64.img
         storage:
-          accessModes: [ReadWriteOnce] # no live-migration; node drain restarts the VM
-          # Filesystem mode (default). The clone is done by Longhorn's CSI
-          # driver thanks to the `csi-clone` strategy set on the longhorn
-          # StorageProfile in vm-templates.yaml — no userspace cloner pod
-          # spawns, so the lost+found permission issue doesn't apply.
           resources:
             requests:
               storage: 20Gi
+          accessModes: [ReadWriteMany]
+          # storageClassName omitted — Longhorn is the cluster default. Override
+          # here only if you want a non-default class for this VM.
   template:
     metadata:
       labels:
         kubevirt.io/vm: vps
+      annotations:
+        kubevirt.io/allow-pod-bridge-network-live-migration: "true"
     spec:
-      # No evictionStrategy — RWO PVC can't be live-migrated; on node drain
-      # the VM is shut down and restarted (the PVC re-attaches wherever it
-      # lands). Set back to `LiveMigrate` if/when the rootfs becomes RWX.
+      evictionStrategy: LiveMigrate
       domain:
+        cpu:
+          cores: 4
+        memory:
+          guest: 8Gi
         devices:
           disks:
             - name: rootdisk
+              disk:
+                bus: virtio
             - name: cloudinitdisk
+              disk:
+                bus: virtio
           interfaces:
             - name: default
               bridge: {}
+          rng: {}
+        machine:
+          type: q35
       networks:
         - name: default
           pod: {}
       volumes:
         - name: rootdisk
           dataVolume:
-            name: vps-root
+            name: ubuntu-vps-root
         - name: cloudinitdisk
           cloudInitNoCloud:
             userData: |
@@ -125,8 +106,8 @@ spec:
                   ssh_authorized_keys:
                     - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEn9DdzGbGXbjxkvmA4n8HV1JBCNjo81dtE+Kq+tcupZ
               # qemu-guest-agent enables `virtctl ssh` and clean shutdowns.
-              # growpart + resize2fs (stock cloud-init) expand the root
-              # partition to fill the 20Gi PVC on first boot.
+              # growpart + resize2fs are part of stock cloud-init and will
+              # expand the root partition to fill the PVC on first boot.
               package_update: true
               package_upgrade: true
               package_reboot_if_required: true
