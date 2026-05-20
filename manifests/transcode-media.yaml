@@ -292,8 +292,8 @@ spec:
         app.kubernetes.io/component: maintenance
     spec:
       restartPolicy: Never
-      # Pinned to the node that exposes /dev/dri (the iGPU-bearing host).
-      nodeName: talos-control-1
+      # # Pinned to the node that exposes /dev/dri (the iGPU-bearing host).
+      # nodeName: talos-control-1
       containers:
         - name: transcode
           image: linuxserver/ffmpeg:latest
