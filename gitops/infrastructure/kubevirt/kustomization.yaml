@@ -12,6 +12,8 @@ kind: Kustomization
 resources:
   - https://github.com/kubevirt/kubevirt/releases/download/v1.8.2/kubevirt-operator.yaml
   - https://github.com/kubevirt/containerized-data-importer/releases/download/v1.65.0/cdi-operator.yaml
+  - kubevirt.yaml
+  - cdi.yaml
   # kubevirt-manager: web UI for KubeVirt VMs. Single bundled manifest that
   # ships its own namespace, CRDs, RBAC, Deployment, and a ClusterIP Service
   # `kubevirt-manager:8080` exposed via gitops/infrastructure/infra-app-httproutes/.
@@ -26,5 +28,3 @@ resources:
   # Names + sizes: https://github.com/kubevirt/common-instancetypes
   - https://github.com/kubevirt/common-instancetypes/releases/download/v1.6.0/common-clusterinstancetypes-bundle-v1.6.0.yaml
   - https://github.com/kubevirt/common-instancetypes/releases/download/v1.6.0/common-clusterpreferences-bundle-v1.6.0.yaml
-  - kubevirt.yaml
-  - cdi.yaml
