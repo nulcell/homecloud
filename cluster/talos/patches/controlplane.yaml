@@ -24,6 +24,10 @@ machine:
   time:
     servers:
       - pool.ntp.org
+  certSANs: # API server cert must cover every address clients hit
+    - k8s.nulcell.com # the VIP's DNS name
+    - 10.10.25.25 # the VIP
+    - 10.10.17.5 # node #1
   kubelet:
     extraArgs:
       rotate-server-certificates: "true"
@@ -58,30 +62,28 @@ cluster:
   proxy:
     disabled: true # Cilium replaces kube-proxy
   apiServer:
-    admissionControl:
-      - name: PodSecurity
-        configuration:
-          exemptions:
-            namespaces:
-              - tetragon
+    # admissionControl:
+    #   - name: PodSecurity
+    #     configuration:
+    #       exemptions:
+    #         namespaces:
+    #           - tetragon
     extraArgs:
       enable-aggregator-routing: "true"
     certSANs: # API server cert must cover every address clients hit
       - k8s.nulcell.com # the VIP's DNS name
       - 10.10.25.25 # the VIP
       - 10.10.17.5 # node #1
-      - 10.10.17.15 # node #2 (future)
-      - 10.10.17.25 # node #3 (future)
   discovery:
     enabled: true
   etcd:
     advertisedSubnets:
       - 10.10.16.0/20
----
-apiVersion: v1alpha1
-kind: HostnameConfig
-auto: "off"
-hostname: talos-control-1 # A static hostname to set for the machine.
+# ---
+# apiVersion: v1alpha1
+# kind: HostnameConfig
+# auto: "off"
+# hostname: talos-control-1 # A static hostname to set for the machine.
 ---
 apiVersion: v1alpha1
 kind: Layer2VIPConfig

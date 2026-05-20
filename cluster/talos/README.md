@@ -40,17 +40,18 @@ Record the **schematic ID** somewhere you'll find it again — you need it for `
 ## Common commands
 
 ```bash
-export TALOSCONFIG_PATH=$(pwd)/generated/talosconfig
-export INSTALLER=metal-installer-secureboot
+export TALOSCONFIG_PATH=cluster/talos/generated/talosconfig
+export INSTALLER=metal-installer
 export SCHEMATIC_ID=d78c7cda9fda387e6420896d82d50d5cc97d004feeece7812703c5e1582b82f7
 export TALOS_VERSION=v1.13.2
 export KUBERNETES_VERSION=v1.35.5
 export INSTALL_IMAGE=factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION}
 
 export NODE_IP=10.10.17.5
+export WORKER_IP=10.10.27.254
 
 # Generate secrets (ONCE, ever)
-# talosctl gen secrets --output-file secrets/secret.yaml
+# talosctl gen secrets --output-file cluster/talos/secrets/secret.yaml
 
 # Generate the initial config
 talosctl gen config homecloud https://k8s.nulcell.com:6443 \
@@ -58,48 +59,47 @@ talosctl gen config homecloud https://k8s.nulcell.com:6443 \
   --talos-version ${TALOS_VERSION} \
   --install-image ${INSTALL_IMAGE} \
   --install-disk /dev/nvme0n1 \
-  --with-secrets secrets/secret.yaml \
-  --output-dir ./generated --force
-talosctl config merge --config $TALOSCONFIG_PATH --context homecloud
-talosctl config endpoints  ${NODE_IP} --context homecloud
-talosctl config nodes ${NODE_IP} --context homecloud
+  --with-secrets cluster/talos/secrets/secret.yaml \
+  --output-dir cluster/talos/generated --force
+rm ~/.talos/config 
+talosctl config merge $TALOSCONFIG_PATH --context homecloud
+talosctl config endpoints k8s.nulcell.com --context homecloud
+talosctl config nodes ${NODE_IP} ${WORKER_IP} --context homecloud
 
 # Patch + apply
-talosctl machineconfig patch generated/controlplane.yaml \
-  --patch @patches/controlplane.yaml \
-  --output controlplane-final.yaml
-talosctl validate --config controlplane-final.yaml --mode metal
-talosctl apply-config --insecure --nodes ${NODE_IP} --file controlplane-final.yaml
+talosctl machineconfig patch cluster/talos/generated/controlplane.yaml \
+  --patch @cluster/talos/patches/controlplane.yaml \
+  --output cluster/talos/controlplane-final.yaml
+talosctl validate --config cluster/talos/controlplane-final.yaml --mode metal
+talosctl apply-config --insecure --nodes ${NODE_IP} --file cluster/talos/controlplane-final.yaml
 
 # Bootstrap etcd (ONCE, on ONE node, ever)
-talosctl bootstrap --nodes ${NODE_IP}
-talosctl config endpoints 10.10.25.25 k8s.nulcell.com --context homecloud
-
+talosctl bootstrap --nodes ${NODE_IP} --endpoints ${NODE_IP}
 
 # Pull kubeconfig
-talosctl kubeconfig --merge
+talosctl kubeconfig --merge --force --nodes ${NODE_IP}
 # OR, if you want to keep it separate:
 talosctl kubeconfig ./kubeconfig
-export KUBECONFIG=$(pwd)/kubeconfig
+export KUBECONFIG=cluster/talos/kubeconfig
 
 # Approve CSRs if any are pending
 kubectl get csr -o json | jq -r '.items[] | select(.status == {}) | .metadata.name' | xargs -r kubectl certificate approve
 
 # Optional, add the worker node to the cluster (repeat for each worker)
 export WORKER_IP=10.10.27.254
-talosctl machineconfig patch generated/worker.yaml \
-  --patch @patches/worker.yaml \
-  --output worker-final.yaml
-talosctl validate --config worker-final.yaml --mode metal
-talosctl apply-config --insecure --nodes ${WORKER_IP} --file worker-final.yaml
+talosctl machineconfig patch cluster/talos/generated/worker.yaml \
+  --patch @cluster/talos/patches/worker.yaml \
+  --output cluster/talos/worker-final.yaml
+talosctl validate --config cluster/talos/worker-final.yaml --mode metal
+talosctl apply-config --insecure --nodes ${WORKER_IP} --file cluster/talos/worker-final.yaml
 kubectl get csr -o json | jq -r '.items[] | select(.status == {}) | .metadata.name' | xargs -r kubectl certificate approve
 
 # Go ahead and install the CNI and other addons
-../bootstrap/install.sh
+cluster/bootstrap/install.sh
 
 # Day-2
 talosctl get links
-talosctl health
+talosctl health --nodes ${NODE_IP}
 talosctl dashboard
 talosctl upgrade --image factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION}
 export KUBERNETES_VERSION_UPGRADE=v1.36.1
@@ -111,4 +111,10 @@ talosctl reset --nodes ${NODE_IP} --graceful=false --reboot=true
 # Regular patches
 talosctl patch machineconfig --patch @cluster/talos/patches/controlplane.yaml --nodes 10.10.17.5
 talosctl patch machineconfig --patch @cluster/talos/patches/worker.yaml --nodes 10.10.27.254
+
+# Update the Talos image (requires reinstall)
+talosctl patch machineconfig --patch @cluster/talos/patches/controlplane-image.yaml --nodes 10.10.17.5
+talosctl upgrade --image factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION} --nodes 10.10.17.5
+talosctl patch machineconfig --patch @cluster/talos/patches/worker-image.yaml --nodes 10.10.27.254
+talosctl upgrade --image factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION} --nodes 10.10.27.254
 ```

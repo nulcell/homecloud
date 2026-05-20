@@ -24,6 +24,10 @@ machine:
   time:
     servers:
       - pool.ntp.org
+  certSANs: # API server cert must cover every address clients hit
+    - k8s.nulcell.com # the VIP's DNS name
+    - 10.10.25.25 # the VIP
+    - 10.10.17.5 # node #1
   kubelet:
     extraArgs:
       rotate-server-certificates: "true"
@@ -46,8 +50,8 @@ machine:
       - name: nvme_tcp
       - name: vfio_pci
       - name: uio_pci_generic
----
-apiVersion: v1alpha1
-kind: HostnameConfig
-auto: "off"
-hostname: talos-worker-1 # A static hostname to set for the machine.
+# ---
+# apiVersion: v1alpha1
+# kind: HostnameConfig
+# auto: "off"
+# hostname: talos-worker-1 # A static hostname to set for the machine.
