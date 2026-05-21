@@ -14,7 +14,7 @@ spec:
           - path: gitops/operators/*
   template:
     metadata:
-      name: "infra-{{.path.basename}}"
+      name: "operators-{{.path.basename}}"
       annotations:
         argocd.argoproj.io/sync-wave: "5"
     spec:

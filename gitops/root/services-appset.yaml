@@ -14,7 +14,7 @@ spec:
           - path: gitops/services/*
   template:
     metadata:
-      name: "infra-{{.path.basename}}"
+      name: "services-{{.path.basename}}"
       annotations:
         argocd.argoproj.io/sync-wave: "15"
     spec:
