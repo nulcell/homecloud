@@ -19,7 +19,6 @@ resources:
   # (matchLabels said `version: nightly` while template labels said `v1.5.3`,
   # so the API server rejected it). Fixed upstream in v1.5.4 — stay on .4+.
   - https://github.com/kubevirt-manager/kubevirt-manager/releases/download/v1.5.4/bundled-v1.5.4.yaml
-  - gateway-kubevirt-manager.yaml
   # # Common cluster instancetypes (sizing — u1.small, cx1.large, …) and
   # # preferences (OS defaults — ubuntu, fedora, windows.11, …). Lets VMs
   # # express their shape via `spec.instancetype` + `spec.preference` instead
