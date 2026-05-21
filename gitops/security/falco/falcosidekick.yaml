@@ -2,6 +2,8 @@ apiVersion: instance.falcosecurity.dev/v1alpha1
 kind: Component
 metadata:
   name: sidekick
+  labels:
+    app.kubernetes.io/managed-by: falco-operator
 spec:
   component:
     type: falcosidekick

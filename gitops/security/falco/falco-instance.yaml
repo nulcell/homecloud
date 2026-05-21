@@ -2,6 +2,8 @@ apiVersion: instance.falcosecurity.dev/v1alpha1
 kind: Falco
 metadata:
   name: falco
+  labels:
+    app.kubernetes.io/managed-by: falco-operator
 spec:
   type: DaemonSet
   updateStrategy:
@@ -13,6 +15,8 @@ apiVersion: artifact.falcosecurity.dev/v1alpha1
 kind: Config
 metadata:
   name: engine-config
+  labels:
+    app.kubernetes.io/managed-by: falco-operator
 spec:
   config:
     engine:

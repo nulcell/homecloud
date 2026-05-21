@@ -2,6 +2,8 @@ apiVersion: artifact.falcosecurity.dev/v1alpha1
 kind: Rulesfile
 metadata:
   name: falco-rules
+  labels:
+    app.kubernetes.io/managed-by: falco-operator
 spec:
   ociArtifact:
     image:

@@ -9,4 +9,4 @@ resources:
   - falcosidekick.yaml
   - falcosidekick-ui.yaml
   - falcosidekick-ui-http-routes.yaml
-  # - metacollector.yaml
+  - metacollector.yaml

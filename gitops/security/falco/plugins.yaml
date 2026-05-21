@@ -2,6 +2,8 @@ apiVersion: artifact.falcosecurity.dev/v1alpha1
 kind: Plugin
 metadata:
   name: container
+  labels:
+    app.kubernetes.io/managed-by: falco-operator
 spec:
   ociArtifact:
     image:
@@ -14,6 +16,8 @@ apiVersion: artifact.falcosecurity.dev/v1alpha1
 kind: Plugin
 metadata:
   name: k8saudit
+  labels:
+    app.kubernetes.io/managed-by: falco-operator
 spec:
   ociArtifact:
     image:
