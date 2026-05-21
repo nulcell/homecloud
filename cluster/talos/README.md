@@ -79,7 +79,7 @@ talosctl bootstrap --nodes ${NODE_IP} --endpoints ${NODE_IP}
 # Pull kubeconfig
 talosctl kubeconfig --merge --force --nodes ${NODE_IP}
 # OR, if you want to keep it separate:
-talosctl kubeconfig ./kubeconfig
+talosctl kubeconfig cluster/talos/kubeconfig --nodes ${NODE_IP} 
 export KUBECONFIG=cluster/talos/kubeconfig
 
 # Approve CSRs if any are pending
