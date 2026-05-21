@@ -113,6 +113,7 @@ spec:
               package_reboot_if_required: true
               packages:
                 - qemu-guest-agent
+                - fastfetch
               runcmd:
                 - systemctl enable --now qemu-guest-agent
 ---
