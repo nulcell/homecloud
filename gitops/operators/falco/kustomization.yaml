@@ -5,7 +5,7 @@ namespace: falco-operator
 helmCharts:
   - name: falco-operator
     repo: https://falcosecurity.github.io/charts
-    version: 0.2.2
+    version: 0.1.0
     releaseName: falco-operator
     namespace: falco-operator
     valuesFile: values.yaml
