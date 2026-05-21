@@ -68,14 +68,14 @@ data:
         Host           falco-k8saudit
         Port           9765
         URI            /k8s-audit
-        Format         json_stream
+        Format         json
         json_date_key  false
 
   parsers.conf: |
     [PARSER]
         Name        json
         Format      json
-        Time_Key    time
+        Time_Key    timestamp
         Time_Format %Y-%m-%dT%H:%M:%S.%L
 ---
 apiVersion: apps/v1
