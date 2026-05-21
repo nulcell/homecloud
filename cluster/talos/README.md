@@ -44,7 +44,7 @@ export TALOSCONFIG_PATH=cluster/talos/generated/talosconfig
 export INSTALLER=metal-installer
 export SCHEMATIC_ID=d78c7cda9fda387e6420896d82d50d5cc97d004feeece7812703c5e1582b82f7
 export TALOS_VERSION=v1.13.2
-export KUBERNETES_VERSION=v1.35.5
+export KUBERNETES_VERSION=v1.36.1
 export INSTALL_IMAGE=factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION}
 
 export NODE_IP=10.10.17.5
