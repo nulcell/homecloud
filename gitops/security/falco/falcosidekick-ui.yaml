@@ -33,7 +33,9 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
   volumeClaimTemplates:
-    - metadata:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
         name: redis-data
       spec:
         accessModes: ["ReadWriteOnce"]
