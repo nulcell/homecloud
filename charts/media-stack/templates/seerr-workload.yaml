@@ -8,7 +8,7 @@ metadata:
   labels:
     {{- include "mediaStack.labels" (dict "ctx" . "app" "seerr") | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.seerr.replicas }}
   {{- if eq $kind "StatefulSet" }}
   serviceName: seerr
   updateStrategy:

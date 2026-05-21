@@ -7,7 +7,7 @@ metadata:
   labels:
     {{- include "mediaStack.labels" (dict "ctx" . "app" "servarr") | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.servarr.replicas }}
   strategy:
     type: Recreate
   selector:

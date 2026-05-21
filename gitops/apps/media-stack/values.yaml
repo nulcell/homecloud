@@ -40,6 +40,7 @@ vpn:
 
 # Hostnames published via external-dns. Omit any to keep that app internal-only.
 jellyfin:
+  replicas: 0
   image:
     tag: latest
   publishedServerUrl: https://jellyfin.nulcell.com
@@ -60,22 +61,29 @@ jellyfin:
     hostname: jellyfin.nulcell.com
 
 seerr:
+  replicas: 0
   image:
     tag: v3.2.0
   gateway:
     hostname: seerr.nulcell.com
 
 sonarr:
+  replicas: 0
   gateway:
     hostname: sonarr.nulcell.com
 
 radarr:
+  replicas: 0
   gateway:
     hostname: radarr.nulcell.com
 
 bazarr:
+  replicas: 0
   gateway:
     hostname: bazarr.nulcell.com
+
+servarr:
+  replicas: 0
 
 prowlarr:
   gateway:

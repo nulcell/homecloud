@@ -115,6 +115,7 @@ vpn:
 # ---------- Jellyfin (media server) ----------
 jellyfin:
   enabled: true
+  replicas: 1
   # Deployment | StatefulSet. StatefulSet gives a stable pod identity (jellyfin-0)
   # which keeps library/metadata paths stable across restarts.
   workloadKind: StatefulSet
@@ -161,6 +162,7 @@ jellyfin:
 # ---------- Jellyseerr (request manager) ----------
 seerr:
   enabled: true
+  replicas: 1
   # Deployment | StatefulSet. StatefulSet gives a stable pod identity (seerr-0)
   # which keeps the sqlite request DB on stable paths across restarts.
   workloadKind: StatefulSet
@@ -185,6 +187,7 @@ seerr:
 # ---------- Sonarr (TV) ----------
 sonarr:
   enabled: true
+  replicas: 1
   # Deployment | StatefulSet.
   workloadKind: Deployment
   image:
@@ -208,6 +211,7 @@ sonarr:
 # ---------- Radarr (movies) ----------
 radarr:
   enabled: true
+  replicas: 1
   # Deployment | StatefulSet.
   workloadKind: Deployment
   image:
@@ -231,6 +235,7 @@ radarr:
 # ---------- Bazarr (subtitles) ----------
 bazarr:
   enabled: true
+  replicas: 1
   # Deployment | StatefulSet.
   workloadKind: Deployment
   image:
@@ -257,6 +262,7 @@ bazarr:
 # servarr pod, and traffic enters via the firewallInputPorts above.
 servarr:
   enabled: true
+  replicas: 1
 
 # ---------- Prowlarr (indexer aggregator) ----------
 prowlarr:
@@ -286,6 +292,7 @@ prowlarr:
 # (Tdarr docs convention) and an emptyDir at /temp for in-flight transcodes.
 tdarr:
   enabled: false
+  replicas: 1
   # StatefulSet pins config/db identity (tdarr-0) — important for the queue/db.
   workloadKind: StatefulSet
   image:
