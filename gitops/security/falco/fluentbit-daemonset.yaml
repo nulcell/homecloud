@@ -53,7 +53,15 @@ data:
         Read_from_Head true
         Refresh_Interval 5
 
-    # 2. Forward them to Falco's k8saudit plugin endpoint
+    # 2. Extract and decode the nested "log" string into a clean JSON map
+    [FILTER]
+        Name           parser
+        Match          audit.k8s
+        Key_Name       log
+        Parser         json
+        Reserve_Data   false
+
+    # 3. Forward them to Falco's k8saudit plugin endpoint
     [OUTPUT]
         Name           http
         Match          audit.k8s
