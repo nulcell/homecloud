@@ -5,7 +5,7 @@ namespace: falco
 resources:
   - falco-instance.yaml
   - plugins.yaml
-  - fluentbit-daemonset.yaml
+  # - fluentbit-daemonset.yaml
   - detection-rules.yaml
   - falcosidekick.yaml
   - falcosidekick-ui.yaml
