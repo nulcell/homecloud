@@ -4,7 +4,7 @@ namespace: falco
 
 helmCharts:
   - name: falco-talon
-    repo: https://falcosecurity.github.io/helm-charts
+    repo: https://falcosecurity.github.io/charts
     version: 0.4.0
     releaseName: falco-talon
     namespace: falco
