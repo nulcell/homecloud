@@ -16,7 +16,7 @@ spec:
     metadata:
       name: "sec-{{.path.basename}}"
       annotations:
-        argocd.argoproj.io/sync-wave: "5" # after infrastructure (0); before apps (10)
+        argocd.argoproj.io/sync-wave: "5"
     spec:
       project: default
       source:

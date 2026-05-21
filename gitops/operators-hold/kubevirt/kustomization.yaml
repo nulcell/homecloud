@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# No top-level `namespace:` — KubeVirt resources stay in `kubevirt`, CDI in
+# `cdi`. Each upstream operator manifest already creates and namespaces its
+# own resources. Both operators ship with `pod-security.kubernetes.io/enforce:
+# privileged` on their namespaces, so no namespace patching is needed.
+#
+# ArgoCD's repo-server fetches both operator manifests at render time. Keep
+# the two versions paired with a known-good KubeVirt/CDI combination —
+# https://github.com/kubevirt/kubevirt/blob/main/docs/compatibility.md
+
+resources:
+  - https://github.com/kubevirt/kubevirt/releases/download/v1.8.2/kubevirt-operator.yaml
+  - https://github.com/kubevirt/containerized-data-importer/releases/download/v1.65.0/cdi-operator.yaml
+  - kubevirt.yaml
+  - cdi.yaml
+  # kubevirt-manager: web UI for KubeVirt VMs. Single bundled manifest that
+  # ships its own namespace, CRDs, RBAC, Deployment, and a ClusterIP Service
+  # `kubevirt-manager:8080` exposed via gitops/infrastructure/infra-app-httproutes/.
+  # v1.5.3's bundled manifest shipped a broken Deployment selector
+  # (matchLabels said `version: nightly` while template labels said `v1.5.3`,
+  # so the API server rejected it). Fixed upstream in v1.5.4 — stay on .4+.
+  - https://github.com/kubevirt-manager/kubevirt-manager/releases/download/v1.5.4/bundled-v1.5.4.yaml
+  # # Common cluster instancetypes (sizing — u1.small, cx1.large, …) and
+  # # preferences (OS defaults — ubuntu, fedora, windows.11, …). Lets VMs
+  # # express their shape via `spec.instancetype` + `spec.preference` instead
+  # # of inlining ~60 lines of domain config. Bump alongside KubeVirt.
+  # # Names + sizes: https://github.com/kubevirt/common-instancetypes
+  # - https://github.com/kubevirt/common-instancetypes/releases/download/v1.6.0/common-clusterinstancetypes-bundle-v1.6.0.yaml
+  # - https://github.com/kubevirt/common-instancetypes/releases/download/v1.6.0/common-clusterpreferences-bundle-v1.6.0.yaml
