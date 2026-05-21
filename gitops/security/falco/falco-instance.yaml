@@ -29,6 +29,11 @@ spec:
     buffered_outputs: false
     outputs_queue:
       capacity: 0
+    json_output: true
+    json_include_output_property: true
+    http_output:
+      enabled: true
+      url: "http://sidekick:2801"
   priority: 50
 ---
 apiVersion: v1
