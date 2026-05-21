@@ -10,6 +10,17 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
+  services:
+    - name: falco-service
+      ports:
+        - name: health
+          port: 8765
+          targetPort: 8765
+          protocol: TCP
+        - name: k8saudit
+          port: 9765 # Port exposed by the Service
+          targetPort: 9765 # Port the Plugin is listening on inside the container
+          protocol: TCP
 ---
 apiVersion: artifact.falcosecurity.dev/v1alpha1
 kind: Config
