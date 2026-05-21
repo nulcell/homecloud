@@ -4,8 +4,8 @@ namespace: falco
 
 resources:
   - falco-instance.yaml
-  # - plugins.yaml
-  # - detection-rules.yaml
+  - plugins.yaml
+  - detection-rules.yaml
   # - falcosidekick.yaml
   # - falcosidekick-ui.yaml
   # - metacollector.yaml
