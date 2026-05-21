@@ -27,7 +27,7 @@ mise install   # everything pinned in .mise.toml
 ## Roadmap
 
 - [x] Single control-plane Talos node with 1 worker.
-- [x] Infrastructure:
+- [ ] Infrastructure:
   - [x] [Cilium](https://cilium.io/) CNI with eBPF datapath (no kube-proxy).
   - [x] [Cilium Gateway API](https://docs.cilium.io/en/stable/k8s/gateway-api/).
   - [x] [SOPS](https://github.com/mozilla/sops) for secret encryption management in GitOps.
@@ -35,6 +35,7 @@ mise install   # everything pinned in .mise.toml
   - [x] [external-dns](https://github.com/kubernetes-sigs/external-dns) for dynamic DNS records via Cloudflare.
   - [x] [cert-manager](https://cert-manager.io/) for TLS certificates.
   - [x] [Longhorn](https://longhorn.io/) for distributed block storage.
+  - [ ] [SeaweedFS Operator](https://github.com/seaweedfs/seaweedfs-operator) for distributed file/object storage.
   - [x] [Kube-prometheus-stack](https://github.com/prometheus-operator/kube-prometheus) for monitoring.
   - [x] [KubeVirt](https://kubevirt.io/) for VMs on Kubernetes.
   - [x] [CNPG Operator](https://cloudnativepg.io/) for Postgres on Kubernetes.
@@ -72,6 +73,8 @@ mise install   # everything pinned in .mise.toml
 - [ ] Retire `network/maas/` in favor of a Raspberry Pi running Pi-hole (DNS + DHCP), netboot, and Tailscale.
 
 ## Architecture
+
+### High-level Component Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -115,12 +118,21 @@ flowchart TD
     %% Storage & Stateful Tier
     subgraph DataStore ["Storage & Databases"]
         LH[Longhorn Block Storage]:::storage
+        SFS[SeaweedFS Operator]:::storage
+        SFSC[SeaweedFS Cluster]:::storage
         CNPG[CNPG Postgres Operator]:::storage
+        PGDB[Postgres Database]:::storage
         RMQ[RabbitMQ Operator]:::storage
+        RMQC[RabbitMQ Cluster]:::storage
         Vault[Vault Operator + Secrets CSI]:::storage
         
-        CNPG -->|Claims PVs| LH
-        RMQ -->|Claims PVs| LH
+        SFS -->|Manages Lifecycle| SFSC
+        CNPG -->|Manages Lifecycle| PGDB
+        RMQ -->|Manages Lifecycle| RMQC
+
+        SFSC -->|Claims PVs| LH
+        PGDB -->|Claims PVs| LH
+        RMQC -->|Claims PVs| LH
     end
 
     %% Compute & Workloads
@@ -131,7 +143,7 @@ flowchart TD
             KServe[Knative Serving - Autoscaling]:::compute
             KEvent[Knative Eventing]:::compute
             KRMQ[RabbitMQ Plugin]:::compute
-            KEvent <--> KRMQ <--> RMQ
+            KEvent <--> KRMQ <--> RMQC
         end
 
         subgraph Apps ["Applications"]
@@ -147,7 +159,8 @@ flowchart TD
         
         Apps -->|Mounts Dynamic Secrets| Vault
         Apps -->|Persistent Storage| LH
-        Apps -->|Database Queries| CNPG
+        Apps -->|File/Object Storage| SFSC
+        Apps -->|Database Queries| PGDB
         N8N <--> KEvent
         CF -->|Direct Tunnel| VP
     end
@@ -197,6 +210,8 @@ flowchart TD
     Argo -.->|Deploys & Manages| Observability
 ```
 
+### Security Tooling Focus Diagram
+
 ```mermaid
 flowchart LR
     %% Centralized Security Dashboard
@@ -239,4 +254,58 @@ flowchart LR
 
     FB -->|Audit & Security Logs| Wazuh
     FB -->|Application Logs| Loki
+```
+
+### Hardware Layout Diagram
+
+```mermaid
+flowchart TB
+    subgraph Public ["Public Internet"]
+        direction LR
+        PubUser[Users / Clients]:::external
+        PrivUser[Admin / Operator]:::external
+        CFD[Cloudflare DNS]:::external
+        CFT[Cloudflare Tunnel]:::external
+        S3[AWS S3 / Object Storage]:::external
+        TS[Tailscale ZTNA]:::external
+
+        PubUser -->|DNS| CFD
+        PubUser -->|HTTPS| CFT
+        PrivUser -->|DNS| CFD
+        PrivUser -->|ZTNA| TS
+    end
+
+    subgraph Network ["Home Network"]
+        direction TB
+        Router[Main Router]:::internal
+        Switch[2.5GbE Switch]:::internal
+        RPI[Pi-hole + Netboot + Tailscale]:::internal
+
+        Router --> Switch
+        Switch <--> RPI
+
+        subgraph Cluster ["HomeCloud Kubernetes Cluster"]
+            direction LR
+            subgraph ControlPlane ["Control Plane"]
+                K8sVIP[K8s API VIP]:::k8s
+                CP1[Control Plane Node 1]:::k8s
+                K8sVIP <-->|VIP| CP1
+            end
+
+            subgraph Workers ["Worker Nodes"]
+                W1[Worker Node 1]:::k8s
+            end
+
+            Workers -->|API| K8sVIP
+        end
+
+        Switch <-->|LAN| ControlPlane
+        Switch <-->|LAN| Workers
+    end
+
+    %% Cross-boundary traffic
+    Router -->|WAN| Public
+    CFT -->|Public Ingress| Cluster
+    TS -->|Private Access| RPI
+    TS -->|ZTNA| K8sVIP
 ```
