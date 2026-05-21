@@ -8,5 +8,5 @@ resources:
   - detection-rules.yaml
   - falcosidekick.yaml
   - falcosidekick-ui.yaml
-  # - falcosidekick-ui-http-routes.yaml
+  - falcosidekick-ui-http-routes.yaml
   # - metacollector.yaml
