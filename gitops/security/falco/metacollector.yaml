@@ -1,0 +1,9 @@
+apiVersion: instance.falcosecurity.dev/v1alpha1
+kind: Component
+metadata:
+  name: metacollector
+spec:
+  component:
+    type: metacollector
+    version: "0.1.1"
+  replicas: 1

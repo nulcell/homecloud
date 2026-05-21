@@ -2,5 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: falco
 
-resources: []
-  # - namespace.yaml
+resources:
+  - falco-instance.yaml
+  # - plugins.yaml
+  # - detection-rules.yaml
+  # - falcosidekick.yaml
+  # - falcosidekick-ui.yaml
+  # - metacollector.yaml

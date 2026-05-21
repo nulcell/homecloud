@@ -1,0 +1,25 @@
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Plugin
+metadata:
+  name: container
+spec:
+  ociArtifact:
+    image:
+      repository: falcosecurity/plugins/plugin/container
+      tag: latest
+    registry:
+      name: ghcr.io
+---
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Plugin
+metadata:
+  name: k8saudit
+spec:
+  ociArtifact:
+    image:
+      repository: falcosecurity/plugins/plugin/k8saudit
+      tag: latest
+    registry:
+      name: ghcr.io
+  config:
+    openParams: "http://:9765/k8s-audit"
