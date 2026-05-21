@@ -57,8 +57,8 @@ data:
     [OUTPUT]
         Name           http
         Match          audit.k8s
-        Host           falco.falco.svc.cluster.local
-        Port           8765
+        Host           falco
+        Port           9765
         URI            /k8s-audit
         Format         json
 
