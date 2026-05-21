@@ -38,45 +38,42 @@ metadata:
     app.kubernetes.io/name: fluent-bit
 data:
   fluent-bit.conf: |
-    [SERVICE]
-        Flush         1
-        Log_Level     info
-        Daemon        off
-        Parsers_File  parsers.conf
+    # [SERVICE]
+    #     Flush         1
+    #     Log_Level     info
+    #     Daemon        off
+    #     Parsers_File  parsers.conf
 
     # 1. Read the Kubernetes Audit Logs from the Talos Filesystem
     [INPUT]
-        Name           tail
-        Tag            audit.k8s
-        Path           /var/log/audit/kube/*.log
-        Parser         json
-        Read_from_Head true
-        Refresh_Interval 5
+        Name              tail
+        Alias             audit.k8s
+        Tag               audit.k8s
+        Buffer_Chunk_Size 512k
+        Buffer_Max_Size   5m
+        Path              /var/log/audit/kube/*.log
+        Parser            json
+        Skip_Long_Lines   On
+        Read_from_Head    true
+        Mem_Buf_Limit     128MB
+        Refresh_Interval  10
 
-    # 2. Extract and decode the nested "log" string into a clean JSON map
-    [FILTER]
-        Name           parser
-        Match          audit.k8s
-        Key_Name       log
-        Parser         json
-        Reserve_Data   false
-
-    # 3. Forward them to Falco's k8saudit plugin endpoint
+    # 2. Forward them to Falco's k8saudit plugin endpoint
     [OUTPUT]
-        Name           http
-        Match          audit.k8s
-        Host           falco-k8saudit
-        Port           9765
-        URI            /k8s-audit
-        Format         json
-        json_date_key  false
+        Name            http
+        Alias           kube_audit_to_falco
+        Match           audit.k8s
+        Host            falco-k8saudit
+        Port            9765
+        URI             /k8s-audit
+        Format          json
 
-  parsers.conf: |
-    [PARSER]
-        Name        json
-        Format      json
-        Time_Key    timestamp
-        Time_Format %Y-%m-%dT%H:%M:%S.%L
+  # parsers.conf: |
+  #   [PARSER]
+  #       Name        json
+  #       Format      json
+  #       Time_Key    timestamp
+  #       Time_Format %Y-%m-%dT%H:%M:%S.%L
 ---
 apiVersion: apps/v1
 kind: DaemonSet
