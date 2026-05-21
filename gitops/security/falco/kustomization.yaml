@@ -6,6 +6,6 @@ resources:
   - falco-instance.yaml
   - plugins.yaml
   - detection-rules.yaml
-  # - falcosidekick.yaml
-  # - falcosidekick-ui.yaml
+  - falcosidekick.yaml
+  - falcosidekick-ui.yaml
   # - metacollector.yaml
