@@ -5,7 +5,7 @@ n8n:
     repository: docker.n8n.io/n8nio/n8n
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "2.20.9"
+    tag: "2.21.6"
 
   # Used for both GENERIC_TIMEZONE and TZ env vars on the n8n + task-runner pods.
   timezone: UTC
@@ -51,7 +51,7 @@ n8nTaskRunner:
   image:
     repository: n8nio/runners
     pullPolicy: IfNotPresent
-    tag: "2.20.9"
+    tag: "2.21.6"
 
   launcherLogLevel: info
 
