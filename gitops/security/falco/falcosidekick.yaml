@@ -8,6 +8,13 @@ spec:
   component:
     type: falcosidekick
     version: "2.32.0"
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: falcosidekick
+          env:
+            - name: WEBUI_URL
+              value: "http://sidekick-ui:2802" # Match the name of your UI service
   replicas: 2
 ---
 apiVersion: artifact.falcosecurity.dev/v1alpha1
@@ -20,3 +27,4 @@ spec:
     http_output:
       enabled: true
       url: "http://sidekick:2801"
+  priority: 50
