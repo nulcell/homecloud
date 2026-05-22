@@ -20,4 +20,4 @@ config:
         Host            falco-k8saudit.falco
         Port            9765
         URI             /k8s-audit
-        Format          json
+        Format          json_lines
