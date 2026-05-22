@@ -9,7 +9,6 @@ config:
         Path              /var/log/audit/kube/kube-apiserver.log
         Parser            json
         Mem_Buf_Limit     128MB
-        Skip_Long_Lines   On
         Refresh_Interval  10
 
   outputs: |
