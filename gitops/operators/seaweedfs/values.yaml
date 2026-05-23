@@ -105,7 +105,7 @@ serviceMonitor:
 
 webhook:
   # -- Enable or disable webhooks
-  enabled: false # disable during installation to avoid issues with certgen jobs
+  enabled: true # disable during installation to avoid issues with certgen jobs
   # -- Configuration for webhook certificate jobs
   initContainer:
     # -- Image for webhook readiness check init container
