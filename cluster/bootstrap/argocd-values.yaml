@@ -1,4 +1,4 @@
-# Argo CD 9.5.14 values.
+# Argo CD 9.5.15 values.
 global:
   domain: argocd.nulcell.com
 
