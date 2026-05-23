@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # --- Versions (keep in sync with docs/bootstrap.md) -----------------------------
 # cert-manager, Longhorn, and metrics-server are now managed by Argo CD; see
 # gitops/infrastructure/{cert-manager,longhorn,metrics-server}/ for their versions.
-GATEWAY_API_VERSION="v1.5.1"
+GATEWAY_API_VERSION="v1.4.1"
 CILIUM_VERSION="1.19.4"
 ARGOCD_VERSION="9.5.15"
 
