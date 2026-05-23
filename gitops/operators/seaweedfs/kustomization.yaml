@@ -5,7 +5,7 @@ namespace: seaweedfs
 helmCharts:
   - name: seaweedfs-operator
     repo: https://seaweedfs.github.io/seaweedfs-operator/
-    version: 0.1.2
+    version: 0.1.23
     releaseName: seaweedfs-operator
     namespace: seaweed
     valuesFile: values.yaml
