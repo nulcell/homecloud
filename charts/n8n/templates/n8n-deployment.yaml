@@ -69,8 +69,8 @@ spec:
               value: https://{{ .Values.gateway.hostname }}/
             - name: N8N_NATIVE_PYTHON_RUNNER
               value: "true"
-            - name: N8N_RUNNERS_ENABLED
-              value: "true"
+            # - name: N8N_RUNNERS_ENABLED
+            #   value: "true"
             - name: N8N_RUNNERS_MODE
               value: external
             - name: N8N_RUNNERS_BROKER_LISTEN_ADDRESS
