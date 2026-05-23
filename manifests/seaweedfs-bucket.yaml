@@ -1,0 +1,12 @@
+apiVersion: seaweed.seaweedfs.com/v1
+kind: Bucket
+metadata:
+  name: sample
+  namespace: media
+spec:
+  clusterRef:
+    name: seaweedfs
+    namespace: seaweedfs
+  objectLock: false
+  reclaimPolicy: Delete
+  versioning: "Off"

@@ -1,0 +1,24 @@
+apiVersion: seaweed.seaweedfs.com/v1
+kind: Seaweed
+metadata:
+  name: seaweedfs
+  namespace: seaweedfs
+spec:
+  image: chrislusf/seaweedfs:4.28
+  volumeServerDiskCount: 1
+  hostSuffix: sfs.nulcell.com
+  master:
+    replicas: 1
+    volumeSizeLimitMB: 1024
+  volume:
+    replicas: 1
+    requests:
+      storage: 2Gi
+  filer:
+    replicas: 1
+    s3:
+      enabled: true # Enable S3 API (IAM is enabled by default)
+    config: |
+      [leveldb2]
+      enabled = true
+      dir = "/data/filerldb2"
