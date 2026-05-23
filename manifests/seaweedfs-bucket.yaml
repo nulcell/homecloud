@@ -4,9 +4,13 @@ metadata:
   name: sample
   namespace: media
 spec:
+  anonymousRead: true
   clusterRef:
     name: seaweedfs
     namespace: seaweedfs
+  quota:
+    enforce: true
+    size: 1Gi
   objectLock: false
   reclaimPolicy: Delete
-  versioning: "Off"
+  versioning: Enabled
