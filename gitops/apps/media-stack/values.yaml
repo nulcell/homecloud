@@ -99,7 +99,7 @@ prowlarr:
 
 qbittorrent:
   image:
-    tag: 5.2.00
+    tag: 5.2.0
   gateway:
     hostname: qbittorrent.nulcell.com
 
