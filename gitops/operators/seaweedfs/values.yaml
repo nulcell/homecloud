@@ -89,7 +89,7 @@ grafanaDashboard:
 
 serviceMonitor:
   # -- Enable or disable ServiceMonitor for prometheus metrics
-  enabled: false
+  enabled: true
   # -- Specify the interval at which metrics should be scraped
   interval: 10s
   # -- Specify the timeout after which the scrape is ended
@@ -105,7 +105,7 @@ serviceMonitor:
 
 webhook:
   # -- Enable or disable webhooks
-  enabled: true
+  enabled: false # disable during installation to avoid issues with certgen jobs
   # -- Configuration for webhook certificate jobs
   initContainer:
     # -- Image for webhook readiness check init container
