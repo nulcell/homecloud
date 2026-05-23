@@ -308,7 +308,7 @@ tdarr:
   service:
     type: ClusterIP
     ports:
-      web: 8265    # Web UI
+      web: 8265 # Web UI
       server: 8266 # Server <-> Node coordination port
   # FFmpeg shipped with the image; "7" is current. Pin if you need stability.
   ffmpegVersion: "7"
