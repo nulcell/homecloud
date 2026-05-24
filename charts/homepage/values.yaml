@@ -95,6 +95,8 @@ persistence:
 config:
   kubernetes: |
     mode: cluster
+    ingress: true
+    gateway: true
   settings: |
     title: My Home
     background:
