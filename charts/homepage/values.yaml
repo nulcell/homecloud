@@ -93,36 +93,15 @@ persistence:
 # These are the raw YAML strings passed verbatim into each config file.
 # =============================================================================
 config:
+  settings: |
+    title: My Home
+    theme: dark
+    headerStyle: boxed
+    hideVersion: true
   kubernetes: |
     mode: cluster
     ingress: true
     gateway: true
-  settings: |
-    title: My Home
-    background:
-      image: https://images.unsplash.com/photo-1502790671504-542ad42d5189?auto=format&fit=crop&w=2560&q=80
-      blur: sm
-      saturate: 50
-      brightness: 50
-      opacity: 50
-    cardBlur: md
-    theme: dark
-    headerStyle: boxed
-    hideVersion: true
-  bookmarks: |
-    - Developer:
-        - Github:
-            - abbr: GH
-              href: https://github.com/
-  services: |
-    - My First Group:
-        - My First Service:
-            href: http://localhost/
-            description: Homepage is awesome
-    - My Second Group:
-        - My Second Service:
-            href: http://localhost/
-            description: Homepage is awesome
   widgets: |
     - kubernetes:
         cluster:
@@ -142,8 +121,15 @@ config:
         cpu: true
         memory: true
     - search:
-        provider: duckduckgo
+        provider: google
         target: _blank
+  bookmarks: |
+    - Developer:
+        - Github:
+            - abbr: GH
+              href: https://github.com/
+  services: |
+    {}
   docker: |
     {}
   proxmox: |

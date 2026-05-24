@@ -11,9 +11,16 @@ config:
     theme: dark
     headerStyle: boxed
     hideVersion: true
-  services: |
-    []
+  kubernetes: |
+    mode: cluster
+    ingress: true
+    gateway: true
   bookmarks: |
+    - Development:
+        - Homecloud GitHub:
+            - abbr: HC-GH
+              href: https://github.com/nulcell/homecloud
+  services: |
     []
 
 persistence:
