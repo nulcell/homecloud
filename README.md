@@ -48,7 +48,7 @@ mise install   # everything pinned in .mise.toml
 - [ ] Applications:
   - [x] Media stack - Jellyfin, Seerr, Radarr, Sonarr, Bazarr, Prowlarr, Gluetun.
   - [x] [N8N](https://n8n.io/) for workflow automation.
-  - [ ] [Homepage](https://github.com/gethomepage/homepage) for Dashboards.
+  - [x] [Homepage](https://github.com/gethomepage/homepage) for Dashboards.
   - [ ] Portfolio website - VitePress + Cloudflare tunnel on `portfolio.nulcell.com`.
 - [ ] Security Tooling:
   - [x] [Tetragon](https://github.com/cilium/tetragon) for runtime security monitoring. (testing alongside Falco, but leaning towards Falco for better ecosystem and alerting integrations)

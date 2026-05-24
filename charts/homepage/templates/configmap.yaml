@@ -1,0 +1,24 @@
+{{- if not .Values.persistence.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "homepage.fullname" . }}
+  namespace: {{ include "homepage.namespace" . }}
+  labels:
+    {{- include "homepage.labels" . | nindent 4 }}
+data:
+  kubernetes.yaml: |
+    {{- .Values.config.kubernetes | nindent 4 }}
+  settings.yaml: |
+    {{- .Values.config.settings | nindent 4 }}
+  bookmarks.yaml: |
+    {{- .Values.config.bookmarks | nindent 4 }}
+  services.yaml: |
+    {{- .Values.config.services | nindent 4 }}
+  widgets.yaml: |
+    {{- .Values.config.widgets | nindent 4 }}
+  docker.yaml: |
+    {{- .Values.config.docker | nindent 4 }}
+  custom.css: {{ index .Values.config "custom.css" | default "" | quote }}
+  custom.js: {{ index .Values.config "custom.js" | default "" | quote }}
+{{- end }}

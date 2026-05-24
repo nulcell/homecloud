@@ -1,0 +1,17 @@
+# Overrides for the homepage chart at charts/homepage/.
+# Everything not listed here keeps the chart's default value.
+
+gateway:
+  enabled: true
+  host: homepage.nulcell.com
+
+config:
+  settings: |
+    title: Homecloud
+    theme: dark
+    headerStyle: boxed
+    hideVersion: true
+  services: |
+    []
+  bookmarks: |
+    []

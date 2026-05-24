@@ -1,0 +1,16 @@
+apiVersion: v2
+name: homepage
+description: |
+  A highly customizable homepage (dashboard) with Kubernetes service discovery,
+  widgets, and RBAC-based cluster integration.
+type: application
+version: "1.13.1"
+appVersion: "v1.13.1"
+sources:
+  - https://github.com/nulcell/homecloud
+  - https://github.com/gethomepage/homepage
+keywords:
+  - homepage
+  - dashboard
+  - startpage
+  - kubernetes
