@@ -1,5 +1,4 @@
-# Overrides for the homepage chart at charts/homepage/.
-# Everything not listed here keeps the chart's default value.
+replicaCount: 3
 
 gateway:
   enabled: true
@@ -8,20 +7,41 @@ gateway:
 config:
   settings: |
     title: Homecloud
+    description: My personal home dashboard.
+    startUrl: https://homepage.nulcell.com
     theme: dark
+    cardBlur: xs
+    color: gray
+    language: en
+    disableIndexing: true
     headerStyle: boxed
     hideVersion: true
+    layout:
+      Media:
+        sytle: row
+        columns: 4
   kubernetes: |
     mode: cluster
     ingress: true
     gateway: true
   bookmarks: |
     - Development:
-        - Homecloud GitHub:
-            - abbr: HC-GH
-              href: https://github.com/nulcell/homecloud
+      - Homecloud GitHub:
+        - href: https://github.com/nulcell/homecloud
   services: |
-    []
+    - Media:
+      - Jellyfin:
+        - href: http://jellyfin.nulcell.com/
+      - Radarr:
+        - href: http://radarr.nulcell.com/
+      - Sonarr:
+        - href: http://sonarr.nulcell.com/
+      - Bazarr:
+        - href: http://bazarr.nulcell.com/
+      - Prowlarr:
+        - href: http://prowlarr.nulcell.com/
+      - Seerr:
+        - href: http://seerr.nulcell.com/
 
 persistence:
   enabled: false
