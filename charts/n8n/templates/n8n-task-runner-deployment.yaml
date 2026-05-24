@@ -43,7 +43,7 @@ spec:
       enableServiceLinks: true
       containers:
         - name: n8n-task-runner
-          image: "{{ .Values.n8nTaskRunner.image.repository }}:{{ .Values.n8nTaskRunner.image.tag }}"
+          image: "{{ .Values.n8nTaskRunner.image.repository }}:{{ .Values.n8nTaskRunner.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.n8nTaskRunner.image.pullPolicy }}
           env:
             - name: GENERIC_TIMEZONE
