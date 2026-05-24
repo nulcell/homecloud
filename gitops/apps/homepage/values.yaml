@@ -26,22 +26,22 @@ config:
     gateway: true
   bookmarks: |
     - Development:
-      - Homecloud GitHub:
-        - href: https://github.com/nulcell/homecloud
+        - Homecloud GitHub:
+            - href: https://github.com/nulcell/homecloud
   services: |
     - Media:
-      - Jellyfin:
-        href: http://jellyfin.nulcell.com/
-      - Radarr:
-        href: http://radarr.nulcell.com/
-      - Sonarr:
-        href: http://sonarr.nulcell.com/
-      - Bazarr:
-        href: http://bazarr.nulcell.com/
-      - Prowlarr:
-        href: http://prowlarr.nulcell.com/
-      - Seerr:
-        href: http://seerr.nulcell.com/
+        - Jellyfin:
+            href: https://jellyfin.nulcell.com/
+        - Radarr:
+            href: https://radarr.nulcell.com/
+        - Sonarr:
+            href: https://sonarr.nulcell.com/
+        - Bazarr:
+            href: https://bazarr.nulcell.com/
+        - Prowlarr:
+            href: https://prowlarr.nulcell.com/
+        - Seerr:
+            href: https://seerr.nulcell.com/
 
 persistence:
   enabled: false
