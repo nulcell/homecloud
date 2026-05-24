@@ -146,6 +146,8 @@ config:
         target: _blank
   docker: |
     {}
+  proxmox: |
+    {}
   custom.css: ""
   custom.js: ""
 

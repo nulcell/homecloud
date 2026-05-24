@@ -19,6 +19,8 @@ data:
     {{- .Values.config.widgets | nindent 4 }}
   docker.yaml: |
     {{- .Values.config.docker | nindent 4 }}
+  proxmox.yaml: |
+    {{- .Values.config.proxmox | nindent 4 }}
   custom.css: {{ index .Values.config "custom.css" | default "" | quote }}
   custom.js: {{ index .Values.config "custom.js" | default "" | quote }}
 {{- end }}

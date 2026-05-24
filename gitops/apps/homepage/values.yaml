@@ -17,7 +17,7 @@ config:
     []
 
 persistence:
-  enabled: true
+  enabled: false
 
 resources:
   requests:
