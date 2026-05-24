@@ -83,6 +83,8 @@ spec:
               mountPath: /app/config/custom.js
               subPath: custom.js
             {{- end }}
+            - name: logs
+              mountPath: /app/config/logs
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -96,6 +98,8 @@ spec:
           configMap:
             name: {{ include "homepage.fullname" . }}
           {{- end }}
+        - name: logs
+          emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
