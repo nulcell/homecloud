@@ -9,13 +9,19 @@ metadata:
     {{- include "homepage.labels" . | nindent 4 }}
 spec:
   parentRefs:
-    - name: {{ .Values.gateway.parentRef.name }}
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.gateway.parentRef.name }}
       namespace: {{ .Values.gateway.parentRef.namespace }}
       sectionName: {{ .Values.gateway.parentRef.httpSectionName }}
   hostnames:
     - {{ .Values.gateway.host | quote }}
   rules:
-    - filters:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
         - type: RequestRedirect
           requestRedirect:
             scheme: https
@@ -31,13 +37,22 @@ metadata:
     {{- include "homepage.labels" . | nindent 4 }}
 spec:
   parentRefs:
-    - name: {{ .Values.gateway.parentRef.name }}
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.gateway.parentRef.name }}
       namespace: {{ .Values.gateway.parentRef.namespace }}
       sectionName: {{ .Values.gateway.parentRef.sectionName }}
   hostnames:
     - {{ .Values.gateway.host | quote }}
   rules:
-    - backendRefs:
-        - name: {{ include "homepage.fullname" . }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: {{ include "homepage.fullname" . }}
           port: {{ .Values.service.port }}
+          weight: 1
 {{- end }}
