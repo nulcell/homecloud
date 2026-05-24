@@ -27,7 +27,7 @@ mise install   # everything pinned in .mise.toml
 ## Roadmap
 
 - [x] Single control-plane Talos node with 1 worker.
-- [ ] Infrastructure:
+- [x] Infrastructure:
   - [x] [Cilium](https://cilium.io/) CNI with eBPF datapath (no kube-proxy).
   - [x] [Cilium Gateway API](https://docs.cilium.io/en/stable/k8s/gateway-api/).
   - [x] [SOPS](https://github.com/mozilla/sops) for secret encryption management in GitOps.
@@ -35,7 +35,7 @@ mise install   # everything pinned in .mise.toml
   - [x] [external-dns](https://github.com/kubernetes-sigs/external-dns) for dynamic DNS records via Cloudflare.
   - [x] [cert-manager](https://cert-manager.io/) for TLS certificates.
   - [x] [Longhorn](https://longhorn.io/) for distributed block storage.
-  - [ ] [SeaweedFS Operator](https://github.com/seaweedfs/seaweedfs-operator) for distributed file/object storage.
+  - [x] [SeaweedFS Operator](https://github.com/seaweedfs/seaweedfs-operator) for distributed file/object storage.
   - [x] [Kube-prometheus-stack](https://github.com/prometheus-operator/kube-prometheus) for monitoring.
   - [x] [KubeVirt](https://kubevirt.io/) for VMs on Kubernetes.
   - [x] [CNPG Operator](https://cloudnativepg.io/) for Postgres on Kubernetes.
