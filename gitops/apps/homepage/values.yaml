@@ -44,7 +44,7 @@ config:
             href: https://seerr.nulcell.com/
 
 persistence:
-  enabled: false
+  enabled: true
 
 resources:
   requests:

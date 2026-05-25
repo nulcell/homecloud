@@ -55,4 +55,8 @@ spec:
           name: {{ include "homepage.fullname" . }}
           port: {{ .Values.service.port }}
           weight: 1
+      sessionPersistence:
+        sessionName: home-session
+        type: Header
+        absoluteTimeout: 60s
 {{- end }}
