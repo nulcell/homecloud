@@ -13,7 +13,6 @@ Network plan — pick before you start, write down somewhere:
 | Variable           | Example                   | Notes                                     |
 | ------------------ | ------------------------- | ----------------------------------------- |
 | Cluster name       | `homecloud`               | Anything. Used in `talosconfig`.          |
-| Node IP (static)   | `10.10.25.10/20`          | First control plane.                      |
 | Default gateway    | `10.10.31.254`            |                                           |
 | Kubernetes API VIP | `10.10.25.25`             | Baked into kubeconfig + Cilium from day 1 |
 | Pod CIDR           | `10.244.0.0/16`           | No overlap with LAN.                      |
@@ -155,12 +154,12 @@ argocd app list
 
 ## Common failures
 
-| Symptom | Likely cause | Check |
-| --- | --- | --- |
-| Node `NotReady` after Cilium install | `k8sServiceHost/Port` not set | `cilium-values.yaml`, then `helm upgrade` |
-| Longhorn manager CrashLoopBackOff | Missing iscsi-tools / util-linux-tools | Rebuild Talos image, `talosctl upgrade` |
-| LoadBalancer stuck `<pending>` | L2 announcement policy wrong | `kubectl describe ciliuml2announcementpolicy` |
-| metrics-server `unable to fetch metrics` | Kubelet server cert not rotating | `talosctl logs kubelet` |
-| Repo-server `permission denied` on age key | `argocd-sops-age` missing | `kubectl -n argocd get secret argocd-sops-age` |
+| Symptom                                    | Likely cause                           | Check                                          |
+| ------------------------------------------ | -------------------------------------- | ---------------------------------------------- |
+| Node `NotReady` after Cilium install       | `k8sServiceHost/Port` not set          | `cilium-values.yaml`, then `helm upgrade`      |
+| Longhorn manager CrashLoopBackOff          | Missing iscsi-tools / util-linux-tools | Rebuild Talos image, `talosctl upgrade`        |
+| LoadBalancer stuck `<pending>`             | L2 announcement policy wrong           | `kubectl describe ciliuml2announcementpolicy`  |
+| metrics-server `unable to fetch metrics`   | Kubelet server cert not rotating       | `talosctl logs kubelet`                        |
+| Repo-server `permission denied` on age key | `argocd-sops-age` missing              | `kubectl -n argocd get secret argocd-sops-age` |
 
 Deeper Talos: `talosctl logs kubelet`, `talosctl logs etcd`, `talosctl dashboard`, `talosctl get members`.
