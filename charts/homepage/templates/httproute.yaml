@@ -55,10 +55,4 @@ spec:
           name: {{ include "homepage.fullname" . }}
           port: {{ .Values.service.port }}
           weight: 1
-      sessionPersistence:
-        sessionName: home-session
-        type: Cookie
-        absoluteTimeout: 10s
-        cookieConfig:
-          lifetimeType: Permanent
 {{- end }}
