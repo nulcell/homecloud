@@ -48,7 +48,7 @@ export KUBERNETES_VERSION=v1.36.1
 export INSTALL_IMAGE=factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION}
 
 export NODE_IP=10.10.17.5
-export WORKER_IP=10.10.17.15
+export WORKER_IP=10.10.27.254
 
 # Generate secrets (ONCE, ever)
 # talosctl gen secrets --output-file cluster/talos/secrets/secret.yaml
@@ -86,7 +86,7 @@ export KUBECONFIG=cluster/talos/kubeconfig
 kubectl get csr -o json | jq -r '.items[] | select(.status == {}) | .metadata.name' | xargs -r kubectl certificate approve
 
 # Optional, add the worker node to the cluster (repeat for each worker)
-export WORKER_IP=10.10.17.15
+export WORKER_IP=10.10.27.254
 talosctl machineconfig patch cluster/talos/generated/worker.yaml \
   --patch @cluster/talos/patches/worker.yaml \
   --output cluster/talos/worker-final.yaml
