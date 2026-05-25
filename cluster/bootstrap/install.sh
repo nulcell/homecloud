@@ -24,8 +24,8 @@ helm repo update
 
 # --- Gateway API CRDs (must precede Cilium) -------------------------------------
 echo "==> Gateway API CRDs"
-kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
-# kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/experimental-install.yaml"
+kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml" --server-side
+kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/experimental-install.yaml" --server-side
 
 # --- Cilium ---------------------------------------------------------------------
 echo "==> Cilium ${CILIUM_VERSION}"

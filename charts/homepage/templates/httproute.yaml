@@ -57,6 +57,8 @@ spec:
           weight: 1
       sessionPersistence:
         sessionName: home-session
-        type: Header
-        absoluteTimeout: 60s
+        type: Cookie
+        absoluteTimeout: 10s
+        cookieConfig:
+          lifetimeType: Permanent
 {{- end }}
