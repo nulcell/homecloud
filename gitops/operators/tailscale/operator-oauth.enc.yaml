@@ -1,0 +1,26 @@
+# Plaintext placeholder — encrypt before committing:
+#   sops --encrypt --in-place gitops/operators/tailscale/operator-oauth.enc.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+    name: operator-oauth
+    namespace: tailscale
+type: Opaque
+stringData:
+    client_id: ENC[AES256_GCM,data:j+Xw9+oxZjXFwvhV8VZZeBg=,iv:F39lQv9U9njx//lT6HHl2PA9nh8B7Nv4hCoUC6s+Neo=,tag:eSSY9CZQPBM7tQuILr1oTA==,type:str]
+    client_secret: ENC[AES256_GCM,data:iqYHvyIV97GzfLRsXRIZTv0WMXpDwgtHw17j3bRLzzlZ9Li7xpWbyHjJJb3CJ1siHERi4axj3miTFoVe1Opk,iv:8qqcJdCKEkrQ0kd7nis27klxYuwI3gUohoJrCGCKlQw=,tag:TPpn9CglplPUfGMVgsQIfA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBocWpqWllQYlRENTRQSEtq
+            bTVDelp5OXo2YjNlRFBrZjdOc0NGRDJPRjBvClV6K0Jzb3lQVVAycFdxWVNZcEh5
+            dnVpOUt2VENuMXQvWFdOMy9QTGY3KzQKLS0tIEk4cDhWR3VjWU1lUGw4QkNPN3Ba
+            WVFSOGxJU2RJRGRpV3JGZVBNbzl3TlEKRHE+bJI9ZV6NCirvxMAu/RnYVrZiy5d6
+            jT24iEC6f/lqxqdKl3CRScPVCOaa07LyTlvMa0oXreP4Hk29hT3GtA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zghrycrgnan0c7nfp5ke5csdeh9rdgtzwsd6yj4pl9rzlzjp24cspycpul
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-05-26T20:53:01Z"
+    mac: ENC[AES256_GCM,data:RaTEcH9pPTEdfZzlaOO9P7f8Caw4/19vUdob7tFSbYqxL9X7NiECyna0QDzp04zF9ZmNZQyX7Mkf1V82oxSFLmUSybTSumYH9qae8FuHwQ1pgRoZgnsDwFd7wqfqLS7CPiKbXVSGOg41DM2nKAnfCo7OgzFbZ+i+rd450VC4TDg=,iv:Bx6KF/NQh4svxVeKTyzYDZzEolmLZNaSlYUD/IoA/6w=,tag:zWOTjij3lQBJjklUfFBhRg==,type:str]
+    version: 3.13.0

@@ -1,0 +1,11 @@
+apiVersion: tailscale.com/v1alpha1
+kind: Connector
+metadata:
+  name: ts-home-cidrs
+spec:
+  replicas: 1
+  hostnamePrefix: ts-home-cidrs
+  exitNode: false
+  subnetRouter:
+    advertiseRoutes:
+      - "10.10.16.0/20"

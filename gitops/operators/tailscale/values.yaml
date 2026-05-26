@@ -1,0 +1,6 @@
+operatorConfig:
+  defaultTags:
+    - "tag:k8s-operator"
+
+  image:
+    pullPolicy: IfNotPresent
