@@ -9,6 +9,12 @@ helmCharts:
     releaseName: falco
     namespace: falco
     valuesFile: values.yaml
+  - name: fluent-bit
+    repo: https://fluent.github.io/helm-charts
+    version: v0.57.6
+    releaseName: fluent-bit
+    namespace: falco
+    valuesFile: fluentbit-values.yaml
 
 resources:
   - namespaces.yaml

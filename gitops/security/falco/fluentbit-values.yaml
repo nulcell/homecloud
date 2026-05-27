@@ -1,0 +1,22 @@
+config:
+  inputs: |
+    [INPUT]
+        Name              tail
+        Alias             audit.k8s
+        Tag               audit.k8s
+        Buffer_Chunk_Size 512k
+        Buffer_Max_Size   5m
+        Path              /var/log/audit/kube/kube-apiserver.log
+        Parser            json
+        Mem_Buf_Limit     128MB
+        Refresh_Interval  10
+
+  outputs: |
+    [OUTPUT]
+        Name            http
+        Alias           audit.k8s_to_falco
+        Match           audit.k8s
+        Host            falco-k8saudit.falco
+        Port            9765
+        URI             /k8s-audit
+        Format          json
