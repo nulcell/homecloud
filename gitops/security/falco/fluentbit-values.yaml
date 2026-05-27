@@ -16,7 +16,7 @@ config:
         Name            http
         Alias           audit.k8s_to_falco
         Match           audit.k8s
-        Host            falco-k8saudit.falco
+        Host            falco-k8saudit-webhook.falco
         Port            9765
         URI             /k8s-audit
         Format          json
