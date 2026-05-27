@@ -57,6 +57,17 @@ driver:
     # Read more on that here: https://falco.org/docs/setup/container/#docker-least-privileged-ebpf-probe
     leastPrivileged: false
 
+# -- Network services configuration (scenario requirement)
+# Add here your services to be deployed together with Falco.
+services:
+  # Example configuration for the "k8sauditlog" plugin
+  # - name: k8saudit-webhook
+  #   type: NodePort
+  #   ports:
+  #     - port: 9765 # See plugin open_params
+  #       nodePort: 30007
+  #       protocol: TCP
+
 collectors:
   # -- Enable/disable all the metadata collectors.
   enabled: true
@@ -81,7 +92,57 @@ falcosidekick:
 # -- Enable the response actions using Falco Talon.
 responseActions:
   enabled: true
+  # -- number of running pods
+  replicaCount: 2
+  # -- grafana contains the configuration related to grafana.
+  grafana:
+    # -- dashboards contains configuration for grafana dashboards.
+    dashboards:
+      # -- enabled specifies whether the dashboards should be deployed.
+      enabled: true
+  config:
+    talon:
+      # -- Talon address, if not empty, Talon output is enabled
+      address: ""
+  ingress:
+    # -- Whether to create the ingress
+    enabled: false
+  webui:
+    # -- enable Falcosidekick-UI
+    enabled: true
+    # -- number of running pods
+    replicaCount: 2
+    ingress:
+      # -- Whether to create the Web UI ingress
+      enabled: false
+    redis:
+      # -- Is mutually exclusive with webui.externalRedis.enabled
+      enabled: true
 
 # -- For configuration values, see https://github.com/falcosecurity/charts/blob/master/charts/falco-talon/values.yaml
 # -- It must be used in conjunction with the response_actions.enabled option.
-falco-talon: {}
+falco-talon:
+  # -- number of running pods
+  replicaCount: 2
+  # -- ingress parameters
+  ingress:
+    # -- enable the ingress
+    enabled: false
+  # -- serviceMonitor holds the configuration for the ServiceMonitor CRD.
+  serviceMonitor:
+    # -- enable the deployment of a Service Monitor for the Prometheus Operator.
+    enabled: true
+  # -- grafana contains the configuration related to grafana.
+  grafana:
+    # -- dashboards contains configuration for grafana dashboards.
+    dashboards:
+      # -- enabled specifies whether the dashboards should be deployed.
+      enabled: true
+
+k8s-metacollector:
+  # -- grafana contains the configuration related to grafana.
+  grafana:
+    # -- dashboards contains configuration for grafana dashboards.
+    dashboards:
+      # -- enabled specifies whether the dashboards should be deployed.
+      enabled: true
