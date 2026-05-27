@@ -116,10 +116,6 @@ collectors:
 falcosidekick:
   # -- Enable falcosidekick deployment.
   enabled: true
-
-# -- Enable the response actions using Falco Talon.
-responseActions:
-  enabled: true
   # -- number of running pods
   replicaCount: 2
   # -- grafana contains the configuration related to grafana.
@@ -146,6 +142,10 @@ responseActions:
     redis:
       # -- Is mutually exclusive with webui.externalRedis.enabled
       enabled: true
+
+# -- Enable the response actions using Falco Talon.
+responseActions:
+  enabled: true
 
 # -- For configuration values, see https://github.com/falcosecurity/charts/blob/master/charts/falco-talon/values.yaml
 # -- It must be used in conjunction with the response_actions.enabled option.
