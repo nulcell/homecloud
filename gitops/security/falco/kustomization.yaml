@@ -18,3 +18,4 @@ helmCharts:
 
 resources:
   - namespaces.yaml
+  - falcosidekick-ui-http-routes.yaml
