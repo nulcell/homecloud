@@ -127,7 +127,7 @@ falcosidekick:
   config:
     talon:
       # -- Talon address, if not empty, Talon output is enabled
-      address: ""
+      address: "http://falco-talon:2803"
   ingress:
     # -- Whether to create the ingress
     enabled: false
