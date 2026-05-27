@@ -128,6 +128,19 @@ falcosidekick:
     talon:
       # -- Talon address, if not empty, Talon output is enabled
       address: "http://falco-talon:2803"
+    webhook:
+      # -- Webhook address, if not empty, Webhook output is *enabled*
+      address: ""
+      # -- HTTP method: POST or PUT
+      method: "POST"
+      # -- a list of comma separated custom headers to add, syntax is "key:value\,key:value"
+      customHeaders: ""
+      # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
+      minimumpriority: ""
+      # -- if true, checkcert flag will be ignored (server cert will always be checked)
+      mutualtls: false
+      # -- check if ssl certificate of the output is valid
+      checkcert: true
   ingress:
     # -- Whether to create the ingress
     enabled: false
@@ -166,7 +179,20 @@ falco-talon:
     dashboards:
       # -- enabled specifies whether the dashboards should be deployed.
       enabled: true
+  # -- config of Falco Talon (See https://docs.falco-talon.org/docs/configuration/)
+  config:
+    # -- default notifiers for all rules
+    defaultNotifiers:
+      #  - slack
+      - k8sevents
+    # -- notifiers (See https://docs.falco-talon.org/docs/notifiers/list/ for the settings)
+    notifiers:
+      # -- webhook
+      webhook:
+        # -- url
+        url: ""
 
+# -- For configuration values, see https://github.com/falcosecurity/charts/blob/master/charts/k8s-metacollector/values.yaml
 k8s-metacollector:
   # -- grafana contains the configuration related to grafana.
   grafana:
