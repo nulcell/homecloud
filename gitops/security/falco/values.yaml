@@ -1,0 +1,87 @@
+tty: true
+
+metrics:
+  enabled: true
+
+# -- serviceMonitor holds the configuration for the ServiceMonitor CRD.
+# A ServiceMonitor is a custom resource definition (CRD) used to configure how Prometheus should
+# discover and scrape metrics from the Falco service.
+serviceMonitor:
+  # -- create specifies whether a ServiceMonitor CRD should be created for a prometheus operator.
+  # https://github.com/coreos/prometheus-operator
+  # Enable it only if the ServiceMonitor CRD is installed in your cluster.
+  create: true
+
+# -- grafana contains the configuration related to grafana.
+grafana:
+  # -- dashboards contains configuration for grafana dashboards.
+  dashboards:
+    # -- enabled specifies whether the dashboards should be deployed.
+    enabled: true
+
+falco:
+  capture:
+    # -- Set to true to enable event capturing.
+    enabled: true
+    # -- Prefix for capture files. Falco appends a timestamp and event number to ensure unique filenames.
+    path_prefix: /tmp/falco
+    # -- Capture mode. Can be "rules" or "all_rules".
+    mode: rules
+    # -- Default capture duration in milliseconds if not specified in the rule.
+    default_duration: 5000
+
+  # [Stable] `json_output`
+  #
+  # -- When enabled, Falco will output alert messages and rules file
+  # loading/validation results in JSON format, making it easier for downstream
+  # programs to process and consume the data. By default, this option is disabled.
+  json_output: true
+
+  # [Stable] `http_output`
+  #
+  # -- Send alerts to an HTTP endpoint or webhook.
+  #
+  # When using falcosidekick, it is necessary to set `json_output` to true, which is
+  # conveniently done automatically for you when using `falcosidekick.enabled=true`.
+  http_output:
+    # -- Enable sending alerts to an HTTP endpoint or webhook.
+    enabled: false
+
+driver:
+  enabled: true
+  kind: modern_ebpf
+  modernEbpf:
+    # -- Constrain Falco with capabilities instead of running a privileged container.
+    # Ensure the modern bpf driver is enabled (i.e., setting the `driver.kind` option to `modern_ebpf`).
+    # Capabilities used: {CAP_SYS_RESOURCE, CAP_BPF, CAP_PERFMON, CAP_SYS_PTRACE}.
+    # Read more on that here: https://falco.org/docs/setup/container/#docker-least-privileged-ebpf-probe
+    leastPrivileged: false
+
+collectors:
+  # -- Enable/disable all the metadata collectors.
+  enabled: true
+  containerEngine:
+    # -- Enable Container Engine support.
+    enabled: true
+  kubernetes:
+    # -- enabled specifies whether the Kubernetes metadata should be collected using the k8smeta plugin and the k8s-metacollector component.
+    # It will deploy the k8s-metacollector external component that fetches Kubernetes metadata and pushes them to Falco instances.
+    # For more info see:
+    # https://github.com/falcosecurity/k8s-metacollector
+    # https://github.com/falcosecurity/charts/tree/master/charts/k8s-metacollector
+    # When this option is disabled, Falco falls back to the container annotations to grab the metadata.
+    # In such a case, only the ID, name, namespace, labels of the pod will be available.
+    enabled: true
+
+# -- For configuration values, see https://github.com/falcosecurity/charts/blob/master/charts/falcosidekick/values.yaml
+falcosidekick:
+  # -- Enable falcosidekick deployment.
+  enabled: true
+
+# -- Enable the response actions using Falco Talon.
+responseActions:
+  enabled: true
+
+# -- For configuration values, see https://github.com/falcosecurity/charts/blob/master/charts/falco-talon/values.yaml
+# -- It must be used in conjunction with the response_actions.enabled option.
+falco-talon: {}
