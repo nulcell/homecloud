@@ -62,7 +62,7 @@ grafana:
   defaultDashboardsTimezone: browser
 
   service:
-    type: ClusterIP            # exposed via HTTPRoute, not LoadBalancer
+    type: ClusterIP # exposed via HTTPRoute, not LoadBalancer
 
   # Disable the chart's Ingress — Gateway API HTTPRoute handles ingress for us.
   ingress:
