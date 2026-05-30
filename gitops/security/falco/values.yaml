@@ -62,6 +62,10 @@ falco:
   load_plugins: [k8saudit, json]
 
 customRules:
+  disable-udp-rule.yaml: |
+    - rule: "Unexpected UDP Traffic"
+      override:
+        enabled: false
 
 driver:
   enabled: true
