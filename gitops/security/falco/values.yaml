@@ -162,7 +162,7 @@ falcosidekick:
       # -- Enable the PVC for the redis pod
       storageEnabled: true
       # -- Size of the PVC for the redis pod
-      storageSize: "2Gi"
+      storageSize: "1Gi"
 
 # -- Enable the response actions using Falco Talon.
 responseActions:
