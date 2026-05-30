@@ -72,6 +72,11 @@ customRules:
       override:
         condition: append
       condition: and not (k8s.ns.name = "longhorn-system" and container.name = "instance-manager" and proc.name = "nc")
+  ignore-gluetun-ping.yaml: |
+    - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
+      override:
+        condition: append
+      condition: and not (k8s.ns.name = "media" and container.name = "gluetun" and proc.name = "ping")
 
 driver:
   enabled: true
