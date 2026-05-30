@@ -62,6 +62,13 @@ falco:
   load_plugins: [k8saudit, json]
 
 customRules:
+  general-supressions:
+    - rule: "BPF Program Not Profiled"
+      override:
+        condition: append
+      condition:
+        and (container.id = "runtime" and evt.type = "bpf" and proc.exepath = "/usr/bin/runc" and proc.pname =
+        "containerd-shim")
   disable-udp-rule.yaml: |
     - rule: "Unexpected UDP Traffic"
       override:
@@ -72,11 +79,25 @@ customRules:
       override:
         condition: append
       condition: and not (k8s.ns.name = "longhorn-system" and container.name = "instance-manager" and proc.name = "nc")
+    - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
+      override:
+        condition: append
+      condition: and not (k8s.ns.name = "longhorn-system" and container.name = "instance-manager" and proc.name = "longhorn-instan")
   ignore-gluetun-ping.yaml: |
     - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
       override:
         condition: append
       condition: and not (k8s.ns.name = "media" and container.name = "gluetun" and proc.name = "ping")
+  ignore-qbittorrent-ping.yaml: |
+    - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
+      override:
+        condition: append
+      condition: and not (k8s.ns.name = "media" and container.name = "qbittorrent" and proc.name = "ping")
+  ignore-cilium-cni.yaml: |
+    - rule: "Drop and execute new binary in container"
+      override:
+        condition: append
+      condition: and not (container.id = "runtime" and proc.exe = "/opt/cni/bin/cilium-cni")
 
 driver:
   enabled: true
