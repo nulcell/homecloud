@@ -61,6 +61,8 @@ falco:
       init_config: ""
   load_plugins: [k8saudit, json]
 
+customRules:
+
 driver:
   enabled: true
   kind: modern_ebpf
@@ -152,9 +154,15 @@ falcosidekick:
     ingress:
       # -- Whether to create the Web UI ingress
       enabled: false
+    # -- TTL for keys, the syntax in X<unit>, with <unit>: s, m, d, w (0 for no ttl)
+    ttl: 2d
     redis:
       # -- Is mutually exclusive with webui.externalRedis.enabled
       enabled: true
+      # -- Enable the PVC for the redis pod
+      storageEnabled: true
+      # -- Size of the PVC for the redis pod
+      storageSize: "2Gi"
 
 # -- Enable the response actions using Falco Talon.
 responseActions:
