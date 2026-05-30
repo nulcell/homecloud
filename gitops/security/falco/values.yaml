@@ -64,7 +64,8 @@ falco:
 customRules:
   disable-udp-rule.yaml: |
     - rule: "Unexpected UDP Traffic"
-      append: true
+      override:
+        condition: append
       condition: and (never_true)
 
 driver:
