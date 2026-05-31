@@ -62,13 +62,12 @@ falco:
   load_plugins: [k8saudit, json]
 
 customRules:
-  general-supressions:
+  general-supressions: |
     - rule: "BPF Program Not Profiled"
       override:
         condition: append
       condition:
-        and (container.id = "runtime" and evt.type = "bpf" and proc.exepath = "/usr/bin/runc" and proc.pname =
-        "containerd-shim")
+        and (container.id = "runtime" and evt.type = "bpf" and proc.exepath = "/usr/bin/runc" and proc.pname = "containerd-shim")
   disable-udp-rule.yaml: |
     - rule: "Unexpected UDP Traffic"
       override:
