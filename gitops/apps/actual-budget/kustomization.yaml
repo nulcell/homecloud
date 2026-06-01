@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: actual-budget
+
+helmCharts:
+  - name: actualbudget
+    repo: https://community-charts.github.io/helm-charts
+    releaseName: actualbudget
+    version: 1.8.8
+    namespace: actual-budget
+    valuesFile: values.yaml
+    includeCRDs: false
+
+resources:
+  - namespace.yaml
+  - httproute.yaml
+  - hpa.yaml
