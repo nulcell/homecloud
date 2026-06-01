@@ -135,17 +135,20 @@ spec:
             {{- toYaml .Values.n8n.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.n8n.containerSecurityContext | nindent 12 }}
+          {{- if not .Values.scaling.enabled }}
           volumeMounts:
             - mountPath: /home/node/.n8n
               name: n8n-data
             - mountPath: /files
               name: n8n-files
+          {{- end }}
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
       securityContext:
         {{- toYaml .Values.n8n.podSecurityContext | nindent 8 }}
       restartPolicy: Always
+      {{- if not .Values.scaling.enabled }}
       volumes:
         - name: n8n-data
           persistentVolumeClaim:
@@ -153,3 +156,4 @@ spec:
         - name: n8n-files
           persistentVolumeClaim:
             claimName: n8n-files
+      {{- end }}
