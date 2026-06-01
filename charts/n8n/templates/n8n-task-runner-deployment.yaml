@@ -40,7 +40,7 @@ spec:
       {{- if .Values.dnsPolicy }}
       dnsPolicy: {{ .Values.dnsPolicy }}
       {{- end }}
-      enableServiceLinks: true
+      enableServiceLinks: false
       serviceAccountName: {{ include "n8n.serviceAccountName" . }}
       containers:
         - name: n8n-task-runner
@@ -72,4 +72,3 @@ spec:
             {{- toYaml .Values.n8nTaskRunner.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.n8nTaskRunner.containerSecurityContext | nindent 12 }}
-      restartPolicy: Always

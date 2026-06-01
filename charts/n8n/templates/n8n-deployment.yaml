@@ -90,14 +90,14 @@ spec:
               value: {{ .Values.n8n.timezone | quote }}
             - name: NODE_ENV
               value: production
-            {{- if not .Values.scaling.enabled }}
+            {{- if and (not .Values.scaling.enabled) .Values.persistence.enabled }}
             - name: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
               value: "true"
             {{- end }}
             - name: N8N_HOST
               value: {{ .Values.gateway.hostname | quote }}
             - name: N8N_PORT
-              value: "5678"
+              value: {{ .Values.service.webPort | quote }}
             - name: N8N_PROTOCOL
               value: https
             - name: N8N_PROXY_HOPS
@@ -140,7 +140,7 @@ spec:
             {{- toYaml .Values.n8n.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.n8n.containerSecurityContext | nindent 12 }}
-          {{- if not .Values.scaling.enabled }}
+          {{- if and (not .Values.scaling.enabled) .Values.persistence.enabled }}
           volumeMounts:
             - mountPath: /home/node/.n8n
               name: n8n-data
@@ -152,8 +152,7 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.n8n.podSecurityContext | nindent 8 }}
-      restartPolicy: Always
-      {{- if not .Values.scaling.enabled }}
+      {{- if and (not .Values.scaling.enabled) .Values.persistence.enabled }}
       volumes:
         - name: n8n-data
           persistentVolumeClaim:

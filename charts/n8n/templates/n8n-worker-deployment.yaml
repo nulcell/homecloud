@@ -109,5 +109,4 @@ spec:
             {{- toYaml .Values.scaling.worker.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.n8n.containerSecurityContext | nindent 12 }}
-      restartPolicy: Always
 {{- end }}

@@ -11,11 +11,6 @@ n8n:
   timezone: UTC
   logLevel: info
 
-  imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
-  namespaceOverride: ""
-
   updateStrategy: {}
   podAnnotations: {}
   podLabels: {}
@@ -54,11 +49,8 @@ n8nTaskRunner:
     tag: ""
 
   launcherLogLevel: info
-
-  imagePullSecrets: []
+  # Override the task-runner Deployment name only (not the release name).
   nameOverride: ""
-  fullnameOverride: ""
-  namespaceOverride: ""
 
   updateStrategy: {}
   podAnnotations: {}
@@ -87,6 +79,11 @@ n8nTaskRunner:
     limits:
       cpu: 500m
       memory: 256Mi
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
 
 serviceAccount:
   create: true
@@ -123,7 +120,7 @@ priorityClassName: ""
 
 service:
   type: ClusterIP
-  # DO NOT CHANGE THE SERVICE NAME — referenced by N8N_RUNNERS_TASK_BROKER_URI.
+  # Changing this also updates N8N_RUNNERS_TASK_BROKER_URI on workers and task runners.
   name: n8n
   webPort: 5678
   taskBrokerPort: 5679

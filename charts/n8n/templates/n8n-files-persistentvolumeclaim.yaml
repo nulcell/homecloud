@@ -1,4 +1,4 @@
-{{- if not .Values.scaling.enabled }}
+{{- if and (not .Values.scaling.enabled) .Values.persistence.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
