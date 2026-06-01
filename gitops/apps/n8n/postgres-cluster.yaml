@@ -20,3 +20,9 @@ spec:
     limits:
       cpu: 500m
       memory: 512Mi
+  monitoring:
+    # -- Whether to enable monitoring
+    enabled: true
+    podMonitor:
+      # -- Whether to enable the PodMonitor
+      enabled: true
