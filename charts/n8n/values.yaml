@@ -130,3 +130,47 @@ persistence:
   # nodes; RWO is fine for a single-replica deploy.
   accessMode: ReadWriteOnce
   size: 5Gi
+
+# Enable queue mode with external PostgreSQL and Redis.
+# When enabled the main pod switches from SQLite to Postgres and EXECUTIONS_MODE=queue.
+# Worker pods are deployed separately; they scale via HPA and have no PVC mounts.
+scaling:
+  enabled: false
+
+  # External PostgreSQL — set host to the CNPG read-write service (e.g. n8n-postgres-rw).
+  # CNPG creates a secret named <cluster>-app with keys: username, password.
+  database:
+    host: ""
+    port: 5432
+    name: n8n
+    existingSecret: ""      # e.g. n8n-postgres-app
+    secretUsernameKey: username
+    secretPasswordKey: password
+
+  # External Redis (unauthenticated).
+  redis:
+    host: ""   # e.g. n8n-redis
+    port: 6379
+
+  # All nodes (main + workers) must share the same encryption key.
+  # Create a secret with key N8N_ENCRYPTION_KEY before enabling scaling.
+  encryptionKey:
+    existingSecret: ""
+    secretKey: N8N_ENCRYPTION_KEY
+
+  worker:
+    concurrency: 10
+    podAnnotations: {}
+    podLabels: {}
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 512Mi
+    autoscaling:
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 80

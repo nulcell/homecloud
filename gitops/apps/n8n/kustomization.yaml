@@ -17,6 +17,8 @@ helmCharts:
 
 resources:
   - namespace.yaml
+  - postgres-cluster.yaml
+  - redis.yaml
 
 generators:
   - secret-generator.yaml

@@ -1,7 +1,8 @@
+{{- if .Values.scaling.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: n8n
+  name: n8n-worker
   namespace: {{ include "n8n.namespace" . }}
   labels:
     {{- include "n8n.labels" . | nindent 4 }}
@@ -10,23 +11,18 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.n8n.replicaCount }}
   selector:
     matchLabels:
-      {{- include "n8n.selectorLabels" . | nindent 6 }}
-  {{- if .Values.n8n.updateStrategy }}
-  strategy:
-    {{- toYaml .Values.n8n.updateStrategy | nindent 4 }}
-  {{- end }}
+      {{- include "n8nWorker.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.n8n.podAnnotations }}
+      {{- with .Values.scaling.worker.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "n8n.selectorLabels" . | nindent 8 }}
-        {{- with .Values.n8n.podLabels }}
+        {{- include "n8nWorker.selectorLabels" . | nindent 8 }}
+        {{- with .Values.scaling.worker.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -40,18 +36,31 @@ spec:
       {{- if .Values.dnsPolicy }}
       dnsPolicy: {{ .Values.dnsPolicy }}
       {{- end }}
+      securityContext:
+        {{- toYaml .Values.n8n.podSecurityContext | nindent 8 }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
       containers:
-        - name: n8n
+        - name: n8n-worker
           image: "{{ .Values.n8n.image.repository }}:{{ .Values.n8n.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.n8n.image.pullPolicy }}
+          command: ["n8n", "worker"]
           env:
+            - name: GENERIC_TIMEZONE
+              value: {{ .Values.n8n.timezone | quote }}
+            - name: TZ
+              value: {{ .Values.n8n.timezone | quote }}
+            - name: NODE_ENV
+              value: production
+            - name: N8N_LOG_LEVEL
+              value: {{ .Values.n8n.logLevel | default "info" | quote }}
+            - name: EXECUTIONS_MODE
+              value: queue
+            - name: N8N_CONCURRENCY_PRODUCTION_LIMIT
+              value: {{ .Values.scaling.worker.concurrency | quote }}
             - name: DB_TYPE
-              {{- if .Values.scaling.enabled }}
               value: postgresdb
-              {{- else }}
-              value: sqlite
-              {{- end }}
-            {{- if .Values.scaling.enabled }}
             - name: DB_POSTGRESDB_HOST
               value: {{ .Values.scaling.database.host | quote }}
             - name: DB_POSTGRESDB_PORT
@@ -68,8 +77,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.scaling.database.existingSecret }}
                   key: {{ .Values.scaling.database.secretPasswordKey }}
-            - name: EXECUTIONS_MODE
-              value: queue
             - name: QUEUE_BULL_REDIS_HOST
               value: {{ .Values.scaling.redis.host | quote }}
             - name: QUEUE_BULL_REDIS_PORT
@@ -79,35 +86,10 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.scaling.encryptionKey.existingSecret }}
                   key: {{ .Values.scaling.encryptionKey.secretKey }}
-            {{- end }}
-            - name: GENERIC_TIMEZONE
-              value: {{ .Values.n8n.timezone | quote }}
-            - name: TZ
-              value: {{ .Values.n8n.timezone | quote }}
-            - name: NODE_ENV
-              value: production
-            - name: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
-              value: "true"
-            - name: N8N_HOST
-              value: {{ .Values.gateway.hostname | quote }}
-            - name: N8N_PORT
-              value: "5678"
-            - name: N8N_PROTOCOL
-              value: https
-            - name: N8N_PROXY_HOPS
-              value: "1"
-            - name: N8N_LOG_LEVEL
-              value: {{ .Values.n8n.logLevel | default "info" | quote }}
-            - name: WEBHOOK_URL
-              value: https://{{ .Values.gateway.hostname }}/
-            - name: N8N_NATIVE_PYTHON_RUNNER
-              value: "true"
-            # - name: N8N_RUNNERS_ENABLED
-            #   value: "true"
             - name: N8N_RUNNERS_MODE
               value: external
-            - name: N8N_RUNNERS_BROKER_LISTEN_ADDRESS
-              value: 0.0.0.0
+            - name: N8N_RUNNERS_TASK_BROKER_URI
+              value: {{ printf "http://%s.%s.svc.cluster.local:5679" .Values.service.name (include "n8n.namespace" .) }}
             - name: N8N_RUNNERS_AUTH_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -121,32 +103,9 @@ spec:
               value: '*'
             - name: NODE_FUNCTION_ALLOW_EXTERNAL
               value: '*'
-          ports:
-            - containerPort: 5678
-              name: web-port
-              protocol: TCP
-            - containerPort: 5679
-              name: broker-port
-              protocol: TCP
           resources:
-            {{- toYaml .Values.n8n.resources | nindent 12 }}
+            {{- toYaml .Values.scaling.worker.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.n8n.containerSecurityContext | nindent 12 }}
-          volumeMounts:
-            - mountPath: /home/node/.n8n
-              name: n8n-data
-            - mountPath: /files
-              name: n8n-files
-      {{- if .Values.priorityClassName }}
-      priorityClassName: {{ .Values.priorityClassName }}
-      {{- end }}
-      securityContext:
-        {{- toYaml .Values.n8n.podSecurityContext | nindent 8 }}
       restartPolicy: Always
-      volumes:
-        - name: n8n-data
-          persistentVolumeClaim:
-            claimName: n8n-data
-        - name: n8n-files
-          persistentVolumeClaim:
-            claimName: n8n-files
+{{- end }}

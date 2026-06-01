@@ -75,3 +75,18 @@ n8n_task_runner selector labels
 app.kubernetes.io/name: {{ include "n8nTaskRunner.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+n8n worker name
+*/}}
+{{- define "n8nWorker.name" -}}
+n8n-worker
+{{- end }}
+
+{{/*
+n8n worker selector labels
+*/}}
+{{- define "n8nWorker.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "n8nWorker.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

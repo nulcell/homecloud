@@ -20,3 +20,37 @@ persistence:
   storageClass: longhorn
   accessMode: ReadWriteOnce # Only one n8n instance, so no need for ReadWriteMany.
   size: 5Gi
+
+scaling:
+  enabled: true
+  database:
+    host: n8n-postgres-rw         # CNPG read-write service
+    port: 5432
+    name: n8n
+    existingSecret: n8n-postgres-app  # auto-created by CNPG
+    secretUsernameKey: username
+    secretPasswordKey: password
+  redis:
+    host: n8n-redis
+    port: 6379
+  # Create this secret before enabling scaling:
+  #   kubectl create secret generic n8n-encryption-key \
+  #     --from-literal=N8N_ENCRYPTION_KEY=<your-key> -n n8n
+  # Then SOPS-encrypt it with ksops and add to secret-generator.yaml.
+  encryptionKey:
+    existingSecret: n8n-encryption-key
+    secretKey: N8N_ENCRYPTION_KEY
+  worker:
+    concurrency: 10
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 512Mi
+    autoscaling:
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 80
