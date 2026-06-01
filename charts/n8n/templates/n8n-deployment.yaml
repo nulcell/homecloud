@@ -41,6 +41,7 @@ spec:
       dnsPolicy: {{ .Values.dnsPolicy }}
       {{- end }}
       enableServiceLinks: false
+      serviceAccountName: {{ include "n8n.serviceAccountName" . }}
       containers:
         - name: n8n
           image: "{{ .Values.n8n.image.repository }}:{{ .Values.n8n.image.tag | default .Chart.AppVersion }}"
@@ -89,8 +90,10 @@ spec:
               value: {{ .Values.n8n.timezone | quote }}
             - name: NODE_ENV
               value: production
+            {{- if not .Values.scaling.enabled }}
             - name: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
               value: "true"
+            {{- end }}
             - name: N8N_HOST
               value: {{ .Values.gateway.hostname | quote }}
             - name: N8N_PORT
@@ -105,8 +108,6 @@ spec:
               value: https://{{ .Values.gateway.hostname }}/
             - name: N8N_NATIVE_PYTHON_RUNNER
               value: "true"
-            # - name: N8N_RUNNERS_ENABLED
-            #   value: "true"
             - name: N8N_RUNNERS_MODE
               value: external
             - name: N8N_RUNNERS_BROKER_LISTEN_ADDRESS
@@ -131,6 +132,10 @@ spec:
             - containerPort: 5679
               name: broker-port
               protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.n8n.resources | nindent 12 }}
           securityContext:

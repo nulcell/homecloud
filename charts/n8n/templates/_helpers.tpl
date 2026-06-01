@@ -62,6 +62,17 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+ServiceAccount name
+*/}}
+{{- define "n8n.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "n8n.name" .) .Values.serviceAccount.name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
 n8n_task_runner name
 */}}
 {{- define "n8nTaskRunner.name" -}}

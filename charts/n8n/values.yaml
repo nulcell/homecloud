@@ -88,6 +88,32 @@ n8nTaskRunner:
       cpu: 500m
       memory: 256Mi
 
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+
+# Health probes for the main n8n pod.
+# n8n exposes /healthz (liveness) and /healthz/readiness (readiness).
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 5678
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /healthz/readiness
+    port: 5678
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
 hostNetwork: false
 dnsPolicy: ClusterFirst
 
