@@ -11,15 +11,9 @@ gateway:
 
 # Reference to the SOPS-encrypted Secret in this folder (n8n-runner-auth.enc.yaml).
 taskRunner:
-  replicaCount: 1
   authToken:
     secretName: n8n-runner-auth
     secretKey: auth-token
-
-persistence:
-  storageClass: longhorn
-  accessMode: ReadWriteOnce # Only one n8n instance, so no need for ReadWriteMany.
-  size: 5Gi
 
 scaling:
   enabled: true
@@ -33,10 +27,8 @@ scaling:
   redis:
     host: n8n-redis
     port: 6379
-  # Create this secret before enabling scaling:
-  #   kubectl create secret generic n8n-encryption-key \
-  #     --from-literal=N8N_ENCRYPTION_KEY=<your-key> -n n8n
-  # Then SOPS-encrypt it with ksops and add to secret-generator.yaml.
+  # Encryption key is SOPS-encrypted at n8n-encryption-key.enc.yaml
+  # and wired into secret-generator.yaml.
   encryptionKey:
     existingSecret: n8n-encryption-key
     secretKey: N8N_ENCRYPTION_KEY

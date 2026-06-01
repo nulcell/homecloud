@@ -99,13 +99,13 @@ spec:
             - name: N8N_PORT
               value: {{ .Values.service.webPort | quote }}
             - name: N8N_PROTOCOL
-              value: https
+              value: {{ .Values.n8n.protocol | quote }}
             - name: N8N_PROXY_HOPS
               value: "1"
             - name: N8N_LOG_LEVEL
               value: {{ .Values.n8n.logLevel | default "info" | quote }}
             - name: WEBHOOK_URL
-              value: https://{{ .Values.gateway.hostname }}/
+              value: {{ printf "%s://%s/" .Values.n8n.protocol .Values.gateway.hostname }}
             - name: N8N_NATIVE_PYTHON_RUNNER
               value: "true"
             - name: N8N_RUNNERS_MODE

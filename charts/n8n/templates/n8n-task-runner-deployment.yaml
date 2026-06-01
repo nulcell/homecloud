@@ -55,7 +55,7 @@ spec:
                   name: {{ .Values.taskRunner.authToken.secretName }}
                   key: {{ .Values.taskRunner.authToken.secretKey }}
             - name: N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT
-              value: "15"
+              value: {{ .Values.n8nTaskRunner.autoShutdownTimeout | quote }}
             - name: N8N_RUNNERS_EXTERNAL_ALLOW
               value: '*'
             - name: N8N_RUNNERS_LAUNCHER_LOG_LEVEL

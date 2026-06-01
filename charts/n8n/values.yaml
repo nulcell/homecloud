@@ -10,6 +10,7 @@ n8n:
   # Used for both GENERIC_TIMEZONE and TZ env vars on the n8n + task-runner pods.
   timezone: UTC
   logLevel: info
+  protocol: https
 
   updateStrategy: {}
   podAnnotations: {}
@@ -49,6 +50,8 @@ n8nTaskRunner:
     tag: ""
 
   launcherLogLevel: info
+  # Seconds of inactivity before the runner process shuts itself down.
+  autoShutdownTimeout: 15
   # Override the task-runner Deployment name only (not the release name).
   nameOverride: ""
 
