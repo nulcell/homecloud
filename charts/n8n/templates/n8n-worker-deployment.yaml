@@ -41,6 +41,7 @@ spec:
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
+      enableServiceLinks: false
       containers:
         - name: n8n-worker
           image: "{{ .Values.n8n.image.repository }}:{{ .Values.n8n.image.tag | default .Chart.AppVersion }}"

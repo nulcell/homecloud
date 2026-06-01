@@ -40,6 +40,7 @@ spec:
       {{- if .Values.dnsPolicy }}
       dnsPolicy: {{ .Values.dnsPolicy }}
       {{- end }}
+      enableServiceLinks: false
       containers:
         - name: n8n
           image: "{{ .Values.n8n.image.repository }}:{{ .Values.n8n.image.tag | default .Chart.AppVersion }}"
@@ -79,6 +80,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.scaling.encryptionKey.existingSecret }}
                   key: {{ .Values.scaling.encryptionKey.secretKey }}
+            - name: OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS
+              value: "true"
             {{- end }}
             - name: GENERIC_TIMEZONE
               value: {{ .Values.n8n.timezone | quote }}
