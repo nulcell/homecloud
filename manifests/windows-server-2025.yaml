@@ -1,0 +1,186 @@
+# Windows Server 2025 Evaluation — KubeVirt VM
+#
+# Two-phase workflow:
+#   Phase 1 — Installation:
+#     1. Apply this manifest (CDI will import the ISO in the background):
+#          kubectl apply -f manifests/windows-server-2025.yaml
+#     2. Wait for DataVolumes to be ready (ISO import takes several minutes):
+#          kubectl -n windows get dv -w
+#     3. Start the VM and open VNC to complete the Windows installer:
+#          kubectl virt -n windows start windows-server-2025
+#          kubectl virt -n windows vnc windows-server-2025
+#     4. In the installer, when prompted for a disk, click "Load driver" and
+#        browse to the virtio-win CDROM → amd64\\w11 (or w10 if w11 absent)
+#        to load the VirtIO storage driver so the system disk is visible.
+#     5. Complete the installation and let Windows boot into setup.
+#
+#   Phase 2 — Post-install optimisation (optional):
+#     - Install the full VirtIO driver pack inside Windows:
+#         virtio-win CDROM → virtio-win-gt-x64.msi
+#     - To switch the NIC from e1000e to virtio for better performance,
+#       remove `model: e1000e` (or set it to `model: virtio`) and restart.
+#     - To reclaim space, delete the DataVolume for the ISO after install:
+#         kubectl -n windows delete dv windows-server-2025-iso
+#
+# RDP (after Windows networking is configured):
+#   WIN_IP=$(kubectl -n windows get svc windows-rdp -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+#   # Connect your RDP client to $WIN_IP:3389
+#
+# VNC console (installation / recovery):
+#   kubectl virt -n windows vnc windows-server-2025
+#
+# Lifecycle:
+#   kubectl -n windows get vm,vmi,dv,pvc         # high-level state
+#   kubectl virt -n windows stop  windows-server-2025
+#   kubectl virt -n windows start windows-server-2025
+#
+# Clean up (removes VM, PVCs, and service):
+#   kubectl delete -f manifests/windows-server-2025.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: windows
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: windows-server-2025
+  namespace: windows
+spec:
+  # Manual: you control start/stop; VM won't auto-restart after install reboots.
+  # Switch to Always once installation is complete and Windows is configured.
+  runStrategy: Manual
+  dataVolumeTemplates:
+    # Windows Server 2025 Evaluation ISO — imported directly from Microsoft CDN.
+    # ~5.5 GB download; CDI will store it in a 6 Gi PVC via Longhorn.
+    # Delete this DataVolume after installation to reclaim storage.
+    - metadata:
+        name: windows-server-2025-iso
+      spec:
+        source:
+          http:
+            url: "https://software-static.download.prss.microsoft.com/dbazure/998969d5-f34g-4e03-ac9d-1f9786c66749/26100.32230.260111-0550.lt_release_svc_refresh_SERVER_EVAL_x64FRE_en-us.iso"
+        storage:
+          resources:
+            requests:
+              storage: 10Gi
+          accessModes: [ReadWriteOnce]
+    # Blank system disk — Windows installs here.
+    - metadata:
+        name: windows-server-2025-disk
+      spec:
+        source:
+          blank: {}
+        storage:
+          resources:
+            requests:
+              storage: 100Gi
+          accessModes: [ReadWriteMany]
+  template:
+    metadata:
+      labels:
+        kubevirt.io/vm: windows-server-2025
+      annotations:
+        kubevirt.io/allow-pod-bridge-network-live-migration: "true"
+    spec:
+      evictionStrategy: LiveMigrate
+      domain:
+        cpu:
+          cores: 4
+          model: host-passthrough
+        memory:
+          guest: 8Gi
+        machine:
+          type: q35
+        # RTC catchup + HyperV clock keeps Windows time accurate under load.
+        clock:
+          utc: {}
+          timer:
+            hpet:
+              present: false
+            pit:
+              tickPolicy: delay
+            rtc:
+              tickPolicy: catchup
+            hyperv: {}
+        features:
+          acpi: {}
+          apic: {}
+          # SMM is required for UEFI SecureBoot to function.
+          smm:
+            enabled: true
+          hyperv:
+            relaxed: {}
+            vapic: {}
+            spinlocks:
+              spinlocks: 8191
+        firmware:
+          bootloader:
+            efi:
+              secureBoot: true
+        devices:
+          # TPM required for Windows Server 2025 best-practices baseline.
+          # Note: avoid enabling BitLocker — KubeVirt TPM state does not
+          # persist across VM migrations, which will break BitLocker-sealed boots.
+          tpm: {}
+          rng: {}
+          disks:
+            # System disk on VirtIO — requires loading the VirtIO storage
+            # driver from the virtio-win CDROM during the Windows installer.
+            - name: systemdisk
+              bootOrder: 2
+              disk:
+                bus: virtio
+            # Boot from ISO first so the installer runs on first start.
+            - name: windows-iso
+              bootOrder: 1
+              cdrom:
+                bus: sata
+                readonly: true
+            # VirtIO driver pack (storage, network, balloon, etc.).
+            # Load storage driver during install; run virtio-win-gt-x64.msi
+            # post-install for full driver coverage.
+            - name: virtio-drivers
+              cdrom:
+                bus: sata
+                readonly: true
+          interfaces:
+            # e1000e works without drivers during install. After installing
+            # the VirtIO network driver via virtio-win-gt-x64.msi, you can
+            # change this to `model: virtio` for better throughput.
+            - name: default
+              bridge: {}
+              model: e1000e
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: systemdisk
+          dataVolume:
+            name: windows-server-2025-disk
+        - name: windows-iso
+          dataVolume:
+            name: windows-server-2025-iso
+        - name: virtio-drivers
+          containerDisk:
+            image: quay.io/kubevirt/virtio-container-disk:v1.8.2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: windows-rdp
+  namespace: windows
+spec:
+  type: LoadBalancer
+  selector:
+    kubevirt.io/vm: windows-server-2025
+  ports:
+    - name: rdp
+      port: 3389
+      targetPort: 3389
+      protocol: TCP
