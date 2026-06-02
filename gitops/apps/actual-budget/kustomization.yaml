@@ -6,7 +6,7 @@ helmCharts:
   - name: actualbudget
     repo: https://community-charts.github.io/helm-charts
     releaseName: actualbudget
-    version: 1.8.8
+    version: 1.8.9
     namespace: actual-budget
     valuesFile: values.yaml
     includeCRDs: false
