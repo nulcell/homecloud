@@ -70,6 +70,7 @@ spec:
       domain:
         cpu:
           cores: 4
+          model: host-passthrough
         memory:
           guest: 8Gi
         devices:
