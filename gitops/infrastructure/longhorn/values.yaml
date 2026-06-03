@@ -1,6 +1,5 @@
-# Longhorn 1.11.2 values.
 defaultSettings:
-  defaultReplicaCount: 1 # Raise to 3 once you have 3 nodes
+  defaultReplicaCount: 1 # Raise to 3 once you have 3 or more§ nodes
   defaultDataPath: /var/lib/longhorn
   storageOverProvisioningPercentage: 100
   storageMinimalAvailablePercentage: 15
@@ -53,7 +52,7 @@ ingress:
   pathType: Prefix
 
 preUpgradeChecker:
-  jobEnabled: false
+  jobEnabled: true
 
 # Picked up by kube-prometheus-stack because the kps values set
 # serviceMonitorSelectorNilUsesHelmValues=false (so any ServiceMonitor in any
