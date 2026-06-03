@@ -11,6 +11,8 @@ defaultSettings:
   # Guaranteed instance manager CPU
   guaranteedInstanceManagerCPU: 12
 
+  replicaAutoBalance: "least-effort"
+
 persistence:
   defaultClass: true
   defaultClassReplicaCount: 1
