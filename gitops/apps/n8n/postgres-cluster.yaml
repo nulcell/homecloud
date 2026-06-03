@@ -4,7 +4,7 @@ metadata:
   name: n8n-postgres
   namespace: n8n
 spec:
-  instances: 3
+  instances: 1 # Single instance for development; increase for production
   imageName: ghcr.io/cloudnative-pg/postgresql:18.4
   primaryUpdateStrategy: unsupervised
   storage:
