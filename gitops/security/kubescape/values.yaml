@@ -20,11 +20,11 @@ capabilities:
 
   # ====== Image vulnerabilities scanning related capabilities ======
   #
-  nodeSbomGeneration: enable # Warning: When disabled along with enableClusterWideSecretAccess: false, vulnerability scanning capabilities will be limited
+  nodeSbomGeneration: disable
   # Instruct Syft to also scan for SBOM files in the filesystem container
   scanEmbeddedSBOMs: disable
-  vulnerabilityScan: enable
-  relevancy: enable
+  vulnerabilityScan: disable
+  relevancy: disable
   # Generate VEX documents alongside the image vulnerabilities report (experimental)
   vexGeneration: disable
 
@@ -37,7 +37,7 @@ capabilities:
   malwareDetection: disable
   nodeProfileService: disable
   admissionController: disable
-  httpDetection: enable
+  httpDetection: disable
   seccompProfileService: enable
   # Storage backend for SeccompProfile resources: "crd" (Kubernetes CRD) or "storage" (aggregated API)
   seccompProfileBackend: crd
@@ -103,11 +103,11 @@ operator:
   name: operator
   resources:
     requests:
-      cpu: 500m
-      memory: 1024Mi
+      cpu: 250m
+      memory: 512Mi
     limits:
-      cpu: 2000m
-      memory: 4096Mi
+      cpu: 1000m
+      memory: 2048Mi
 
 # kubevuln - image vulnerability scanning microservice
 kubevuln:
