@@ -101,13 +101,13 @@ kubescape:
 operator:
   # operator Deployment name
   name: operator
-  # resources:
-  #   requests:
-  #     cpu: 500m
-  #     memory: 1024Mi
-  #   limits:
-  #     cpu: 2000m
-  #     memory: 4096Mi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1024Mi
+    limits:
+      cpu: 2000m
+      memory: 4096Mi
 
 # kubevuln - image vulnerability scanning microservice
 kubevuln:
