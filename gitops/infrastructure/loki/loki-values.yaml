@@ -2,6 +2,16 @@ deploymentMode: Monolithic
 
 loki:
   auth_enabled: false
+  # Single-instance deployment: use in-memory ring KV store so stale ring entries
+  # from pod restarts can never accumulate and cause "too many unhealthy instances".
+  commonConfig:
+    replication_factor: 1
+  ingester:
+    lifecycler:
+      ring:
+        kvstore:
+          store: inmemory
+        replication_factor: 1
   schemaConfig:
     configs:
       - from: "2024-01-01"
