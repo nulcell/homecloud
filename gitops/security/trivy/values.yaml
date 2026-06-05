@@ -3,7 +3,7 @@ serviceMonitor:
   honorLabels: true
 
 operator:
-  replicas: 1
+  replicas: 2
   vulnerabilityScannerEnabled: true
   sbomGenerationEnabled: true
   clusterSbomCacheEnabled: true
@@ -12,7 +12,8 @@ operator:
   rbacAssessmentScannerEnabled: true
   infraAssessmentScannerEnabled: true
   clusterComplianceEnabled: true
-  scanJobsConcurrentLimit: 2
+  scanJobsConcurrentLimit: 5
+  builtInTrivyServer: true
 
 trivy:
   # ClientServer mode deploys a single Trivy server pod that maintains the vulnerability DB.
@@ -20,13 +21,35 @@ trivy:
   # "cache may be in use by another process" lock contention when multiple containers
   # within the same scan job pod race to initialize the DB simultaneously.
   mode: ClientServer
-  builtInTrivyServer: true
   storageClassName: longhorn
   storageSize: 5Gi
 
 trivyOperator:
   # Per-CVE-ID metrics cause high Prometheus cardinality — intentionally off.
   metricsVulnIdEnabled: false
+  # -- scanJobsInSameNamespace control whether to run vulnerability scan jobs in same namespace of workload
+  scanJobsInSameNamespace: false
+  # -- skipInitContainers when this flag is set to true, the initContainers will be skipped for the scanner and node collector pods
+  skipInitContainers: true
+
+compliance:
+  # -- failEntriesLimit the flag to limit the number of fail entries per control check in the cluster compliance detail report
+  # this limit is for preventing the report from being too large per control checks
+  failEntriesLimit: 10
+  # -- reportType this flag control the type of report generated (summary or all)
+  reportType: summary
+  # -- specs is a list of compliance specs to be used by the cluster compliance scanner
+  #  - k8s-cis-1.23
+  #  - k8s-nsa-1.0
+  #  - k8s-pss-baseline-0.1
+  #  - k8s-pss-restricted-0.1
+  #  - eks-cis-1.4
+  #  - rke2-cis-1.24
+  specs:
+    - k8s-cis-1.23
+    - k8s-nsa-1.0
+    - k8s-pss-baseline-0.1
+    - k8s-pss-restricted-0.1
 
 # Talos Linux has an immutable root filesystem — containerd cannot mkdir /etc/systemd
 # on the host to set up the bind mount. Replace with emptyDir so the pod starts;
@@ -56,3 +79,15 @@ nodeCollector:
     - name: etc-cni-netd
       hostPath:
         path: /etc/cni/net.d/
+
+# -- alternateReportStorage is the flag to enable alternate storage for all trivy reports (crds) in the form json files inside of a persistent volume
+alternateReportStorage:
+  enabled: false
+  mountPath: "/mnt/data/trivy-operator"
+  volumeName: "trivy-operator-pvc"
+  storage: "10Gi"
+  # -- storageClassName for the PVC (optional, uses cluster default if not specified)
+  storageClassName: ""
+  podSecurityContext:
+    runAsUser: 10000
+    fsGroup: 10000
