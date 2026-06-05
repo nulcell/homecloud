@@ -54,14 +54,7 @@ server:
     enabled: false
   route:
     main:
-      enabled: true
-      hostnames:
-        - auth.nulcell.com
-      parentRefs:
-        - name: external
-          namespace: gateway
-      httpsRedirect: true
-      https: false
+      enabled: false
   resources:
     requests:
       cpu: 100m

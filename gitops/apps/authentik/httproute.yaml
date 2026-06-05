@@ -1,0 +1,47 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: authentik
+  namespace: authentik
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: external
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - auth.nulcell.com
+  rules:
+    - matches:
+        - path: { type: PathPrefix, value: / }
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: authentik-server
+          port: 80
+          weight: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: authentik-http-redirect
+  namespace: authentik
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: external
+      namespace: gateway
+      sectionName: http
+  hostnames:
+    - auth.nulcell.com
+  rules:
+    - matches:
+        - path: { type: PathPrefix, value: / }
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
