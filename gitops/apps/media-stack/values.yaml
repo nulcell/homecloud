@@ -14,6 +14,12 @@ persistence:
   data:
     size: 500Gi
 
+gateway:
+  enabled: true
+  parentRef:
+    name: external
+    namespace: gateway
+
 vpn:
   enabled: true
   image:

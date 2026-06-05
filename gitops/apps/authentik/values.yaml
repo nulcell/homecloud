@@ -58,7 +58,7 @@ server:
       hostnames:
         - auth.nulcell.com
       parentRefs:
-        - name: default
+        - name: external
           namespace: gateway
           sectionName: https
       httpsRedirect: true

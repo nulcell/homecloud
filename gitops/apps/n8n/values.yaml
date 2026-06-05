@@ -7,6 +7,9 @@ n8n:
 
 gateway:
   enabled: true
+  parentRef:
+    name: external
+    namespace: gateway
   hostname: n8n.nulcell.com
 
 # Reference to the SOPS-encrypted Secret in this folder (n8n-runner-auth.enc.yaml).
@@ -18,10 +21,10 @@ taskRunner:
 scaling:
   enabled: true
   database:
-    host: n8n-postgres-rw         # CNPG read-write service
+    host: n8n-postgres-rw # CNPG read-write service
     port: 5432
     name: n8n
-    existingSecret: n8n-postgres-app  # auto-created by CNPG
+    existingSecret: n8n-postgres-app # auto-created by CNPG
     secretUsernameKey: username
     secretPasswordKey: password
   redis:

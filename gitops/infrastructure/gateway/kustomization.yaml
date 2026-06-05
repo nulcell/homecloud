@@ -10,6 +10,7 @@ resources:
   - gatewayclass.yaml
   - clusterissuer.yaml
   - wildcard-certificate.yaml
-  - gateway-default.yaml
+  - gateway-external.yaml
+  - gateway-internal.yaml
 generators:
   - secret-generator.yaml
