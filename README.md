@@ -4,14 +4,14 @@ Self-hosted private cloud on bare metal. Talos + Cilium + ArgoCD + Longhorn + Ku
 
 ## Layout
 
-| Path                             | Purpose                                                                                                           |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [`cluster/`](cluster/)           | Talos machine configs + imperative bootstrap (Cilium, ArgoCD). Start at [`cluster/README.md`](cluster/README.md). |
-| [`gitops/`](gitops/)             | ArgoCD's source of truth — root, infrastructure, security, apps.                                                  |
-| [`charts/`](charts/)             | Helm umbrella charts referenced by `gitops/apps/*`.                                                               |
-| [`manifests/`](manifests/)       | Ad-hoc / one-shot manifests, applied manually.                                                                    |
-| [`scripts/`](scripts/)           | Standalone operator utilities.                                                                                    |
-| [`network/maas/`](network/maas/) | Legacy MaaS install — pending replacement with Pi-hole + netboot + Tailscale on a Pi.                             |
+| Path                                   | Purpose                                                                                                           |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [`cluster/`](cluster/)                 | Talos machine configs + imperative bootstrap (Cilium, ArgoCD). Start at [`cluster/README.md`](cluster/README.md). |
+| [`gitops/`](gitops/)                   | ArgoCD's source of truth — root, infrastructure, security, apps.                                                  |
+| [`charts/`](charts/)                   | Helm umbrella charts referenced by `gitops/apps/*`.                                                               |
+| [`manifests/`](manifests/)             | Ad-hoc / one-shot manifests, applied manually.                                                                    |
+| [`scripts/`](scripts/)                 | Standalone operator utilities.                                                                                    |
+| [`network/netboot/`](network/netboot/) | Raspberry Pi netboot setup (Pi-hole, Tailscale, DHCP/DNS).                                                        |
 
 Conventions for agents and humans: [AGENTS.md](AGENTS.md).
 
@@ -39,6 +39,8 @@ mise install   # everything pinned in .mise.toml
   - [x] [Kube-prometheus-stack](https://github.com/prometheus-operator/kube-prometheus) for monitoring.
   - [x] [KubeVirt](https://kubevirt.io/) for VMs on Kubernetes.
   - [x] [CNPG Operator](https://cloudnativepg.io/) for Postgres on Kubernetes.
+  - [x] [Grafana Loki](https://grafana.com/oss/loki/) + [Fluent Bit](https://fluentbit.io/) for log aggregation (media, n8n, authentik, actual-budget).
+  - [ ] [Headlamp](https://headlamp.dev/) in-cluster deployment (currently using desktop app; manifests in `gitops/exprimental/infrastructure/headlamp/`).
 - [ ] Serverless and Messaging:
   - [ ] [RabbitMQ Operator](https://github.com/rabbitmq/rabbitmq-operator) for messaging.
   - [ ] [Knative Operators](https://knative.dev/docs/install/operator/knative-with-operators/) for serverless workloads.
@@ -51,17 +53,13 @@ mise install   # everything pinned in .mise.toml
   - [x] [Homepage](https://github.com/gethomepage/homepage) for Dashboards.
   - [ ] [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/deployment-guides/kubernetes/) for making internal applications publicly available. Pair with [loadbalancer](https://developers.cloudflare.com/load-balancing/private-network/public-to-tunnel/)
   - [ ] Portfolio website - VitePress + Cloudflare tunnel on `portfolio.nulcell.com`.
-- [ ] Security Tooling:
-  - [x] [Tetragon](https://github.com/cilium/tetragon) for runtime security monitoring. (testing alongside Falco, but leaning towards Falco for better ecosystem and alerting integrations)
-  - [ ] [Falco](https://falco.org/) (via eBPF) + [Falcosidekick](https://github.com/falcosecurity/falcosidekick) for runtime security monitoring.
+- [x] Security Tooling:
+  - [x] [Falco](https://falco.org/) (via modern eBPF) + [Falcosidekick](https://github.com/falcosecurity/falcosidekick) + [Falco Talon](https://docs.falco-talon.org/) for runtime security monitoring and automated response.
+  - [x] [Trivy Operator](https://github.com/aquasecurity/trivy-operator) for vulnerability and configuration scanning.
+  - [x] [Kubescape](https://kubescape.io/) for cluster security posture assessment (CSPM).
   - [ ] [Kyverno](https://kyverno.io/) for policy enforcement and configuration validation.
+  - [ ] [Policy Reporter](https://kyverno.github.io/policy-reporter/) for aggregating policy violations from Trivy, Kubescape, and Kyverno.
   - [ ] [Secrets Store CSI Driver](https://github.com/kubernetes-sigs/secrets-store-csi-driver) + [Vault Provider](https://github.com/hashicorp/vault-csi-provider) for dynamic secrets management.
-  - [ ] [Trivy Operator](https://github.com/aquasecurity/trivy) for container image scanning in CI and in the cluster.
-  - [ ] [Kubescape](https://kubescape.io/) for cluster security posture assessment (CSPM).
-  - [ ] [Policy Reporter](https://kyverno.github.io/policy-reporter/) for aggregating and alerting on policy violations.
-  - [ ] [Wazuh](https://wazuh.com/) for centralized SIEM.
-  - [ ] [Grafana Loki](https://grafana.com/oss/loki/) for application logging.
-  - [ ] [Fluent Bit](https://fluentbit.io/) for lightweight log shipping to route application logs to Loki, and security/audit logs to Wazuh.
 - [ ] Testing:
   - [ ] [Kube-monkey](https://github.com/asobti/kube-monkey) for chaos testing.
 - [ ] Backups:
@@ -71,7 +69,6 @@ mise install   # everything pinned in .mise.toml
   - [ ] 2.5GbE network upgrade for cluster nodes.
   - [ ] Dedicated control-plane nodes with similar mini-pcs.
   - [ ] 2-3 additional workers with other hardware.
-- [ ] Retire `network/maas/` in favor of a Raspberry Pi running Pi-hole (DNS + DHCP), netboot, and Tailscale.
 
 ## Architecture
 
@@ -169,9 +166,9 @@ flowchart TD
     %% Security & Governance Framework
     subgraph SecLayer ["Security Framework"]
         Kyverno[Kyverno Policy Engine]:::security
-        Falco[Falco / Tetragon eBPF Runtime]:::security
-        FSide[Falcosidekick]:::security
-        Trivy[Trivy Operator Container Scan]:::security
+        Falco[Falco eBPF Runtime]:::security
+        FSide[Falcosidekick + Talon]:::security
+        Trivy[Trivy Operator]:::security
         KScape[Kubescape CSPM]:::security
         PolRep[Policy Reporter UI]:::security
 
@@ -185,14 +182,13 @@ flowchart TD
     subgraph Observability ["Observability & Operations"]
         KPM[Kube-Prometheus-Stack]:::obs
         Loki[Grafana Loki]:::obs
-        Wazuh[Wazuh SIEM]:::obs
-        FB[Fluent Bit DaemonSet]:::obs
+        FB[Fluent Bit Log Agent]:::obs
         KMonk[Kube-Monkey Chaos]:::obs
 
         Compute -->|Metrics| KPM
         Compute -->|Logs| FB
         FB -->|App Logs| Loki
-        FB -->|Security/Audit Logs| Wazuh
+        Loki -.->|Log Datasource| KPM
         KMonk -.->|Disrupts Pods| Compute
     end
 
@@ -232,29 +228,33 @@ flowchart LR
     %% Runtime Security Tools
     subgraph Runtime ["Runtime Detection"]
         Falco[Falco eBPF] -->|Threat Events| Sidekick[Falcosidekick]
+        Sidekick -->|Response Actions| Talon[Falco Talon]
     end
 
     Sidekick -->|Webhook| PR
 
-    %% Logging Infrastructure
+    %% Log Sources
     subgraph Log_Sources ["Log Sources"]
-        SysLogs[K8s Audit & Talos Syslogs]
+        AuditLogs[K8s Audit Logs]
         AppLogs[App Pod stdout/stderr]
     end
 
     FB{{Fluent Bit}}
+    FluentBit{{Fluent Bit}}
 
-    SysLogs --> FB
-    AppLogs --> FB
+    AuditLogs --> FB
+    AppLogs --> FluentBit
 
-    %% Log Destinations
-    subgraph Storage_SIEM ["Log Aggregation & SIEM"]
-        Wazuh[Wazuh SIEM]
+    FB -->|Audit Stream| Falco
+
+    %% Log Aggregation
+    subgraph Log_Store ["Log Aggregation"]
         Loki[Grafana Loki]
+        Grafana[Grafana]
     end
 
-    FB -->|Audit & Security Logs| Wazuh
-    FB -->|Application Logs| Loki
+    FluentBit -->|App Logs| Loki
+    Loki --> Grafana
 ```
 
 ### Hardware Layout Diagram

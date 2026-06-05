@@ -1,0 +1,87 @@
+config:
+  pluginsDir: /build/plugins
+
+initContainers:
+  # Kubescape: security posture assessment
+  - name: kubescape-plugin
+    image: ghcr.io/kubebeam/kubescape-headlamp-plugin:latest
+    command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+
+  # cert-manager: certificate and issuer management
+  - name: cert-manager-plugin
+    image: ghcr.io/headlamp-k8s/headlamp-plugin-cert-manager:latest
+    command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+
+  # KubeVirt: virtual machine management
+  - name: kubevirt-plugin
+    image: ghcr.io/naval-group/headlamp-kubevirt:latest
+    command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/kubevirt /build/plugins/"]
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+
+  # Trivy: vulnerability and compliance reports (tarball install — no container image published)
+  - name: trivy-plugin
+    image: alpine:3
+    command:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /build/plugins &&
+        wget -qO /tmp/trivy-plugin.tar.gz \
+          https://github.com/kubebeam/trivy-headlamp-plugin/releases/download/v0.3.2/trivy-headlamp-plugin-v0.3.2.tar.gz &&
+        tar -xzf /tmp/trivy-plugin.tar.gz -C /build/plugins/
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+
+  # --- Optional: uncomment to enable ---
+
+  # Flux: GitOps management (enable if switching from ArgoCD to Flux)
+  # - name: flux-plugin
+  #   image: ghcr.io/headlamp-k8s/headlamp-plugin-flux:v0.6.0
+  #   command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
+  #   volumeMounts:
+  #     - mountPath: /build/plugins
+  #       name: headlamp-plugins
+
+  # Knative: serverless workload management (enable when Knative is deployed)
+  # - name: knative-plugin
+  #   image: ghcr.io/headlamp-k8s/headlamp-plugin-knative:v0.3.0-beta
+  #   command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
+  #   volumeMounts:
+  #     - mountPath: /build/plugins
+  #       name: headlamp-plugins
+
+  # Gatekeeper: OPA policy enforcement UI (tarball install — no container image published)
+  # - name: gatekeeper-plugin
+  #   image: alpine:3
+  #   command:
+  #     - /bin/sh
+  #     - -c
+  #     - |
+  #       mkdir -p /build/plugins &&
+  #       wget -qO /tmp/gk-plugin.tar.gz \
+  #         https://github.com/sozercan/gatekeeper-headlamp-plugin/releases/download/0.2.0/gatekeeper-headlamp-plugin-0.2.0.tar.gz &&
+  #       tar -xzf /tmp/gk-plugin.tar.gz -C /build/plugins/
+  #   volumeMounts:
+  #     - mountPath: /build/plugins
+  #       name: headlamp-plugins
+
+volumeMounts:
+  - name: headlamp-plugins
+    mountPath: /build/plugins
+
+volumes:
+  - name: headlamp-plugins
+    emptyDir: {}
+
+service:
+  type: ClusterIP
+  port: 80

@@ -76,6 +76,14 @@ grafana:
       domain: grafana.nulcell.com
       serve_from_sub_path: false
 
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      uid: loki
+      url: http://loki.loki.svc.cluster.local:3100
+      access: proxy
+      isDefault: false
+
 nodeExporter:
   enabled: true
 

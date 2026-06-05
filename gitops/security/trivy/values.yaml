@@ -1,0 +1,15 @@
+serviceMonitor:
+  enabled: true
+  honorLabels: true
+
+operator:
+  replicas: 1
+  vulnerabilityScannerEnabled: true
+  configAuditScannerEnabled: true
+  rbacAssessmentScannerEnabled: true
+  infraAssessmentScannerEnabled: true
+  clusterComplianceEnabled: true
+  scanJobsConcurrentLimit: 2
+
+trivyOperator:
+  metricsVulnIdEnabled: false

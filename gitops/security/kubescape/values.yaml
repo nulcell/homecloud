@@ -1,0 +1,17 @@
+clusterName: homecloud
+
+capabilities:
+  configurationScan: enable
+  vulnerabilityScan: enable
+  runtimeObservability: enable
+  kubescapeOffline: enable
+  continuousScan: disable
+  admissionController: disable
+
+kubescape:
+  serviceMonitor:
+    enabled: true
+
+nodeAgent:
+  serviceMonitor:
+    enabled: true
