@@ -60,7 +60,7 @@ server:
       parentRefs:
         - name: external
           namespace: gateway
-          sectionName: https
+          sectionName: http
       httpsRedirect: true
       https: false
   resources:
