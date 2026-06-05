@@ -1,0 +1,56 @@
+controller:
+  type: deployment
+
+alloy:
+  configMap:
+    content: |
+      // Discover pods in target namespaces only
+      discovery.kubernetes "pods" {
+        role = "pod"
+
+        namespaces {
+          names = ["media", "n8n", "authentik", "actual-budget"]
+        }
+      }
+
+      // Relabel: drop completed pods, set Loki labels
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_phase"]
+          regex         = "Succeeded|Failed"
+          action        = "drop"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+      }
+
+      // Stream logs from the Kubernetes API (no host volume mounts required)
+      loki.source.kubernetes "pod_logs" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.write.loki.receiver]
+      }
+
+      // Push to Loki
+      loki.write "loki" {
+        endpoint {
+          url = "http://loki.loki.svc.cluster.local:3100/loki/api/v1/push"
+        }
+      }
+
+serviceMonitor:
+  enabled: true

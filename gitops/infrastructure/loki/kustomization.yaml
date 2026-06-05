@@ -9,12 +9,12 @@ helmCharts:
     releaseName: loki
     namespace: loki
     valuesFile: loki-values.yaml
-  - name: fluent-bit
-    repo: https://fluent.github.io/helm-charts
-    version: 0.57.6
-    releaseName: fluent-bit
+  - name: alloy
+    repo: https://grafana.github.io/helm-charts
+    version: 1.8.2
+    releaseName: alloy
     namespace: loki
-    valuesFile: fluentbit-values.yaml
+    valuesFile: alloy-values.yaml
 
 resources:
   - namespace.yaml
