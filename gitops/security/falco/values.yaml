@@ -162,6 +162,9 @@ falcosidekick:
       # -- enabled specifies whether the dashboards should be deployed.
       enabled: true
   config:
+    alertmanager:
+      hostport: "http://kps-alertmanager.monitoring:9093"
+      minimumpriority: "warning"
     talon:
       # -- Talon address, if not empty, Talon output is enabled
       address: "http://falco-talon:2803"
