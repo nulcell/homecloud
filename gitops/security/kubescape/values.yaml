@@ -1,37 +1,240 @@
 clusterName: homecloud
 
+# Targeted scanning
+# If you wish to exclude specific namespaces from scanning, provide the comma-separated list here
+excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,kubeconfig,gmp-system,gmp-public"
+# If you wish to scan only specific namespaces, provide the comma-separated list here (takes precedence over excludeNamespaces)
+includeNamespaces: ""
+
 capabilities:
-  # ====== Configuration scanning — disabled: Trivy configAuditScannerEnabled covers this ======
-  configurationScan: disable
-  continuousScan: disable
+  # ====== Base operator ======
+  operator: enable
+
+  # ====== configuration scanning related capabilities ======
+  #
+  # Default configuration scanning setup
+  configurationScan: enable
+  # Continuous Scanning continuously evaluates the security posture of your cluster.
+  continuousScan: enable
   nodeScan: disable
 
-  # ====== Image vulnerabilities — disabled: Trivy vulnerability + SBOM scanning covers this ======
-  vulnerabilityScan: disable
-  relevancy: disable
+  # ====== Image vulnerabilities scanning related capabilities ======
+  #
+  nodeSbomGeneration: enable # Warning: When disabled along with enableClusterWideSecretAccess: false, vulnerability scanning capabilities will be limited
+  # Instruct Syft to also scan for SBOM files in the filesystem container
+  scanEmbeddedSBOMs: disable
+  vulnerabilityScan: enable
+  relevancy: enable
+  # Generate VEX documents alongside the image vulnerabilities report (experimental)
   vexGeneration: disable
 
-  # ====== Runtime — unique to Kubescape, not covered by Trivy or Falco ======
+  # ====== Runtime related capabilities ======
+  #
   runtimeObservability: enable
   networkPolicyService: enable
-  seccompProfileService: enable
-  runtimeDetection: disable
+  networkEventsStreaming: enable
+  runtimeDetection: enable
   malwareDetection: disable
-  nodeProfileService: disable
+  nodeProfileService: enable
+  admissionController: enable
+  httpDetection: enable
+  seccompProfileService: enable
+  # Storage backend for SeccompProfile resources: "crd" (Kubernetes CRD) or "storage" (aggregated API)
+  seccompProfileBackend: crd
+  manageWorkloads: disable
+  syncSBOM: disable
 
-  # ====== Other ======
+  # ====== Risk acceptance ======
+  riskAcceptance: disable
+
+  # ====== Other capabilities ======
+  #
+  # This is an experimental capability with an elevated security risk. Read the
+  # matching docs before enabling.
   autoUpgrading: disable
+  kubescapeOffline: disable
   prometheusExporter: enable
-  admissionController: disable
+  # seccompGenerator: disable
+
+  testing:
+    nodeAgentMultiplication:
+      enabled: false
+      replicas: 5
+
+# installation of the alertCRD chart
+alertCRD:
+  installDefault: true # install the default CRD
+  scopeClustered: true # it is better to have the CRDs in the cluster scope
+  scopeNamespaced: false # enable scopeNamespaced when there are no permissions for creating cluster scoped CRDs
 
 serviceScanConfig:
-  enabled: false
+  enabled: true
   interval: 1h
 
+# Enable persistence using Persistent Volume Claims
+persistence:
+  # -- persistence storage class
+  storageClass: "longhorn"
+
+  # -- persistence access mode
+  accessMode: ReadWriteMany
+
+  # -- persistence size
+  size:
+    backingStorage: 5Gi
+    kubevuln: 5Gi
+
+# kubescape scanner - https://github.com/kubescape/kubescape
 kubescape:
+  name: kubescape
+  resources:
+    requests:
+      cpu: 250m
+      memory: 400Mi
+    limits:
+      cpu: 600m
+      memory: 1Gi
   serviceMonitor:
     enabled: true
 
+# Operator will trigger kubescape and kubevuln scanning
+operator:
+  # operator Deployment name
+  name: operator
+
+# kubevuln - image vulnerability scanning microservice
+kubevuln:
+  # kubevuln Deployment name
+  name: kubevuln
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 300m
+      memory: 1000Mi
+      # Consider to increase ephemeral-storage requests in order to avoid pod eviction due to huge images
+      #               https://github.com/kubescape/kubescape/issues/389
+      ephemeral-storage: 10Gi
+    limits:
+      cpu: 1500m
+      memory: 5000Mi
+      ephemeral-storage: 10Gi
+
+  tmpDirPersistence:
+    enabled: false
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 50Gi
+    annotations: {}
+
+  # SBOM scanner sidecar — isolates Syft memory usage in a separate container
+  sbomScanner:
+    enabled: true
+
+# Values for the Kubescape Storage service that Kubescape uses for its internal
+# purposes like storage
+storage:
+  # Values or the Aggregated APIServer
+  name: "storage"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 400Mi
+    limits:
+      cpu: 1500m
+      memory: 1500Mi
+
 nodeAgent:
+  name: node-agent
   serviceMonitor:
     enabled: true
+
+  config:
+    maxLearningPeriod: 24h # duration string
+    learningPeriod: 2m # duration string
+    updatePeriod: 10m # duration string
+    nodeProfileInterval: 10m # duration string
+    networkStreamingInterval: 2m # duration string
+    prometheusExporter: true
+    skipKernelVersionCheck: false
+    malwareScanAllFiles: false
+    hostMalwareSensor: disable
+    hostNetworkSensor: disable
+    # Host sensor configuration
+    hostSensor:
+      enabled: true
+      interval: 5m # duration string
+  resources:
+    requests:
+      cpu: 100m
+      memory: 180Mi
+    limits:
+      cpu: 500m
+      memory: 1400Mi
+
+  # SBOM scanner sidecar — runs Syft in a separate container for memory isolation
+  sbomScanner:
+    enabled: false
+    name: sbom-scanner
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 4Gi
+
+# +++++++++++++++++++++++++++++++ ClamAV ++++++++++++++++++++++++++++++++++++++++++++++++
+clamav:
+  name: clamav
+  resources:
+    limits:
+      cpu: 300m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# +++++++++++++++++++++++++++++ Synchronizer ++++++++++++++++++++++++++++++++++++++++++++++++
+synchronizer:
+  name: synchronizer
+  resources:
+    requests:
+      cpu: 100m
+      memory: 250Mi
+    limits:
+      cpu: 200m
+      memory: 500Mi
+
+# +++++++++++++++++++++++++++++ Prometheus exporter ++++++++++++++++++++++++++++++++++++++++++++++++
+# Prometheus exporter
+prometheusExporter:
+  name: "prometheus-exporter"
+  resources:
+    requests:
+      cpu: 10m
+      memory: 10Mi
+    limits:
+      cpu: 50m
+      memory: 100Mi
+
+  enableWorkloadMetrics: false
+
+# -----------------------------------------------------------------------------------------
+# ------------------------- Configurations ------------------------------------------------
+# -----------------------------------------------------------------------------------------
+
+# Continuous scanning configurations
+continuousScanning:
+  configMapName: cs-matching-rules
+
+  # Matching rules for the monitored resources.
+  # Kubescape will watch resources of every provided GVR across the provided
+  # namespaces.
+  matchingRules:
+    match:
+      - apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        resources: ["deployments"]
+    namespaces:
+      - default
