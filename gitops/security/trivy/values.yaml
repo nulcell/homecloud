@@ -5,6 +5,9 @@ serviceMonitor:
 operator:
   replicas: 1
   vulnerabilityScannerEnabled: true
+  sbomGenerationEnabled: true
+  clusterSbomCacheEnabled: true
+  exposedSecretScannerEnabled: true
   configAuditScannerEnabled: true
   rbacAssessmentScannerEnabled: true
   infraAssessmentScannerEnabled: false
@@ -12,4 +15,5 @@ operator:
   scanJobsConcurrentLimit: 2
 
 trivyOperator:
+  # Per-CVE-ID metrics cause high Prometheus cardinality — intentionally off.
   metricsVulnIdEnabled: false
