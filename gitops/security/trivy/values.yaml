@@ -21,7 +21,7 @@ trivy:
   # "cache may be in use by another process" lock contention when multiple containers
   # within the same scan job pod race to initialize the DB simultaneously.
   mode: ClientServer
-  serverURL: "https://trivy.trivy:4975"
+  serverURL: "https://trivy-service.trivy:4954"
   storageClassName: longhorn
   storageSize: 5Gi
 
