@@ -14,6 +14,16 @@ operator:
   clusterComplianceEnabled: true
   scanJobsConcurrentLimit: 2
 
+trivy:
+  # ClientServer mode deploys a single Trivy server pod that maintains the vulnerability DB.
+  # Scan job containers connect to it as clients — no local DB init, eliminating the
+  # "cache may be in use by another process" lock contention when multiple containers
+  # within the same scan job pod race to initialize the DB simultaneously.
+  mode: ClientServer
+  builtInTrivyServer: true
+  storageClassName: longhorn
+  storageSize: 5Gi
+
 trivyOperator:
   # Per-CVE-ID metrics cause high Prometheus cardinality — intentionally off.
   metricsVulnIdEnabled: false

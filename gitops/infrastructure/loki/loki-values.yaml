@@ -7,11 +7,23 @@ loki:
   commonConfig:
     replication_factor: 1
   ingester:
+    chunk_encoding: snappy
     lifecycler:
       ring:
         kvstore:
           store: inmemory
         replication_factor: 1
+  tracing:
+    enabled: true
+  querier:
+    # Default is 4, if you have enough memory and CPU you can increase, reduce if OOMing
+    max_concurrent: 4
+  compactor:
+    working_directory: /var/loki/compactor
+    retention_enabled: true
+    delete_request_store: filesystem
+  limits_config:
+    retention_period: 168h
   schemaConfig:
     configs:
       - from: "2024-01-01"
@@ -24,12 +36,37 @@ loki:
   storage:
     type: filesystem
 
+defaults:
+  goSettings:
+    # Disable auto-injection so the manual GOMEMLIMIT in singleBinary.extraEnv
+    # is the only value set (avoids duplicate env var).
+    goMemLimitFactor: 0
+
 singleBinary:
   replicas: 1
+  resources:
+    limits:
+      cpu: 3
+      memory: 4Gi
+    requests:
+      cpu: 2
+      memory: 2Gi
+  extraEnv:
+    # Keep a little bit lower than memory limits
+    - name: GOMEMLIMIT
+      value: 3750MiB
   persistence:
     enabled: true
     size: 20Gi
     storageClass: longhorn
+
+chunksCache:
+  # Disabled: only useful for object storage backends (S3/GCS/etc.) to avoid
+  # re-fetching chunks. With filesystem storage there is nothing to cache.
+  enabled: false
+
+memcached:
+  enabled: false
 
 read:
   replicas: 0
@@ -43,6 +80,25 @@ gateway:
 
 minio:
   enabled: false
+
+ingester:
+  replicas: 0
+querier:
+  replicas: 0
+queryFrontend:
+  replicas: 0
+queryScheduler:
+  replicas: 0
+distributor:
+  replicas: 0
+compactor:
+  replicas: 0
+indexGateway:
+  replicas: 0
+bloomCompactor:
+  replicas: 0
+bloomGateway:
+  replicas: 0
 
 monitoring:
   serviceMonitor:
