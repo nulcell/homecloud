@@ -16,7 +16,7 @@ capabilities:
   configurationScan: enable
   # Continuous Scanning continuously evaluates the security posture of your cluster.
   continuousScan: enable
-  nodeScan: disable
+  nodeScan: enable
 
   # ====== Image vulnerabilities scanning related capabilities ======
   #
@@ -32,7 +32,7 @@ capabilities:
   #
   runtimeObservability: enable
   networkPolicyService: enable
-  networkEventsStreaming: enable
+  networkEventsStreaming: disable
   runtimeDetection: enable
   malwareDetection: disable
   nodeProfileService: enable
@@ -61,6 +61,9 @@ capabilities:
       enabled: false
       replicas: 5
 
+global:
+  enableClusterWideSecretAccess: true
+
 # installation of the alertCRD chart
 alertCRD:
   installDefault: true # install the default CRD
@@ -77,7 +80,7 @@ persistence:
   storageClass: "longhorn"
 
   # -- persistence access mode
-  accessMode: ReadWriteMany
+  accessMode: ReadWriteOnce
 
   # -- persistence size
   size:
@@ -104,10 +107,10 @@ operator:
   resources:
     requests:
       cpu: 500m
-      memory: 512Mi
+      memory: 1024Mi
     limits:
       cpu: 2000m
-      memory: 2000Mi
+      memory: 4096Mi
 
 # kubevuln - image vulnerability scanning microservice
 kubevuln:
