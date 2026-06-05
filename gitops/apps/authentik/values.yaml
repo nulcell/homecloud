@@ -62,7 +62,7 @@ server:
           namespace: gateway
           sectionName: https
       httpsRedirect: true
-      https: true
+      https: false
   resources:
     requests:
       cpu: 100m
