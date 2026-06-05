@@ -13,4 +13,4 @@ helmCharts:
 
 resources:
   - namespace.yaml
-  # - storage-rbac.yaml
+  - storage-rbac.yaml
