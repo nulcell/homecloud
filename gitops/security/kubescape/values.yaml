@@ -24,7 +24,7 @@ capabilities:
   # Instruct Syft to also scan for SBOM files in the filesystem container
   scanEmbeddedSBOMs: disable
   vulnerabilityScan: enable
-  relevancy: enable
+  relevancy: disable
   # Generate VEX documents alongside the image vulnerabilities report (experimental)
   vexGeneration: disable
 
