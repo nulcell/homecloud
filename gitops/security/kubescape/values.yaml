@@ -103,11 +103,11 @@ operator:
   name: operator
   resources:
     requests:
-      cpu: 200m
-      memory: 256Mi
+      cpu: 500m
+      memory: 512Mi
     limits:
-      cpu: 1000m
-      memory: 1000Mi
+      cpu: 2000m
+      memory: 2000Mi
 
 # kubevuln - image vulnerability scanning microservice
 kubevuln:
