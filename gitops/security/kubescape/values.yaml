@@ -15,14 +15,14 @@ capabilities:
   # Default configuration scanning setup
   configurationScan: enable
   # Continuous Scanning continuously evaluates the security posture of your cluster.
-  continuousScan: disable
+  continuousScan: enable
   nodeScan: enable
 
   # ====== Image vulnerabilities scanning related capabilities ======
   #
   nodeSbomGeneration: enable # Warning: When disabled along with enableClusterWideSecretAccess: false, vulnerability scanning capabilities will be limited
   # Instruct Syft to also scan for SBOM files in the filesystem container
-  scanEmbeddedSBOMs: disable
+  scanEmbeddedSBOMs: enable
   vulnerabilityScan: enable
   relevancy: enable
   # Generate VEX documents alongside the image vulnerabilities report (experimental)
@@ -32,7 +32,7 @@ capabilities:
   #
   runtimeObservability: enable
   networkPolicyService: enable
-  networkEventsStreaming: disable
+  networkEventsStreaming: enable
   runtimeDetection: enable
   malwareDetection: disable
   nodeProfileService: disable
@@ -109,8 +109,8 @@ operator:
       cpu: 500m
       memory: 1024Mi
     limits:
-      cpu: 2000m
-      memory: 4096Mi
+      cpu: 1000m
+      memory: 2048Mi
 
 # kubevuln - image vulnerability scanning microservice
 kubevuln:
