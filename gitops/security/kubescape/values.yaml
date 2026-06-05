@@ -35,7 +35,7 @@ capabilities:
   networkEventsStreaming: disable
   runtimeDetection: disable
   malwareDetection: disable
-  nodeProfileService: enable
+  nodeProfileService: disable
   admissionController: disable
   httpDetection: enable
   seccompProfileService: enable
