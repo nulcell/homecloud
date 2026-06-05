@@ -1,12 +1,44 @@
 clusterName: homecloud
 
 capabilities:
+  # ====== configuration scanning related capabilities ======
+  #
+  # Default configuration scanning setup
   configurationScan: enable
+  # Continuous Scanning continuously evaluates the security posture of your cluster.
+  continuousScan: disable
+  nodeScan: disable
+
+  # ====== Image vulnerabilities scanning related capabilities ======
+  #
   vulnerabilityScan: enable
+  relevancy: enable
+  # Generate VEX documents alongside the image vulnerabilities report (experimental)
+  vexGeneration: disable
+
+  # ====== Runtime related capabilities ======
+  #
   runtimeObservability: enable
-  kubescapeOffline: enable
-  continuousScan: enable
+  networkPolicyService: enable
+  runtimeDetection: disable
+  malwareDetection: disable
+  nodeProfileService: disable
+  seccompProfileService: enable
+
+  # ====== Other capabilities ======
+  #
+  # This is an experimental capability with an elevated security risk. Read the
+  # matching docs before enabling.
+  autoUpgrading: disable
+  prometheusExporter: disable
+  # seccompGenerator: disable
+  # kubescapeOffline: disable
   admissionController: disable
+
+#extra capability - service discovery option
+serviceScanConfig:
+  enabled: false
+  interval: 1h
 
 kubescape:
   serviceMonitor:
