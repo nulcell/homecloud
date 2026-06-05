@@ -9,6 +9,8 @@ helmCharts:
     releaseName: kubescape
     namespace: kubescape
     valuesFile: values.yaml
+    includeCRDs: true
 
 resources:
   - namespace.yaml
+  # - storage-rbac.yaml

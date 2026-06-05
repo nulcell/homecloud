@@ -9,6 +9,7 @@ helmCharts:
     releaseName: trivy-operator
     namespace: trivy
     valuesFile: values.yaml
+    includeCRDs: true
 
 resources:
   - namespace.yaml
