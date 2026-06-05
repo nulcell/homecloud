@@ -24,18 +24,18 @@ capabilities:
   # Instruct Syft to also scan for SBOM files in the filesystem container
   scanEmbeddedSBOMs: disable
   vulnerabilityScan: enable
-  relevancy: disable
+  relevancy: enable
   # Generate VEX documents alongside the image vulnerabilities report (experimental)
   vexGeneration: disable
 
   # ====== Runtime related capabilities ======
   #
-  runtimeObservability: disable
+  runtimeObservability: enable
   networkPolicyService: enable
   networkEventsStreaming: disable
   runtimeDetection: disable
   malwareDetection: disable
-  nodeProfileService: disable
+  nodeProfileService: enable
   admissionController: disable
   httpDetection: enable
   seccompProfileService: enable
