@@ -24,19 +24,19 @@ capabilities:
   # Instruct Syft to also scan for SBOM files in the filesystem container
   scanEmbeddedSBOMs: disable
   vulnerabilityScan: enable
-  relevancy: enable
+  relevancy: disable
   # Generate VEX documents alongside the image vulnerabilities report (experimental)
   vexGeneration: disable
 
   # ====== Runtime related capabilities ======
   #
-  runtimeObservability: enable
+  runtimeObservability: disable
   networkPolicyService: enable
-  networkEventsStreaming: enable
+  networkEventsStreaming: disable
   runtimeDetection: disable
   malwareDetection: disable
-  nodeProfileService: enable
-  admissionController: enable
+  nodeProfileService: disable
+  admissionController: disable
   httpDetection: enable
   seccompProfileService: enable
   # Storage backend for SeccompProfile resources: "crd" (Kubernetes CRD) or "storage" (aggregated API)
