@@ -7,7 +7,7 @@ operator:
   vulnerabilityScannerEnabled: true
   configAuditScannerEnabled: true
   rbacAssessmentScannerEnabled: true
-  infraAssessmentScannerEnabled: true
+  infraAssessmentScannerEnabled: false
   clusterComplianceEnabled: true
   scanJobsConcurrentLimit: 2
 
