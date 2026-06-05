@@ -2,7 +2,7 @@ clusterName: homecloud
 
 # Targeted scanning
 # If you wish to exclude specific namespaces from scanning, provide the comma-separated list here
-excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,kubeconfig,gmp-system,gmp-public,trivy"
+excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,kubeconfig,longhorn-system,trivy"
 # If you wish to scan only specific namespaces, provide the comma-separated list here (takes precedence over excludeNamespaces)
 includeNamespaces: ""
 
