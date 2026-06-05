@@ -30,7 +30,7 @@ capabilities:
 
   # ====== Runtime related capabilities ======
   #
-  runtimeObservability: enable
+  runtimeObservability: disable
   networkPolicyService: enable
   networkEventsStreaming: disable
   runtimeDetection: disable
