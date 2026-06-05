@@ -1,0 +1,121 @@
+authentik:
+  secret_key: "" # injected via AUTHENTIK_SECRET_KEY env var from secret
+
+  postgresql:
+    host: authentik-postgres-rw # CNPG read-write service
+    port: 5432
+    name: authentik
+    user: authentik
+    password: "" # injected via AUTHENTIK_POSTGRESQL__PASSWORD env var
+    sslmode: require
+
+# Inject secrets from Kubernetes secrets into both server and worker
+global:
+  # To override bitnami images
+  security:
+    allowInsecureImages: true
+  env:
+    - name: AUTHENTIK_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: authentik-secret-key
+          key: secret-key
+    - name: AUTHENTIK_POSTGRESQL__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-postgres-app # auto-created by CNPG
+          key: password
+
+server:
+  replicas: 1
+  ## authentik server Horizontal Pod Autoscaler
+  autoscaling:
+    # -- Enable Horizontal Pod Autoscaler ([HPA]) for the authentik server
+    enabled: true
+    # -- Minimum number of replicas for the authentik server [HPA]
+    minReplicas: 1
+    # -- Maximum number of replicas for the authentik server [HPA]
+    maxReplicas: 3
+    # -- Average CPU utilization percentage for the authentik server [HPA]
+    targetCPUUtilizationPercentage: 75
+    # -- Average memory utilization percentage for the authentik server [HPA]
+    targetMemoryUtilizationPercentage: ~
+  pdb:
+    # -- Deploy a [PodDistrubtionBudget] for the authentik server
+    enabled: true
+  ## authentik server metrics service configuration
+  metrics:
+    # -- deploy metrics service
+    enabled: true
+    serviceMonitor:
+      # -- enable a prometheus ServiceMonitor
+      enabled: true
+  ingress:
+    enabled: false
+  route:
+    main:
+      enabled: true
+      hostnames:
+        - auth.nulcell.com
+      parentRefs:
+        - name: default
+          namespace: gateway
+          sectionName: https
+      httpsRedirect: true
+      https: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+worker:
+  replicas: 1
+
+  ## authentik worker Horizontal Pod Autoscaler
+  autoscaling:
+    # -- Enable Horizontal Pod Autoscaler ([HPA]) for the authentik worker
+    enabled: true
+    # -- Minimum number of replicas for the authentik worker [HPA]
+    minReplicas: 1
+    # -- Maximum number of replicas for the authentik worker [HPA]
+    maxReplicas: 3
+    # -- Average CPU utilization percentage for the authentik worker [HPA]
+    targetCPUUtilizationPercentage: 75
+    # -- Average memory utilization percentage for the authentik worker [HPA]
+    targetMemoryUtilizationPercentage: ~
+
+  ## authentik worker Pod Disruption Budget
+  pdb:
+    # -- Deploy a [PodDistrubtionBudget] for the authentik worker
+    enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  ## authentik worker metrics service configuration
+  metrics:
+    # -- deploy metrics service
+    enabled: true
+    serviceMonitor:
+      # -- enable a prometheus ServiceMonitor
+      enabled: true
+
+prometheus:
+  rules:
+    enabled: true
+
+postgresql:
+  enabled: false # using CNPG
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false

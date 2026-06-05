@@ -1,0 +1,24 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: authentik-postgres
+  namespace: authentik
+spec:
+  instances: 1 # Single instance for development; increase to 3 for production
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4
+  primaryUpdateStrategy: unsupervised
+  storage:
+    size: 10Gi
+  bootstrap:
+    initdb:
+      database: authentik
+      owner: authentik
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  monitoring:
+    enablePodMonitor: true
