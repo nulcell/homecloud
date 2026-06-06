@@ -23,7 +23,7 @@ operator:
   infraAssessmentScannerEnabled: true
   clusterComplianceEnabled: true
   scanJobsConcurrentLimit: 5
-  builtInTrivyServer: true
+  builtInTrivyServer: false
 
 image:
   pullSecrets:
@@ -34,7 +34,7 @@ trivy:
   # Scan job containers connect to it as clients — no local DB init, eliminating the
   # "cache may be in use by another process" lock contention when multiple containers
   # within the same scan job pod race to initialize the DB simultaneously.
-  # mode: ClientServer
+  mode: ClientServer
   serverURL: "https://trivy-service.trivy:4954"
   storageClassName: longhorn
   storageSize: 5Gi
