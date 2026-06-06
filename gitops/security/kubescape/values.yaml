@@ -163,7 +163,7 @@ nodeAgent:
     networkStreamingInterval: 2m # duration string
     prometheusExporter: disable
     alertManagerExporterUrls:
-      - http://kps-alertmanager.monitoring:9093
+      - kps-alertmanager.monitoring:9093
     skipKernelVersionCheck: false
     malwareScanAllFiles: false
     hostMalwareSensor: disable
