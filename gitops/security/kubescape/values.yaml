@@ -1,6 +1,6 @@
 clusterName: homecloud
 
-excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,kubeconfig,trivy"
+excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,kubeconfig,trivy,longhorn-system,cdi"
 includeNamespaces: ""
 
 # DockerHub pull-through credentials — the secret is created by the
