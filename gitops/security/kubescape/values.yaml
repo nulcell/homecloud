@@ -22,7 +22,7 @@ capabilities:
   # Watch-mode scanning: re-evaluates posture on every resource change (creates/updates).
   # Combined with configurationScan, this keeps the posture dashboard live rather than
   # only refreshing on a schedule.
-  continuousScan: disable
+  continuousScan: enable # testing
   nodeScan: enable
 
   # ====== Image vulnerabilities ======
