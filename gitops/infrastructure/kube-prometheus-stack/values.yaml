@@ -34,6 +34,7 @@ prometheus:
 
 alertmanager:
   alertmanagerSpec:
+    retention: 168h # 7d
     storage:
       volumeClaimTemplate:
         spec:
