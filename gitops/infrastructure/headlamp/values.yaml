@@ -2,14 +2,6 @@ config:
   pluginsDir: /build/plugins
 
 initContainers:
-  # Kubescape: security posture assessment
-  - name: kubescape-plugin
-    image: ghcr.io/kubebeam/kubescape-headlamp-plugin:latest
-    command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
-    volumeMounts:
-      - mountPath: /build/plugins
-        name: headlamp-plugins
-
   # cert-manager: certificate and issuer management
   - name: cert-manager-plugin
     image: ghcr.io/headlamp-k8s/headlamp-plugin-cert-manager:latest
@@ -18,10 +10,20 @@ initContainers:
       - mountPath: /build/plugins
         name: headlamp-plugins
 
+  # Kubescape: security posture assessment
+  - name: kubescape-plugin
+    image: quay.io/kubescape/headlamp-plugin:v0.11.2
+    command: ["/bin/sh", "-c", "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+
   # KubeVirt: virtual machine management
-  - name: kubevirt-plugin
-    image: ghcr.io/naval-group/headlamp-kubevirt:latest
-    command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/kubevirt /build/plugins/"]
+  - name: headlamp-kubevirt
+    image: ghcr.io/naval-group/headlamp-kubevirt:0.2.2
+    command: ["/bin/sh", "-c"]
+    args:
+      - "cp -r /plugins/kubevirt /headlamp-plugins/"
     volumeMounts:
       - mountPath: /build/plugins
         name: headlamp-plugins
