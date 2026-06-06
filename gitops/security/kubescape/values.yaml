@@ -30,7 +30,7 @@ capabilities:
   vulnerabilityScan: enable
   # Syft-based SBOM extraction from node-level image layers. Requires vulnerabilityScan.
   nodeSbomGeneration: enable
-  scanEmbeddedSBOMs: disable
+  scanEmbeddedSBOMs: enable
   # Filter CVEs to only those in libraries actually loaded at runtime (eBPF trace).
   # This is kubescape's key differentiator vs trivy: noise reduction based on
   # observed execution rather than static package lists.
