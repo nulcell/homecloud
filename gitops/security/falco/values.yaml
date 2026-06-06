@@ -164,10 +164,12 @@ falcosidekick:
   config:
     alertmanager:
       hostport: "http://kps-alertmanager.monitoring:9093"
-      minimumpriority: "warning"
+      minimumpriority: "notice"
+      expireafter: 48h # duration string
     talon:
       # -- Talon address, if not empty, Talon output is enabled
       address: "http://falco-talon:2803"
+      minimumpriority: "notice"
     webhook:
       # -- Webhook address, if not empty, Webhook output is *enabled*
       address: ""
