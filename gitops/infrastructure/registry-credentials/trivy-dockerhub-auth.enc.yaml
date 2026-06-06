@@ -1,0 +1,35 @@
+# Plaintext placeholder — fill in your DockerHub credentials then encrypt:
+#   sops --encrypt --in-place gitops/infrastructure/registry-credentials/trivy-dockerhub-auth.enc.yaml
+#
+# trivy.valuesFromSecret in the trivy-operator helm values points to this
+# secret. The operator injects TRIVY_USERNAME and TRIVY_PASSWORD as environment
+# variables into every scan job pod, so trivy can authenticate to Docker Hub
+# when fetching image manifests in remote mode — regardless of which namespace
+# the workload lives in.
+#
+# Use the same DockerHub username and access token as dockerhub-trivy.enc.yaml.
+# The token only needs "Public Repo Read-only" scope.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: trivy-dockerhub-auth
+    namespace: trivy
+type: Opaque
+stringData:
+    TRIVY_USERNAME: ENC[AES256_GCM,data:QO6wuGPU3A==,iv:rAKClsrEIZFOApjOUV5+7u1fhPuepN+gCHd7LZdeyko=,tag:/30gUTHn5Q/w1gsfnen1Jg==,type:str]
+    TRIVY_PASSWORD: ENC[AES256_GCM,data:PrT/LAi8t4+bkKTjtZ0uq3GGNa6bi4ARhxTcPAFH71/CESdF,iv:nirHTYwJPiVSFZLWhL7RPtesvX9S287fI8Cu1KpnNo8=,tag:F0XE+cl0y+So83sGNqRSOQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAyMHY0WElSN0FUajc3TDJE
+            MHpwYTRqRnllcm9Xc3RTS0loU3VwZVFqRVc4Ckc5dzhHREpvWXQ4MFkvRGtuYXdJ
+            Y29TR0Z4eXZzSENiTWxKSGlEOWhnTTAKLS0tICtuWWNFL0lsdVBlUDRUcElYaVkr
+            VDlBQlFPQzBGcWE2RU02OWJhME5LdnMKVQ21Zghobx18F0ggZgVXjK4nmEB/iQts
+            LRaYENIBbRljGOLzspdGhlTgK/6fnIWSW1tyRVgpeYg7XjWCV4SMTw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zghrycrgnan0c7nfp5ke5csdeh9rdgtzwsd6yj4pl9rzlzjp24cspycpul
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-06-06T10:13:41Z"
+    mac: ENC[AES256_GCM,data:7B6d2H27/deKWBrtc1y7E+K0oHoWgnqrD+DR6VzreDl8O5wetKG8xg3YYbN7CTjKpB5NGbaVTbUY7Ro+jGPgNUT0QOWMgq/sbnWFv7K2w94k5EIedH9VHi57z2vBS7PBSwEn4TDahzTx+UC+EW3r16qNZH2fv1gU3n/sPkPq3xY=,iv:eyoUt7+sjnVKvJsc9j0Qf6MxdC/SuBwuxKIuK3V1VlE=,tag:X51AJUQS5MhZeTAOobUhcw==,type:str]
+    version: 3.13.0

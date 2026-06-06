@@ -40,6 +40,7 @@ trivy:
   storageSize: 5Gi
   # DockerHub credentials for pulling the trivy scanner image in scan job pods.
   imagePullSecret: "dockerhub-credentials"
+  valuesFromSecret: "trivy-dockerhub-auth"
 
 trivyOperator:
   # Per-CVE-ID metrics cause high Prometheus cardinality — intentionally off.
