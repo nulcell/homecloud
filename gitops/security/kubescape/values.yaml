@@ -35,7 +35,7 @@ capabilities:
   # This is kubescape's key differentiator vs trivy: noise reduction based on
   # observed execution rather than static package lists.
   relevancy: enable
-  vexGeneration: disable
+  vexGeneration: enable
 
   # ====== Runtime related capabilities ======
   #
@@ -71,7 +71,7 @@ capabilities:
 
 # installation of the alertCRD chart
 alertCRD:
-  installDefault: false # install the default CRD
+  installDefault: true # install the default CRD
   scopeClustered: true # it is better to have the CRDs in the cluster scope
   scopeNamespaced: false # enable scopeNamespaced when there are no permissions for creating cluster scoped CRDs
 
@@ -171,6 +171,7 @@ nodeAgent:
     hostSensor:
       enabled: true
       interval: 5m # duration string
+    stdoutExporter: true
 
   serviceMonitor:
     enabled: true
