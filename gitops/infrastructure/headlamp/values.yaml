@@ -4,7 +4,7 @@ config:
 initContainers:
   # cert-manager: certificate and issuer management
   - name: cert-manager-plugin
-    image: ghcr.io/headlamp-k8s/headlamp-plugin-cert-manager:latest
+    image: ghcr.io/headlamp-k8s/headlamp-plugin-cert-manager:v0.1.0
     command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
     volumeMounts:
       - mountPath: /build/plugins
@@ -28,15 +28,8 @@ initContainers:
 
   # Trivy: vulnerability and compliance reports (tarball install — no container image published)
   - name: trivy-plugin
-    image: alpine:3
-    command:
-      - /bin/sh
-      - -c
-      - |
-        mkdir -p /build/plugins &&
-        wget -qO /tmp/trivy-plugin.tar.gz \
-          https://github.com/kubebeam/trivy-headlamp-plugin/releases/download/v0.3.2/trivy-headlamp-plugin-v0.3.2.tar.gz &&
-        tar -xzf /tmp/trivy-plugin.tar.gz -C /build/plugins/
+    image: ghcr.io/kubebeam/trivy-headlamp-plugin:v0.3.2
+    command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/trivy-plugin /build/plugins/"]
     volumeMounts:
       - mountPath: /build/plugins
         name: headlamp-plugins
