@@ -1,0 +1,31 @@
+# Plaintext placeholder — fill in your credentials then encrypt:
+#   sops --encrypt --in-place gitops/infrastructure/registry-credentials/dockerhub-kubescape.enc.yaml
+#
+# Generate the .dockerconfigjson value with:
+#   echo -n '{"auths":{"https://index.docker.io/v1/":{"auth":"'$(echo -n "DOCKERHUB_USERNAME:DOCKERHUB_ACCESS_TOKEN" | base64)'"}}}'
+#
+# Use a DockerHub Access Token (hub.docker.com → Account Settings → Security),
+# not your password. The token only needs "Public Repo Read-only" scope.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: dockerhub-credentials
+    namespace: kubescape
+type: kubernetes.io/dockerconfigjson
+stringData:
+    .dockerconfigjson: ENC[AES256_GCM,data:2yYFj2Gzj3XnmbCvzZ9v9LFSALzyR1PN69ik9QgKKiDS28jFyPenup7mVZVPR3sa0vEd46Au6yS1/ErFIayiXpu1yqC5+HHUXMgipDzowEyZrG72Z9cZTMNifdbVqI4PjoF/eR+EWwXB7jvAR6iHpsM=,iv:Tt+ypxLVOLFcZHE+4Vo+H5K+vwyksv26S6iWp6pbs+M=,tag:VEtdBNC6DI7IuLrLPAzR9w==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBMK0crR1llMWlyM2ptUUND
+            cTNzRUcwSy9QMi9SWkJYQ3E1VzFxYlg5elNZCjVyNElqY2MvTzliVnc2SituWGw1
+            MkpnMmF6bURGYXl6L3J0YlhJZ3ZvejQKLS0tIG9CdEoxUk9iYWVtWjh6ejVPNTF0
+            MGhvU0NKTHBZZVhHbmU5Qkw1TnBXR2MKVa0ydvEmTxnw2gwRl352tjlpmLbdH/F0
+            SG/MgZSOOJ9lVqyXcyPcnZg5qdNU3Wp8Jilq1Yy93WNU8EDX8xMdKA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zghrycrgnan0c7nfp5ke5csdeh9rdgtzwsd6yj4pl9rzlzjp24cspycpul
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-06-06T09:39:12Z"
+    mac: ENC[AES256_GCM,data:C9hTFMkaCA9BqK8bfWLwFsIpU6z/PkAacHqYBwCCGNqzvxs0UleuHmadNEEP/NIA6+/RpuJBCm61gFwaoSX75vHHL5Tgwy2gjsIJ2qVPSQyKGyai4hw/9pZSKgVTEAL2jRC2mcFKc3jVwPZr3ygatX2hpgmIwpGrO6NeTcgHMm0=,iv:vNPEywqUweWRKynNuqy74AHGg0N9hvea8o8QqQ0rI7Y=,tag:X+ifKIM78hFiewDuhzOsig==,type:str]
+    version: 3.13.0

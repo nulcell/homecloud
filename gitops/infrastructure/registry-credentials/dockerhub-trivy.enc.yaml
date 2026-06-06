@@ -1,0 +1,28 @@
+# Plaintext placeholder — fill in your credentials then encrypt:
+#   sops --encrypt --in-place gitops/infrastructure/registry-credentials/dockerhub-trivy.enc.yaml
+#
+# Use the same .dockerconfigjson value as dockerhub-kubescape.enc.yaml.
+# Same credentials, different namespace target.
+apiVersion: v1
+kind: Secret
+metadata:
+    name: dockerhub-credentials
+    namespace: trivy
+type: kubernetes.io/dockerconfigjson
+stringData:
+    .dockerconfigjson: ENC[AES256_GCM,data:bT86+nuS/nJYZwK7xsVZIAHG76ukSyqwJHIHQxeAUOZYYpdAg3FIUBZZVTLtC/p+8iz5kzSrZnQd9IFjqb+FXjtU0o0h80M2aOQWJ56jvrBi1p/cZ55zNMzcl7xbd5qH4s+UHAkobnhmdJAgSTcu6G0=,iv:EMQckB4XgfYbKcYgIFpNjkghbD6F1HqX/CGmNbbKkJo=,tag:8a2GFA96uzbC2vga1E1PgQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBtREpGV0psdjFEbHE5YUhk
+            eHE4UTNXVGkrQUhnOWlRNlR5MnFjNWdzaFhrCkFMVUFKWVFsMFlCMUJpRXBxZlVv
+            TGVpdHdKVHhCWENrQy8xVmIxa3hwc2cKLS0tIG40NjZqa0FsajM2WkYzRzJpZW1R
+            WjdzMDVDTDNUYklkTS9peTZKZFo1Q2MKeyROd9ElqaXfbpmA+ZmP3FO8gUb/SgoZ
+            FoBHwtPqgCGrsttM/R0xOFGRUQZpq6DtS0hNOp8+0f5mq/0qQJSb4g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1zghrycrgnan0c7nfp5ke5csdeh9rdgtzwsd6yj4pl9rzlzjp24cspycpul
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-06-06T09:39:05Z"
+    mac: ENC[AES256_GCM,data:7QQFiTqSZpk6L5ekFqdLT+lThrZbqf7cMti/3ORB30q8r++SCqz6SWAZuDYbgdZA/Z5bejNwym8LMRNm3d8bs6rcvkgm1+JlLmgg8l4WanNq7AsY0Zs9xdycoJ0iBSa4w0kO1CvEYLVJNUnG9OGzhFy9wk90laK9VQ8iSVUHFPw=,iv:bTu8ko4zz+nA7TOQTxkXzpKJo71v0hpnSIoHNXOaRrE=,tag:h123V14e4hph/nmclezNNg==,type:str]
+    version: 3.13.0

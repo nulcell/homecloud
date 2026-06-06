@@ -1,10 +1,15 @@
 clusterName: homecloud
 
-# Targeted scanning
-# If you wish to exclude specific namespaces from scanning, provide the comma-separated list here
-excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,kubeconfig,longhorn-system,trivy"
-# If you wish to scan only specific namespaces, provide the comma-separated list here (takes precedence over excludeNamespaces)
+excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,kubeconfig,trivy"
 includeNamespaces: ""
+
+# DockerHub pull-through credentials — the secret is created by the
+# infra-registry-credentials ArgoCD app in this namespace.
+# Chart expects a single string (secret name), not a list.
+imagePullSecrets: "dockerhub-credentials"
+
+global:
+  enableClusterWideSecretAccess: true
 
 capabilities:
   # ====== Base operator ======
@@ -14,35 +19,43 @@ capabilities:
   #
   # Default configuration scanning setup
   configurationScan: enable
-  # Continuous Scanning continuously evaluates the security posture of your cluster.
+  # Watch-mode scanning: re-evaluates posture on every resource change (creates/updates).
+  # Combined with configurationScan, this keeps the posture dashboard live rather than
+  # only refreshing on a schedule.
   continuousScan: disable
   nodeScan: enable
 
-  # ====== Image vulnerabilities scanning related capabilities ======
-  #
-  nodeSbomGeneration: disable
-  # Instruct Syft to also scan for SBOM files in the filesystem container
+  # ====== Image vulnerabilities ======
+  # Scan all workload images for CVEs — core feature for kubescape vs trivy comparison.
+  vulnerabilityScan: enable
+  # Syft-based SBOM extraction from node-level image layers. Requires vulnerabilityScan.
+  nodeSbomGeneration: enable
   scanEmbeddedSBOMs: disable
-  vulnerabilityScan: disable
-  relevancy: disable
-  # Generate VEX documents alongside the image vulnerabilities report (experimental)
+  # Filter CVEs to only those in libraries actually loaded at runtime (eBPF trace).
+  # This is kubescape's key differentiator vs trivy: noise reduction based on
+  # observed execution rather than static package lists.
+  relevancy: enable
   vexGeneration: disable
 
   # ====== Runtime related capabilities ======
   #
-  runtimeObservability: disable
+  runtimeObservability: enable
   networkPolicyService: enable
   networkEventsStreaming: disable
+  # Runtime threat detection (Falco-style rules over eBPF events). Note: Falco is
+  # also deployed in this cluster — there will be overlap. Enabling here for the
+  # full kubescape feature comparison.
   runtimeDetection: disable
   malwareDetection: disable
-  nodeProfileService: disable
+  # Build per-node application profiles used by relevancy and network policy gen.
+  nodeProfileService: enable
   admissionController: disable
   httpDetection: disable
   seccompProfileService: enable
-  # Storage backend for SeccompProfile resources: "crd" (Kubernetes CRD) or "storage" (aggregated API)
   seccompProfileBackend: crd
   manageWorkloads: disable
-  syncSBOM: disable
+  # Sync generated SBOMs to the backing storage so the UI/API can surface them.
+  syncSBOM: enable
 
   # ====== Risk acceptance ======
   riskAcceptance: disable
@@ -56,9 +69,6 @@ capabilities:
   prometheusExporter: disable
   # seccompGenerator: disable
 
-global:
-  enableClusterWideSecretAccess: true
-
 # installation of the alertCRD chart
 alertCRD:
   installDefault: false # install the default CRD
@@ -69,15 +79,9 @@ serviceScanConfig:
   enabled: true
   interval: 1h
 
-# Enable persistence using Persistent Volume Claims
 persistence:
-  # -- persistence storage class
   storageClass: "longhorn"
-
-  # -- persistence access mode
   accessMode: ReadWriteOnce
-
-  # -- persistence size
   size:
     backingStorage: 5Gi
     kubevuln: 5Gi
@@ -99,19 +103,17 @@ kubescape:
 
 # Operator will trigger kubescape and kubevuln scanning
 operator:
-  # operator Deployment name
   name: operator
   resources:
     requests:
-      cpu: 250m
-      memory: 1024Mi
+      cpu: 500m
+      memory: 2048Mi
     limits:
-      cpu: 1000m
-      memory: 4096Mi
+      cpu: 2000m
+      memory: 8192Mi
 
 # kubevuln - image vulnerability scanning microservice
 kubevuln:
-  # kubevuln Deployment name
   name: kubevuln
   replicaCount: 1
   resources:
@@ -126,9 +128,11 @@ kubevuln:
       memory: 5000Mi
       ephemeral-storage: 10Gi
 
+  # PVC-backed temp directory for image layer extraction.
+  # Prevents the "large image → emptyDir fills RAM → OOMKill" failure mode.
   tmpDirPersistence:
-    enabled: false
-    storageClassName: ""
+    enabled: true
+    storageClassName: "longhorn"
     accessModes:
       - ReadWriteOnce
     size: 50Gi
@@ -136,12 +140,9 @@ kubevuln:
 
   # SBOM scanner sidecar — isolates Syft memory usage in a separate container
   sbomScanner:
-    enabled: false
+    enabled: true
 
-# Values for the Kubescape Storage service that Kubescape uses for its internal
-# purposes like storage
 storage:
-  # Values or the Aggregated APIServer
   name: "storage"
   resources:
     requests:
@@ -167,14 +168,11 @@ nodeAgent:
     malwareScanAllFiles: false
     hostMalwareSensor: disable
     hostNetworkSensor: disable
-    # Host sensor configuration
     hostSensor:
       enabled: true
       interval: 5m # duration string
 
-  # prometheus (operator) service monitor
   serviceMonitor:
-    # -- enable/disable service monitor for prometheus
     enabled: true
 
   resources:
@@ -183,9 +181,8 @@ nodeAgent:
       memory: 180Mi
     limits:
       cpu: 500m
-      memory: 1400Mi
+      memory: 2000Mi
 
-  # SBOM scanner sidecar — runs Syft in a separate container for memory isolation
   sbomScanner:
     enabled: false
     name: sbom-scanner

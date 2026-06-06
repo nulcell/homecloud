@@ -6,7 +6,7 @@ targetNamespaces: ""
 # -- excludeNamespaces is a comma separated list of namespaces (or glob patterns)
 # to be excluded from scanning. Only applicable in the all namespaces install
 # mode, i.e. when the targetNamespaces values is a blank string.
-excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,longhorn-system,trivy"
+excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,trivy"
 
 serviceMonitor:
   enabled: true
@@ -25,6 +25,10 @@ operator:
   scanJobsConcurrentLimit: 5
   builtInTrivyServer: true
 
+image:
+  pullSecrets:
+    - dockerhub-credentials
+
 trivy:
   # ClientServer mode deploys a single Trivy server pod that maintains the vulnerability DB.
   # Scan job containers connect to it as clients — no local DB init, eliminating the
@@ -34,13 +38,13 @@ trivy:
   serverURL: "https://trivy-service.trivy:4954"
   storageClassName: longhorn
   storageSize: 5Gi
+  # DockerHub credentials for pulling the trivy scanner image in scan job pods.
+  imagePullSecret: "dockerhub-credentials"
 
 trivyOperator:
   # Per-CVE-ID metrics cause high Prometheus cardinality — intentionally off.
   metricsVulnIdEnabled: false
-  # -- scanJobsInSameNamespace control whether to run vulnerability scan jobs in same namespace of workload
   scanJobsInSameNamespace: false
-  # -- skipInitContainers when this flag is set to true, the initContainers will be skipped for the scanner and node collector pods
   skipInitContainers: true
 
 compliance:
@@ -66,6 +70,8 @@ compliance:
 # on the host to set up the bind mount. Replace with emptyDir so the pod starts;
 # the scanner will simply find no systemd units (accurate for Talos).
 nodeCollector:
+  # DockerHub credentials for pulling the node-collector image.
+  imagePullSecret: "dockerhub-credentials"
   volumes:
     - name: var-lib-etcd
       hostPath:
