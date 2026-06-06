@@ -13,3 +13,4 @@ helmCharts:
 resources:
   - namespace.yaml
   - httproute.yaml
+  - serviceaccount.yaml # kubectl create token headlamp-admin -n headlamp
