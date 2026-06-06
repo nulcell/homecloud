@@ -13,4 +13,6 @@ helmCharts:
 resources:
   - namespace.yaml
   - httproute.yaml
-  # - serviceaccount.yaml # kubectl create token headlamp-admin -n headlamp
+
+# Generate a short-lived token for the UI with the following command:
+# # kubectl create token headlamp -n headlamp --duration=1h
