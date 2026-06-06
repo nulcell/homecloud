@@ -21,9 +21,7 @@ initContainers:
   # KubeVirt: virtual machine management
   - name: headlamp-kubevirt
     image: ghcr.io/naval-group/headlamp-kubevirt:0.2.2
-    command: ["/bin/sh", "-c"]
-    args:
-      - "cp -r /plugins/kubevirt /headlamp-plugins/"
+    command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/kubevirt /build/plugins/"]
     volumeMounts:
       - mountPath: /build/plugins
         name: headlamp-plugins
