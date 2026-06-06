@@ -165,6 +165,7 @@ falcosidekick:
     alertmanager:
       hostport: "http://kps-alertmanager.monitoring:9093"
       minimumpriority: "notice"
+      endpoint: "/api/v2/alerts"
       expireafter: 48h # duration string
     talon:
       # -- Talon address, if not empty, Talon output is enabled
