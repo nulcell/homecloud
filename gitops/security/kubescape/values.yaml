@@ -41,11 +41,11 @@ capabilities:
   #
   runtimeObservability: enable
   networkPolicyService: enable
-  networkEventsStreaming: disable
+  networkEventsStreaming: enable # testing
   # Runtime threat detection (Falco-style rules over eBPF events). Note: Falco is
   # also deployed in this cluster — there will be overlap. Enabling here for the
   # full kubescape feature comparison.
-  runtimeDetection: disable
+  runtimeDetection: enable # testing
   malwareDetection: disable
   # Build per-node application profiles used by relevancy and network policy gen.
   nodeProfileService: enable
@@ -53,7 +53,7 @@ capabilities:
   httpDetection: enable
   seccompProfileService: enable
   seccompProfileBackend: crd
-  manageWorkloads: disable
+  manageWorkloads: enable # testing
   # Sync generated SBOMs to the backing storage so the UI/API can surface them.
   syncSBOM: enable
 
@@ -167,7 +167,7 @@ nodeAgent:
     skipKernelVersionCheck: false
     malwareScanAllFiles: false
     hostMalwareSensor: disable
-    hostNetworkSensor: disable
+    hostNetworkSensor: enable # testing
     hostSensor:
       enabled: true
       interval: 5m # duration string
