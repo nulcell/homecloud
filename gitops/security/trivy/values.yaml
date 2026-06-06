@@ -27,7 +27,7 @@ operator:
 
 image:
   pullSecrets:
-    - dockerhub-credentials
+    - name: dockerhub-credentials
 
 trivy:
   # ClientServer mode deploys a single Trivy server pod that maintains the vulnerability DB.
