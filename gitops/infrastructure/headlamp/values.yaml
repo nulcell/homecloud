@@ -26,15 +26,15 @@ initContainers:
       - mountPath: /build/plugins
         name: headlamp-plugins
 
-  # Trivy: vulnerability and compliance reports (tarball install — no container image published)
-  - name: trivy-plugin
-    image: ghcr.io/kubebeam/trivy-headlamp-plugin:v0.3.2
-    command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/trivy-plugin /build/plugins/"]
-    volumeMounts:
-      - mountPath: /build/plugins
-        name: headlamp-plugins
-
   # --- Optional: uncomment to enable ---
+
+  # # Trivy: vulnerability and compliance reports (tarball install — no container image published)
+  # - name: trivy-plugin
+  #   image: ghcr.io/kubebeam/trivy-headlamp-plugin:v0.3.2
+  #   command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/trivy-plugin /build/plugins/"]
+  #   volumeMounts:
+  #     - mountPath: /build/plugins
+  #       name: headlamp-plugins
 
   # Flux: GitOps management (enable if switching from ArgoCD to Flux)
   # - name: flux-plugin
