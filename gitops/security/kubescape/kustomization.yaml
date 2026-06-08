@@ -14,4 +14,4 @@ helmCharts:
 resources:
   - namespace.yaml
   - storage-rbac.yaml
-  - profile-cleanup.yaml
+  # - profile-cleanup.yaml
