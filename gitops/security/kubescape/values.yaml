@@ -1,6 +1,6 @@
 clusterName: homecloud
 
-excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,kubeconfig,trivy,longhorn-system,cdi"
+excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,kubeconfig,trivy,longhorn-system,cdi,falco"
 includeNamespaces: ""
 
 # DockerHub pull-through credentials — the secret is created by the
@@ -22,7 +22,7 @@ capabilities:
   # Watch-mode scanning: re-evaluates posture on every resource change (creates/updates).
   # Combined with configurationScan, this keeps the posture dashboard live rather than
   # only refreshing on a schedule.
-  continuousScan: enable # testing
+  continuousScan: disable # testing
   nodeScan: enable
 
   # ====== Image vulnerabilities ======
@@ -42,10 +42,7 @@ capabilities:
   runtimeObservability: enable
   networkPolicyService: enable
   networkEventsStreaming: disable
-  # Runtime threat detection (Falco-style rules over eBPF events). Note: Falco is
-  # also deployed in this cluster — there will be overlap. Enabling here for the
-  # full kubescape feature comparison.
-  runtimeDetection: enable # testing
+  runtimeDetection: disable # testing
   malwareDetection: disable
   # Build per-node application profiles used by relevancy and network policy gen.
   nodeProfileService: enable
@@ -126,7 +123,7 @@ kubevuln:
       ephemeral-storage: 5Gi
     limits:
       cpu: 1500m
-      memory: 5000Mi
+      memory: 2048Mi
       ephemeral-storage: 10Gi
 
   # PVC-backed temp directory for image layer extraction.
@@ -180,10 +177,10 @@ nodeAgent:
   resources:
     requests:
       cpu: 500m
-      memory: 400Mi
+      memory: 512Mi
     limits:
-      cpu: 2000m
-      memory: 4096Mi
+      cpu: 1000m
+      memory: 1024Mi
 
   sbomScanner:
     enabled: false
