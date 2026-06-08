@@ -9,21 +9,21 @@ kind: ClusterRole
 metadata:
   name: kubescape-profile-cleanup
 rules:
-- apiGroups: ["spdx.softwarecomposition.kubescape.io"]
-  resources: ["applicationprofiles", "networkneighborhoods"]
-  verbs: ["list", "delete"]
-- apiGroups: ["apps"]
-  resources: ["replicasets", "daemonsets", "statefulsets"]
-  verbs: ["get"]
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get"]
-- apiGroups: ["kubevirt.io"]
-  resources: ["virtualmachineinstances"]
-  verbs: ["get"]
-- apiGroups: ["postgresql.cnpg.io"]
-  resources: ["clusters"]
-  verbs: ["get"]
+  - apiGroups: ["spdx.softwarecomposition.kubescape.io"]
+    resources: ["applicationprofiles", "networkneighborhoods"]
+    verbs: ["list", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets", "daemonsets", "statefulsets"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+  - apiGroups: ["kubevirt.io"]
+    resources: ["virtualmachineinstances"]
+    verbs: ["get"]
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters"]
+    verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -34,9 +34,9 @@ roleRef:
   kind: ClusterRole
   name: kubescape-profile-cleanup
 subjects:
-- kind: ServiceAccount
-  name: profile-cleanup
-  namespace: kubescape
+  - kind: ServiceAccount
+    name: profile-cleanup
+    namespace: kubescape
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -55,60 +55,61 @@ spec:
           serviceAccountName: profile-cleanup
           restartPolicy: OnFailure
           containers:
-          - name: cleanup
-            image: registry.k8s.io/kubectl:v1.36.1
-            command: ["/bin/sh", "-c"]
-            args:
-            - |
-              set -euo pipefail
+            - name: cleanup
+              image: alpine:3.22
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  apk add --no-cache kubectl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community/
 
-              # Map lowercase kind prefix → kubectl resource.group
-              api_resource() {
-                case "$1" in
-                  replicaset)             echo "replicasets.apps" ;;
-                  daemonset)              echo "daemonsets.apps" ;;
-                  statefulset)            echo "statefulsets.apps" ;;
-                  pod)                    echo "pods" ;;
-                  cluster)                echo "clusters.postgresql.cnpg.io" ;;
-                  virtualmachineinstance) echo "virtualmachineinstances.kubevirt.io" ;;
-                  *)                      echo "" ;;
-                esac
-              }
+                  # Map lowercase kind prefix → kubectl resource.group
+                  api_resource() {
+                    case "$1" in
+                      replicaset)             echo "replicasets.apps" ;;
+                      daemonset)              echo "daemonsets.apps" ;;
+                      statefulset)            echo "statefulsets.apps" ;;
+                      pod)                    echo "pods" ;;
+                      cluster)                echo "clusters.postgresql.cnpg.io" ;;
+                      virtualmachineinstance) echo "virtualmachineinstances.kubevirt.io" ;;
+                      *)                      echo "" ;;
+                    esac
+                  }
 
-              cleanup() {
-                local crd="$1"
-                local deleted=0 kept=0 skipped=0
+                  cleanup() {
+                    local crd="$1"
+                    local deleted=0 kept=0 skipped=0
 
-                echo "--- $crd ---"
+                    echo "--- $crd ---"
 
-                while IFS= read -r line; do
-                  ns=$(echo "$line" | awk '{print $1}')
-                  name=$(echo "$line" | awk '{print $2}')
+                    while IFS= read -r line; do
+                      ns=$(echo "$line" | awk '{print $1}')
+                      name=$(echo "$line" | awk '{print $2}')
 
-                  owner_kind="${name%%-*}"
-                  owner_name="${name#*-}"
-                  resource=$(api_resource "$owner_kind")
+                      owner_kind="${name%%-*}"
+                      owner_name="${name#*-}"
+                      resource=$(api_resource "$owner_kind")
 
-                  if [ -z "$resource" ]; then
-                    echo "  SKIP  $ns/$name (unknown kind: $owner_kind)"
-                    skipped=$((skipped + 1))
-                    continue
-                  fi
+                      if [ -z "$resource" ]; then
+                        echo "  SKIP  $ns/$name (unknown kind: $owner_kind)"
+                        skipped=$((skipped + 1))
+                        continue
+                      fi
 
-                  if kubectl get "$resource" -n "$ns" "$owner_name" --ignore-not-found | grep -q .; then
-                    kept=$((kept + 1))
-                  else
-                    echo "  DELETE $ns/$name"
-                    kubectl delete "$crd" -n "$ns" "$name"
-                    deleted=$((deleted + 1))
-                  fi
-                done < <(kubectl get "$crd" -A --no-headers \
-                  -o custom-columns='NS:.metadata.namespace,NAME:.metadata.name')
+                      if kubectl get "$resource" -n "$ns" "$owner_name" --ignore-not-found | grep -q .; then
+                        kept=$((kept + 1))
+                      else
+                        echo "  DELETE $ns/$name"
+                        kubectl delete "$crd" -n "$ns" "$name"
+                        deleted=$((deleted + 1))
+                      fi
+                    done < <(kubectl get "$crd" -A --no-headers \
+                      -o custom-columns='NS:.metadata.namespace,NAME:.metadata.name')
 
-                echo "  kept=$kept deleted=$deleted skipped=$skipped"
-              }
+                    echo "  kept=$kept deleted=$deleted skipped=$skipped"
+                  }
 
-              cleanup applicationprofiles
-              cleanup networkneighborhoods
+                  cleanup applicationprofiles
+                  cleanup networkneighborhoods
 
-              echo "Done."
+                  echo "Done."
