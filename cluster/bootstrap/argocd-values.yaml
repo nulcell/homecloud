@@ -101,14 +101,10 @@ repoServer:
     enabled: true
     serviceMonitor:
       enabled: true
-  # SOPS decryption: mount the age key as a Secret named argocd-sops-age.
-  # Create it once during bootstrap:
-  #   kubectl -n argocd create secret generic argocd-sops-age \
-  #     --from-file=key.txt=$HOME/.config/sops/age/keys.txt
   volumes:
-    - name: sops-age
-      secret:
-        secretName: argocd-sops-age
+    # - name: sops-age   # SOPS age key — no longer needed; all secrets migrated to ESO
+    #   secret:
+    #     secretName: argocd-sops-age
     - name: cmp-tmp
       emptyDir: {}
     - name: kustomize-sops-config
@@ -122,13 +118,13 @@ repoServer:
     # rendering `helmCharts:` blocks (external-dns, kube-prometheus-stack, etc.).
     - name: custom-tools
       emptyDir: {}
-  volumeMounts:
-    - name: sops-age
-      mountPath: /sops
-      readOnly: true
-  env:
-    - name: SOPS_AGE_KEY_FILE
-      value: /sops/key.txt
+  # volumeMounts:                     # SOPS age key — no longer needed
+  #   - name: sops-age
+  #     mountPath: /sops
+  #     readOnly: true
+  # env:
+  #   - name: SOPS_AGE_KEY_FILE
+  #     value: /sops/key.txt
   # Downloads helm into the shared custom-tools volume. Bump HELM_VERSION
   # alongside any cluster-wide helm-rendered manifest changes.
   initContainers:
@@ -153,9 +149,9 @@ repoServer:
         runAsNonRoot: true
         runAsUser: 999
         runAsGroup: 999
-      env:
-        - name: SOPS_AGE_KEY_FILE
-          value: /sops/key.txt
+      # env:                           # SOPS age key — no longer needed
+      #   - name: SOPS_AGE_KEY_FILE
+      #     value: /sops/key.txt
       volumeMounts:
         - name: var-files
           mountPath: /var/run/argocd
@@ -163,9 +159,9 @@ repoServer:
           mountPath: /home/argocd/cmp-server/plugins
         - name: cmp-tmp
           mountPath: /tmp
-        - name: sops-age
-          mountPath: /sops
-          readOnly: true
+        # - name: sops-age             # SOPS age key — no longer needed
+        #   mountPath: /sops
+        #   readOnly: true
         - name: kustomize-sops-config
           mountPath: /home/argocd/cmp-server/config
         # Drop the helm binary directly onto PATH inside this sidecar.

@@ -40,31 +40,6 @@ kubectl -n kube-system rollout status ds/cilium --timeout=5m
 echo "==> Cilium L2 pool + announcement policy"
 kubectl apply -f "${SCRIPT_DIR}/cilium-l2.yaml"
 
-# --- ArgoCD ---------------------------------------------------------------------
-echo "==> Argo CD ${ARGOCD_VERSION}"
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: argocd
-  labels:
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/audit: privileged
-    pod-security.kubernetes.io/warn: privileged
-EOF
-# The SOPS age key must exist before the repo-server starts, or pods will crashloop.
-if ! kubectl -n argocd get secret argocd-sops-age >/dev/null 2>&1; then
-  echo "  -- creating argocd-sops-age from \$HOME/.config/sops/age/keys.txt"
-  kubectl -n argocd create secret generic argocd-sops-age \
-    --from-file=key.txt="${HOME}/.config/sops/age/keys.txt"
-fi
-
-helm upgrade --install argocd argo/argo-cd \
-  --namespace argocd \
-  --version "${ARGOCD_VERSION}" \
-  --values "${SCRIPT_DIR}/argocd-values.yaml" \
-  --wait
-
 # --- External Secrets Operator – bootstrap credentials -------------------------
 # The onepassword-credentials secret must exist before ArgoCD deploys ESO, so the
 # ClusterSecretStore can authenticate on first reconcile.
@@ -80,6 +55,31 @@ if ! kubectl -n external-secrets get secret onepassword-credentials >/dev/null 2
   kubectl -n external-secrets create secret generic onepassword-credentials \
     --from-literal=credential="$(op read "op://homecloud/5xsyk5yefnbhsfr2rfuu62e6aq/credential")"
 fi
+
+# --- ArgoCD ---------------------------------------------------------------------
+echo "==> Argo CD ${ARGOCD_VERSION}"
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+EOF
+# # The SOPS age key must exist before the repo-server starts, or pods will crashloop.
+# if ! kubectl -n argocd get secret argocd-sops-age >/dev/null 2>&1; then
+#   echo "  -- creating argocd-sops-age from \$HOME/.config/sops/age/keys.txt"
+#   kubectl -n argocd create secret generic argocd-sops-age \
+#     --from-file=key.txt="${HOME}/.config/sops/age/keys.txt"
+# fi
+
+helm upgrade --install argocd argo/argo-cd \
+  --namespace argocd \
+  --version "${ARGOCD_VERSION}" \
+  --values "${SCRIPT_DIR}/argocd-values.yaml" \
+  --wait
 
 # --- Root Application -----------------------------------------------------------
 # Hands the cluster off to GitOps. cert-manager, Longhorn, metrics-server,
