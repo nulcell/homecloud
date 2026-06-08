@@ -14,16 +14,16 @@ rules:
     verbs: ["list", "delete"]
   - apiGroups: ["apps"]
     resources: ["replicasets", "daemonsets", "statefulsets"]
-    verbs: ["get"]
+    verbs: ["list"]
   - apiGroups: [""]
     resources: ["pods"]
-    verbs: ["get"]
+    verbs: ["list"]
   - apiGroups: ["kubevirt.io"]
     resources: ["virtualmachineinstances"]
-    verbs: ["get"]
+    verbs: ["list"]
   - apiGroups: ["postgresql.cnpg.io"]
     resources: ["clusters"]
-    verbs: ["get"]
+    verbs: ["list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -60,40 +60,73 @@ spec:
               command: ["/bin/sh", "-c"]
               args:
                 - |
-                  set -euo pipefail
-                  apk add --no-cache kubectl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community/
+                  set -eu
+                  apk add --no-cache -q kubectl \
+                    --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community/ \
+                    >/dev/null 2>&1
 
-                  cols='NS:.metadata.namespace,NAME:.metadata.name'
+                  # ── helpers ────────────────────────────────────────────────
 
-                  # Pre-fetch all owning resources once — avoids one kubectl call per profile.
-                  # RS names include the pod-template hash (e.g. headlamp-5db4d88db6).
-                  # DS/SS names do not — Kubescape appends the hash, so we strip it before lookup.
-                  replicasets=$(kubectl get replicasets.apps   -A --no-headers -o custom-columns="$cols")
-                  daemonsets=$(kubectl  get daemonsets.apps    -A --no-headers -o custom-columns="$cols")
-                  statefulsets=$(kubectl get statefulsets.apps -A --no-headers -o custom-columns="$cols")
-                  pods=$(kubectl        get pods               -A --no-headers -o custom-columns="$cols")
-                  clusters=$(kubectl    get clusters.postgresql.cnpg.io        -A --no-headers -o custom-columns="$cols" 2>/dev/null || true)
-                  vmis=$(kubectl        get virtualmachineinstances.kubevirt.io -A --no-headers -o custom-columns="$cols" 2>/dev/null || true)
+                  COLS="NS:.metadata.namespace,NAME:.metadata.name"
 
-                  exists_in() {
-                    # exists_in <list> <namespace> <name>
-                    echo "$1" | awk -v ns="$2" -v n="$3" '$1==ns && $2==n {found=1} END{exit !found}'
+                  # fetch_all <resource.group>
+                  # Returns "NAMESPACE NAME" lines for every instance in the cluster.
+                  fetch_all() {
+                    kubectl get "$1" -A --no-headers -o custom-columns="$COLS" 2>/dev/null || true
                   }
 
+                  # exists_in <list> <namespace> <name>
+                  # Returns 0 if the namespace/name pair appears in the list, 1 otherwise.
+                  exists_in() {
+                    echo "$1" | awk -v ns="$2" -v n="$3" \
+                      '$1==ns && $2==n { found=1 } END { exit !found }'
+                  }
+
+                  # reverse_lines — reverses stdin line order (newest-first after sort-by-age)
+                  reverse_lines() {
+                    awk '{ lines[NR]=$0 } END { for (i=NR; i>=1; i--) print lines[i] }'
+                  }
+
+                  # ── pre-fetch owning resources ──────────────────────────────
+                  #
+                  # RS names include the pod-template hash assigned by the Deployment
+                  # controller (e.g. headlamp-5db4d88db6), so the profile name maps
+                  # directly to a real RS object.
+                  #
+                  # DS/SS names do NOT include the hash — Kubescape appends one itself
+                  # to track template revisions. The hash must be stripped before lookup.
+
+                  replicasets=$(fetch_all replicasets.apps)
+                  daemonsets=$(fetch_all daemonsets.apps)
+                  statefulsets=$(fetch_all statefulsets.apps)
+                  pods=$(fetch_all pods)
+                  clusters=$(fetch_all clusters.postgresql.cnpg.io)
+                  vmis=$(fetch_all virtualmachineinstances.kubevirt.io)
+
+                  # ── cleanup <fq-crd> ────────────────────────────────────────
+                  #
+                  # Deletes profiles whose owning resource no longer exists.
+                  # For DaemonSets and StatefulSets, also deletes older template
+                  # revisions, keeping only the newest profile per controller.
+
                   cleanup() {
-                    local fq_crd short profiles seen_controllers ns name
-                    local owner_kind owner_name check_name list controller_key
+                    local fq_crd short profiles seen_controllers
+                    local ns name owner_kind owner_name check_name list controller_key
                     local deleted=0 kept=0 skipped=0
 
                     fq_crd="$1"
                     short="${fq_crd%%.*}"
                     seen_controllers=""
 
-                    # Fetch newest-first so DS/SS dedup always keeps the most recent revision
-                    profiles=$(kubectl get "$fq_crd" -A --no-headers \
-                      --sort-by=.metadata.creationTimestamp \
-                      -o custom-columns="$cols" \
-                      | awk '{lines[NR]=$0} END{for(i=NR;i>=1;i--) print lines[i]}')
+                    # Sort ascending by age then reverse so we process newest first.
+                    # This ensures the first occurrence of each DS/SS controller key
+                    # we encounter is always the most recent revision.
+                    profiles=$(
+                      kubectl get "$fq_crd" -A --no-headers \
+                        --sort-by=.metadata.creationTimestamp \
+                        -o custom-columns="$COLS" \
+                      | reverse_lines
+                    )
 
                     while IFS= read -r line; do
                       ns=$(echo "$line" | awk '{print $1}')
@@ -108,17 +141,16 @@ spec:
                         pod)                    list="$pods";         check_name="$owner_name" ;;
                         cluster)                list="$clusters";     check_name="$owner_name" ;;
                         virtualmachineinstance) list="$vmis";         check_name="$owner_name" ;;
-                        *)
-                          skipped=$((skipped + 1)); continue ;;
+                        *) skipped=$((skipped + 1)); continue ;;
                       esac
 
                       if ! exists_in "$list" "$ns" "$check_name"; then
                         echo "  delete $ns/$name"
                         kubectl delete "$fq_crd" -n "$ns" "$name"
-                        deleted=$((deleted + 1)); continue
+                        deleted=$((deleted + 1))
+                        continue
                       fi
 
-                      # DS/SS: keep only newest revision per controller; delete older ones
                       if [ "$owner_kind" = "daemonset" ] || [ "$owner_kind" = "statefulset" ]; then
                         controller_key="$ns/$owner_kind/$check_name"
                         if echo "$seen_controllers" | grep -qF "|$controller_key|"; then
@@ -138,7 +170,7 @@ spec:
                     echo "$short: kept=$kept deleted=$deleted skipped=$skipped"
                   }
 
+                  # ── run ────────────────────────────────────────────────────
+
                   cleanup applicationprofiles.spdx.softwarecomposition.kubescape.io
                   cleanup networkneighborhoods.spdx.softwarecomposition.kubescape.io
-
-                  echo "Done."
