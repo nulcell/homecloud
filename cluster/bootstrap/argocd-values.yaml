@@ -7,17 +7,10 @@ configs:
     server.insecure: true # TLS is terminated at the Gateway
   cm:
     timeout.reconciliation: 60s
-    kustomize.buildOptions: "--enable-helm"
-  cmp:
-    create: true
-    plugins:
-      kustomize-sops:
-        generate:
-          command: [sh, -c]
-          # --load-restrictor=LoadRestrictionsNone lets kustomizations reference
-          # files outside their own directory — needed by helmGlobals.chartHome
-          # paths like ../../../charts (e.g. gitops/apps/n8n -> charts/n8n).
-          args: ["kustomize build --enable-alpha-plugins --enable-exec --load-restrictor=LoadRestrictionsNone ."]
+    # --load-restrictor=LoadRestrictionsNone lets kustomizations reference files
+    # outside their own directory — needed by helmGlobals.chartHome paths like
+    # ../../../charts (e.g. gitops/apps/n8n -> charts/n8n).
+    kustomize.buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
 
 server:
   service:
@@ -101,70 +94,3 @@ repoServer:
     enabled: true
     serviceMonitor:
       enabled: true
-  volumes:
-    # - name: sops-age   # SOPS age key — no longer needed; all secrets migrated to ESO
-    #   secret:
-    #     secretName: argocd-sops-age
-    - name: cmp-tmp
-      emptyDir: {}
-    - name: kustomize-sops-config
-      configMap:
-        name: argocd-cmp-cm
-        items:
-          - key: kustomize-sops.yaml
-            path: plugin.yaml
-    # Populated by the download-tools initContainer below; mounted into the
-    # kustomize-sops sidecar so `kustomize build` can shell out to `helm` when
-    # rendering `helmCharts:` blocks (external-dns, kube-prometheus-stack, etc.).
-    - name: custom-tools
-      emptyDir: {}
-  # volumeMounts:                     # SOPS age key — no longer needed
-  #   - name: sops-age
-  #     mountPath: /sops
-  #     readOnly: true
-  # env:
-  #   - name: SOPS_AGE_KEY_FILE
-  #     value: /sops/key.txt
-  # Downloads helm into the shared custom-tools volume. Bump HELM_VERSION
-  # alongside any cluster-wide helm-rendered manifest changes.
-  initContainers:
-    - name: download-tools
-      image: alpine:3.20
-      command: [sh, -c]
-      args:
-        - |
-          set -eux
-          HELM_VERSION=v3.16.4
-          wget -qO- "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" \
-            | tar -xzO linux-amd64/helm > /custom-tools/helm
-          chmod +x /custom-tools/helm
-      volumeMounts:
-        - name: custom-tools
-          mountPath: /custom-tools
-  extraContainers:
-    - name: kustomize-sops
-      image: viaductoss/ksops:v4.3.3
-      command: [/var/run/argocd/argocd-cmp-server]
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 999
-        runAsGroup: 999
-      # env:                           # SOPS age key — no longer needed
-      #   - name: SOPS_AGE_KEY_FILE
-      #     value: /sops/key.txt
-      volumeMounts:
-        - name: var-files
-          mountPath: /var/run/argocd
-        - name: plugins
-          mountPath: /home/argocd/cmp-server/plugins
-        - name: cmp-tmp
-          mountPath: /tmp
-        # - name: sops-age             # SOPS age key — no longer needed
-        #   mountPath: /sops
-        #   readOnly: true
-        - name: kustomize-sops-config
-          mountPath: /home/argocd/cmp-server/config
-        # Drop the helm binary directly onto PATH inside this sidecar.
-        - name: custom-tools
-          mountPath: /usr/local/bin/helm
-          subPath: helm

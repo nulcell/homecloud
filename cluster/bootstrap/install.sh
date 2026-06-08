@@ -68,12 +68,6 @@ metadata:
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged
 EOF
-# # The SOPS age key must exist before the repo-server starts, or pods will crashloop.
-# if ! kubectl -n argocd get secret argocd-sops-age >/dev/null 2>&1; then
-#   echo "  -- creating argocd-sops-age from \$HOME/.config/sops/age/keys.txt"
-#   kubectl -n argocd create secret generic argocd-sops-age \
-#     --from-file=key.txt="${HOME}/.config/sops/age/keys.txt"
-# fi
 
 helm upgrade --install argocd argo/argo-cd \
   --namespace argocd \
