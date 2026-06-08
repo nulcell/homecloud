@@ -13,6 +13,4 @@ helmCharts:
 
 resources:
   - namespace.yaml
-
-generators:
-  - secret-generator.yaml
+  - operator-oauth-external-secret.yaml

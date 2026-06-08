@@ -12,5 +12,4 @@ resources:
   - wildcard-certificate.yaml
   - gateway-external.yaml
   - gateway-internal.yaml
-generators:
-  - secret-generator.yaml
+  - cloudflare-external-secret.yaml
