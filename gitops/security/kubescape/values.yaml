@@ -104,7 +104,7 @@ kubescape:
 # Operator will trigger kubescape and kubevuln scanning
 operator:
   name: operator
-  triggerSecurityFramework: false
+  triggerSecurityFramework: true
   resources:
     requests:
       cpu: 50m
