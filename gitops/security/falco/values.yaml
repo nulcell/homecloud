@@ -99,7 +99,7 @@ customRules:
       condition: and not (container.id = "runtime" and proc.exe = "/opt/cni/bin/cilium-cni")
 
 driver:
-  enabled: true
+  enabled: false # temporarily disabled due to kubescape memory issues
   kind: modern_ebpf
   modernEbpf:
     # -- Constrain Falco with capabilities instead of running a privileged container.
