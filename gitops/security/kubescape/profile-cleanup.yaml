@@ -76,8 +76,7 @@ spec:
                   # exists_in <list> <namespace> <name>
                   # Returns 0 if the namespace/name pair appears in the list, 1 otherwise.
                   exists_in() {
-                    echo "$1" | awk -v ns="$2" -v n="$3" \
-                      '$1==ns && $2==n { found=1 } END { exit !found }'
+                    echo "$1" | awk -v ns="$2" -v n="$3" '$1==ns && $2==n { found=1 } END { exit !found }'
                   }
 
                   # reverse_lines — reverses stdin line order (newest-first after sort-by-age)
@@ -119,12 +118,15 @@ spec:
                     # Sort ascending by age then reverse so we process newest first.
                     # This ensures the first occurrence of each DS/SS controller key
                     # we encounter is always the most recent revision.
-                    profiles=$(
-                      kubectl get "$fq_crd" -A --no-headers \
-                        --sort-by=.metadata.creationTimestamp \
-                        -o custom-columns="$COLS" \
-                      | reverse_lines
-                    )
+                    profiles=$(kubectl get "$fq_crd" -A --no-headers \
+                      --sort-by=.metadata.creationTimestamp -o custom-columns="$COLS")
+                    profiles=$(echo "$profiles" | reverse_lines)
+
+                    # Write to a temp file — ash does not support <<< here-strings,
+                    # and piping into while would run the loop in a subshell, losing
+                    # the counter variables after the loop exits.
+                    tmpfile=$(mktemp)
+                    echo "$profiles" > "$tmpfile"
 
                     while IFS= read -r line; do
                       ns=$(echo "$line" | awk '{print $1}')
@@ -163,7 +165,8 @@ spec:
                         kept=$((kept + 1))
                       fi
 
-                    done <<< "$profiles"
+                    done < "$tmpfile"
+                    rm -f "$tmpfile"
 
                     echo "$short: kept=$kept deleted=$deleted skipped=$skipped"
                   }
