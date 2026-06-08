@@ -15,6 +15,4 @@ resources:
   - namespace.yaml
   - postgres-cluster.yaml
   - httproute.yaml
-
-generators:
-  - secret-generator.yaml
+  - authentik-external-secret.yaml
