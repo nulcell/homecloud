@@ -21,10 +21,10 @@ grafana:
 
 falco:
   rules_files:
-    # - /etc/falco/falco_rules.yaml # temporarily disabled due to kubescape memory issues
-    # - /etc/falco/falco-incubating_rules.yaml # temporarily disabled due to kubescape memory issues
+    - /etc/falco/falco_rules.yaml
+    - /etc/falco/falco-incubating_rules.yaml
     - /etc/falco/k8s_audit_rules.yaml
-    # - /etc/falco/rules.d # temporarily disabled due to kubescape memory issues
+    - /etc/falco/rules.d
   capture:
     # -- Set to true to enable event capturing.
     enabled: true
@@ -61,45 +61,45 @@ falco:
       init_config: ""
   load_plugins: [k8saudit, json]
 
-# customRules: # temporarily disabled due to kubescape memory issues
-#   general-supressions: |
-#     - rule: "BPF Program Not Profiled"
-#       override:
-#         condition: append
-#       condition:
-#         and (container.id = "runtime" and evt.type = "bpf" and proc.exepath = "/usr/bin/runc" and proc.pname = "containerd-shim")
-#   disable-udp-rule.yaml: |
-#     - rule: "Unexpected UDP Traffic"
-#       override:
-#         condition: append
-#       condition: and (never_true)
-#   ignore-longhorn-nc.yaml: |
-#     - rule: "Launch Suspicious Network Tool in Container"
-#       override:
-#         condition: append
-#       condition: and not (k8s.ns.name = "longhorn-system" and container.name = "instance-manager" and proc.name = "nc")
-#     - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
-#       override:
-#         condition: append
-#       condition: and not (k8s.ns.name = "longhorn-system" and container.name = "instance-manager" and proc.name = "longhorn-instan")
-#   ignore-gluetun-ping.yaml: |
-#     - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
-#       override:
-#         condition: append
-#       condition: and not (k8s.ns.name = "media" and container.name = "gluetun" and proc.name = "ping")
-#   ignore-qbittorrent-ping.yaml: |
-#     - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
-#       override:
-#         condition: append
-#       condition: and not (k8s.ns.name = "media" and container.name = "qbittorrent" and proc.name = "ping")
-#   ignore-cilium-cni.yaml: |
-#     - rule: "Drop and execute new binary in container"
-#       override:
-#         condition: append
-#       condition: and not (container.id = "runtime" and proc.exe = "/opt/cni/bin/cilium-cni")
+customRules:
+  general-supressions: |
+    - rule: "BPF Program Not Profiled"
+      override:
+        condition: append
+      condition:
+        and (container.id = "runtime" and evt.type = "bpf" and proc.exepath = "/usr/bin/runc" and proc.pname = "containerd-shim")
+  disable-udp-rule.yaml: |
+    - rule: "Unexpected UDP Traffic"
+      override:
+        condition: append
+      condition: and (never_true)
+  ignore-longhorn-nc.yaml: |
+    - rule: "Launch Suspicious Network Tool in Container"
+      override:
+        condition: append
+      condition: and not (k8s.ns.name = "longhorn-system" and container.name = "instance-manager" and proc.name = "nc")
+    - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
+      override:
+        condition: append
+      condition: and not (k8s.ns.name = "longhorn-system" and container.name = "instance-manager" and proc.name = "longhorn-instan")
+  ignore-gluetun-ping.yaml: |
+    - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
+      override:
+        condition: append
+      condition: and not (k8s.ns.name = "media" and container.name = "gluetun" and proc.name = "ping")
+  ignore-qbittorrent-ping.yaml: |
+    - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
+      override:
+        condition: append
+      condition: and not (k8s.ns.name = "media" and container.name = "qbittorrent" and proc.name = "ping")
+  ignore-cilium-cni.yaml: |
+    - rule: "Drop and execute new binary in container"
+      override:
+        condition: append
+      condition: and not (container.id = "runtime" and proc.exe = "/opt/cni/bin/cilium-cni")
 
 driver:
-  enabled: false # temporarily disabled due to kubescape memory issues
+  enabled: true
   kind: modern_ebpf
   modernEbpf:
     # -- Constrain Falco with capabilities instead of running a privileged container.
@@ -135,7 +135,7 @@ services:
 
 collectors:
   # -- Enable/disable all the metadata collectors.
-  enabled: false # temporarily disabled due to kubescape memory issues
+  enabled: true
   containerEngine:
     # -- Enable Container Engine support.
     enabled: true
@@ -193,12 +193,12 @@ falcosidekick:
     # -- enable Falcosidekick-UI
     enabled: true
     # -- number of running pods
-    replicaCount: 2
+    replicaCount: 1
     ingress:
       # -- Whether to create the Web UI ingress
       enabled: false
     # -- TTL for keys, the syntax in X<unit>, with <unit>: s, m, d, w (0 for no ttl)
-    ttl: 2d
+    ttl: 1d
     redis:
       # -- Is mutually exclusive with webui.externalRedis.enabled
       enabled: true
@@ -215,7 +215,7 @@ responseActions:
 # -- It must be used in conjunction with the response_actions.enabled option.
 falco-talon:
   # -- number of running pods
-  replicaCount: 2
+  replicaCount: 1
   # -- ingress parameters
   ingress:
     # -- enable the ingress
