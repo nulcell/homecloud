@@ -61,81 +61,35 @@ spec:
               args:
                 - |
                   set -eu
-                  apk add --no-cache kubectl jq curl \
+                  apk add --no-cache kubectl \
                     --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community/ >/dev/null
-
-                  # ── in-cluster credentials ──────────────────────────────────
-
-                  TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-                  CACERT=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-                  KS_BASE="https://kubernetes.default.svc/apis/spdx.softwarecomposition.kubescape.io/v1beta1"
-
-                  # ── helpers ────────────────────────────────────────────────
 
                   COLS="NS:.metadata.namespace,NAME:.metadata.name"
 
-                  # fetch_all <resource.group>
-                  # Returns "NAMESPACE NAME" lines for every instance in the cluster.
-                  fetch_all() {
-                    kubectl get "$1" -A --no-headers -o custom-columns="$COLS" 2>/dev/null || true
-                  }
+                  # Pre-fetch all owning resource lists upfront — avoids one kubectl call per profile.
+                  # RS names include the pod-template hash (e.g. headlamp-5db4d88db6) so the profile
+                  # name maps directly to the RS. DS/SS names do not — Kubescape appends the hash
+                  # itself, so it must be stripped before the lookup (see case statement below).
+                  replicasets=$(kubectl get replicasets.apps    -A --no-headers -o custom-columns="$COLS")
+                  daemonsets=$(kubectl  get daemonsets.apps     -A --no-headers -o custom-columns="$COLS")
+                  statefulsets=$(kubectl get statefulsets.apps  -A --no-headers -o custom-columns="$COLS")
+                  pods=$(kubectl        get pods                -A --no-headers -o custom-columns="$COLS")
+                  clusters=$(kubectl    get clusters.postgresql.cnpg.io           -A --no-headers -o custom-columns="$COLS" 2>/dev/null || true)
+                  vmis=$(kubectl        get virtualmachineinstances.kubevirt.io   -A --no-headers -o custom-columns="$COLS" 2>/dev/null || true)
 
-                  # ks_list <kind>
-                  # Lists all instances of a kubescape resource (applicationprofiles /
-                  # networkneighborhoods) via the raw REST API, bypassing kubectl's resource
-                  # discovery (which cannot see the kubescape aggregated API server).
-                  # Returns "NAMESPACE NAME" lines, newest-first.
-                  ks_list() {
-                    curl -sSf --cacert "$CACERT" -H "Authorization: Bearer $TOKEN" \
-                      "${KS_BASE}/$1?limit=1000" \
-                      | jq -r '.items | sort_by(.metadata.creationTimestamp) | reverse[]
-                               | "\(.metadata.namespace) \(.metadata.name)"'
-                  }
-
-                  # ks_delete <kind> <namespace> <name>
-                  ks_delete() {
-                    curl -sS --cacert "$CACERT" -H "Authorization: Bearer $TOKEN" \
-                      -X DELETE "${KS_BASE}/namespaces/$2/$1/$3" -o /dev/null
-                  }
-
-                  # exists_in <list> <namespace> <name>
-                  # Returns 0 if the namespace/name pair appears in the list, 1 otherwise.
                   exists_in() {
                     echo "$1" | awk -v ns="$2" -v n="$3" '$1==ns && $2==n { found=1 } END { exit !found }'
                   }
 
-                  # ── pre-fetch owning resources ──────────────────────────────
-                  #
-                  # RS names include the pod-template hash assigned by the Deployment
-                  # controller (e.g. headlamp-5db4d88db6), so the profile name maps
-                  # directly to a real RS object.
-                  #
-                  # DS/SS names do NOT include the hash — Kubescape appends one itself
-                  # to track template revisions. The hash must be stripped before lookup.
-
-                  replicasets=$(fetch_all replicasets.apps)
-                  daemonsets=$(fetch_all daemonsets.apps)
-                  statefulsets=$(fetch_all statefulsets.apps)
-                  pods=$(fetch_all pods)
-                  clusters=$(fetch_all clusters.postgresql.cnpg.io)
-                  vmis=$(fetch_all virtualmachineinstances.kubevirt.io)
-
-                  # ── cleanup <kind> ──────────────────────────────────────────
-                  #
-                  # Deletes profiles whose owning resource no longer exists.
-                  # For DaemonSets and StatefulSets, also deletes older template
-                  # revisions, keeping only the newest profile per controller.
-
                   cleanup() {
-                    local kind fq_kind profiles tmpfile seen_controllers
-                    local ns name owner_kind owner_name check_name list controller_key
+                    local fq_crd short tmpfile ns name owner_kind owner_name check_name list
                     local deleted=0 kept=0 skipped=0
 
-                    kind="$1"
-                    seen_controllers=""
-
+                    fq_crd="$1"
+                    short="${fq_crd%%.*}"
                     tmpfile=$(mktemp)
-                    ks_list "$kind" > "$tmpfile"
+
+                    kubectl get "$fq_crd" -A --no-headers -o custom-columns="$COLS" > "$tmpfile"
 
                     while IFS= read -r line; do
                       ns=$(echo "$line" | awk '{print $1}')
@@ -155,22 +109,8 @@ spec:
 
                       if ! exists_in "$list" "$ns" "$check_name"; then
                         echo "  delete $ns/$name"
-                        ks_delete "$kind" "$ns" "$name"
+                        kubectl delete "$fq_crd" -n "$ns" "$name"
                         deleted=$((deleted + 1))
-                        continue
-                      fi
-
-                      # DS/SS: keep only newest revision per controller; delete older ones
-                      if [ "$owner_kind" = "daemonset" ] || [ "$owner_kind" = "statefulset" ]; then
-                        controller_key="$ns/$owner_kind/$check_name"
-                        if echo "$seen_controllers" | grep -qF "|$controller_key|"; then
-                          echo "  delete $ns/$name (old $owner_kind revision)"
-                          ks_delete "$kind" "$ns" "$name"
-                          deleted=$((deleted + 1))
-                        else
-                          seen_controllers="${seen_controllers}|${controller_key}|"
-                          kept=$((kept + 1))
-                        fi
                       else
                         kept=$((kept + 1))
                       fi
@@ -178,10 +118,8 @@ spec:
                     done < "$tmpfile"
                     rm -f "$tmpfile"
 
-                    echo "$kind: kept=$kept deleted=$deleted skipped=$skipped"
+                    echo "$short: kept=$kept deleted=$deleted skipped=$skipped"
                   }
 
-                  # ── run ────────────────────────────────────────────────────
-
-                  cleanup applicationprofiles
-                  cleanup networkneighborhoods
+                  cleanup applicationprofiles.spdx.softwarecomposition.kubescape.io
+                  cleanup networkneighborhoods.spdx.softwarecomposition.kubescape.io
