@@ -77,10 +77,11 @@ spec:
                   }
 
                   cleanup() {
-                    local crd="$1"
+                    local fq_crd="$1"
+                    local short="${fq_crd%%.*}"
                     local deleted=0 kept=0 skipped=0
 
-                    echo "--- $crd ---"
+                    echo "--- $short ---"
 
                     while IFS= read -r line; do
                       ns=$(echo "$line" | awk '{print $1}')
@@ -100,16 +101,16 @@ spec:
                         kept=$((kept + 1))
                       else
                         echo "  DELETE $ns/$name"
-                        kubectl delete "$crd" -n "$ns" "$name"
+                        kubectl delete "$fq_crd" -n "$ns" "$name"
                         deleted=$((deleted + 1))
                       fi
-                    done < <(kubectl get "$crd" -A --no-headers \
+                    done < <(kubectl get "$fq_crd" -A --no-headers \
                       -o custom-columns='NS:.metadata.namespace,NAME:.metadata.name')
 
                     echo "  kept=$kept deleted=$deleted skipped=$skipped"
                   }
 
-                  cleanup applicationprofiles
-                  cleanup networkneighborhoods
+                  cleanup applicationprofiles.spdx.softwarecomposition.kubescape.io
+                  cleanup networkneighborhoods.spdx.softwarecomposition.kubescape.io
 
                   echo "Done."
