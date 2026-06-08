@@ -63,17 +63,21 @@ spec:
                   set -euo pipefail
                   apk add --no-cache kubectl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community/
 
-                  # Map lowercase kind prefix → kubectl resource.group
-                  api_resource() {
-                    case "$1" in
-                      replicaset)             echo "replicasets.apps" ;;
-                      daemonset)              echo "daemonsets.apps" ;;
-                      statefulset)            echo "statefulsets.apps" ;;
-                      pod)                    echo "pods" ;;
-                      cluster)                echo "clusters.postgresql.cnpg.io" ;;
-                      virtualmachineinstance) echo "virtualmachineinstances.kubevirt.io" ;;
-                      *)                      echo "" ;;
-                    esac
+                  cols='NS:.metadata.namespace,NAME:.metadata.name'
+
+                  # Pre-fetch all owning resources once — avoids one kubectl call per profile.
+                  # RS names include the pod-template hash (e.g. headlamp-5db4d88db6).
+                  # DS/SS names do not — Kubescape appends the hash, so we strip it before lookup.
+                  replicasets=$(kubectl get replicasets.apps   -A --no-headers -o custom-columns="$cols")
+                  daemonsets=$(kubectl  get daemonsets.apps    -A --no-headers -o custom-columns="$cols")
+                  statefulsets=$(kubectl get statefulsets.apps -A --no-headers -o custom-columns="$cols")
+                  pods=$(kubectl        get pods               -A --no-headers -o custom-columns="$cols")
+                  clusters=$(kubectl    get clusters.postgresql.cnpg.io        -A --no-headers -o custom-columns="$cols" 2>/dev/null || true)
+                  vmis=$(kubectl        get virtualmachineinstances.kubevirt.io -A --no-headers -o custom-columns="$cols" 2>/dev/null || true)
+
+                  exists_in() {
+                    # exists_in <list> <namespace> <name>
+                    echo "$1" | awk -v ns="$2" -v n="$3" '$1==ns && $2==n {found=1} END{exit !found}'
                   }
 
                   cleanup() {
@@ -83,29 +87,56 @@ spec:
 
                     echo "--- $short ---"
 
-                    while IFS= read -r line; do
-                      ns=$(echo "$line" | awk '{print $1}')
-                      name=$(echo "$line" | awk '{print $2}')
+                    # Fetch newest-first so DS/SS dedup always keeps the most recent revision
+                    local profiles
+                    profiles=$(kubectl get "$fq_crd" -A --no-headers \
+                      --sort-by=.metadata.creationTimestamp \
+                      -o custom-columns="$cols" \
+                      | awk '{lines[NR]=$0} END{for(i=NR;i>=1;i--) print lines[i]}')
 
+                    local seen_controllers=""
+
+                    while IFS= read -r line; do
+                      local ns name owner_kind owner_name check_name list controller_key
+                      ns=$(echo "$line"          | awk '{print $1}')
+                      name=$(echo "$line"        | awk '{print $2}')
                       owner_kind="${name%%-*}"
                       owner_name="${name#*-}"
-                      resource=$(api_resource "$owner_kind")
 
-                      if [ -z "$resource" ]; then
-                        echo "  SKIP  $ns/$name (unknown kind: $owner_kind)"
-                        skipped=$((skipped + 1))
-                        continue
-                      fi
+                      case "$owner_kind" in
+                        replicaset)             list="$replicasets"; check_name="$owner_name" ;;
+                        daemonset)              list="$daemonsets";  check_name="${owner_name%-*}" ;;
+                        statefulset)            list="$statefulsets"; check_name="${owner_name%-*}" ;;
+                        pod)                    list="$pods";        check_name="$owner_name" ;;
+                        cluster)                list="$clusters";    check_name="$owner_name" ;;
+                        virtualmachineinstance) list="$vmis";        check_name="$owner_name" ;;
+                        *)
+                          echo "  SKIP  $ns/$name (unknown kind: $owner_kind)"
+                          skipped=$((skipped + 1)); continue ;;
+                      esac
 
-                      if kubectl get "$resource" -n "$ns" "$owner_name" --ignore-not-found | grep -q .; then
-                        kept=$((kept + 1))
-                      else
+                      if ! exists_in "$list" "$ns" "$check_name"; then
                         echo "  DELETE $ns/$name"
                         kubectl delete "$fq_crd" -n "$ns" "$name"
-                        deleted=$((deleted + 1))
+                        deleted=$((deleted + 1)); continue
                       fi
-                    done < <(kubectl get "$fq_crd" -A --no-headers \
-                      -o custom-columns='NS:.metadata.namespace,NAME:.metadata.name')
+
+                      # DS/SS: keep only newest revision per controller; delete older ones
+                      if [ "$owner_kind" = "daemonset" ] || [ "$owner_kind" = "statefulset" ]; then
+                        controller_key="$ns/$owner_kind/$check_name"
+                        if echo "$seen_controllers" | grep -qF "|$controller_key|"; then
+                          echo "  DELETE $ns/$name (old revision of $owner_kind/$check_name)"
+                          kubectl delete "$fq_crd" -n "$ns" "$name"
+                          deleted=$((deleted + 1))
+                        else
+                          seen_controllers="${seen_controllers}|${controller_key}|"
+                          kept=$((kept + 1))
+                        fi
+                      else
+                        kept=$((kept + 1))
+                      fi
+
+                    done <<< "$profiles"
 
                     echo "  kept=$kept deleted=$deleted skipped=$skipped"
                   }
