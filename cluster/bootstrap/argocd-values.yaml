@@ -13,6 +13,19 @@ configs:
     kustomize.buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
 
 server:
+  replicas: 1
+  ## Argo CD server Horizontal Pod Autoscaler
+  autoscaling:
+    # -- Enable Horizontal Pod Autoscaler ([HPA]) for the Argo CD server
+    enabled: true
+    # -- Minimum number of replicas for the Argo CD server [HPA]
+    minReplicas: 1
+    # -- Maximum number of replicas for the Argo CD server [HPA]
+    maxReplicas: 3
+    # -- Average CPU utilization percentage for the Argo CD server [HPA]
+    targetCPUUtilizationPercentage: 75
+    # -- Average memory utilization percentage for the Argo CD server [HPA]
+    targetMemoryUtilizationPercentage: 75
   service:
     type: LoadBalancer # Cilium L2 pool issues the IP
   ingress:
@@ -83,6 +96,18 @@ dex:
 
 repoServer:
   replicas: 1
+  ## Repo server Horizontal Pod Autoscaler
+  autoscaling:
+    # -- Enable Horizontal Pod Autoscaler ([HPA]) for the repo server
+    enabled: true
+    # -- Minimum number of replicas for the repo server [HPA]
+    minReplicas: 1
+    # -- Maximum number of replicas for the repo server [HPA]
+    maxReplicas: 3
+    # -- Average CPU utilization percentage for the repo server [HPA]
+    targetCPUUtilizationPercentage: 75
+    # -- Average memory utilization percentage for the repo server [HPA]
+    targetMemoryUtilizationPercentage: 75
   resources:
     requests:
       cpu: 100m
