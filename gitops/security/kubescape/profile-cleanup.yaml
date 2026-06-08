@@ -61,9 +61,7 @@ spec:
               args:
                 - |
                   set -eu
-                  apk add --no-cache -q kubectl \
-                    --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community/ \
-                    >/dev/null 2>&1
+                  apk add --no-cache -q kubectl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community/
 
                   # ── helpers ────────────────────────────────────────────────
 
