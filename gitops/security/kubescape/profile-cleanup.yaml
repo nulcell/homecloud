@@ -81,42 +81,39 @@ spec:
                   }
 
                   cleanup() {
-                    local fq_crd="$1"
-                    local short="${fq_crd%%.*}"
+                    local fq_crd short profiles seen_controllers ns name
+                    local owner_kind owner_name check_name list controller_key
                     local deleted=0 kept=0 skipped=0
 
-                    echo "--- $short ---"
+                    fq_crd="$1"
+                    short="${fq_crd%%.*}"
+                    seen_controllers=""
 
                     # Fetch newest-first so DS/SS dedup always keeps the most recent revision
-                    local profiles
                     profiles=$(kubectl get "$fq_crd" -A --no-headers \
                       --sort-by=.metadata.creationTimestamp \
                       -o custom-columns="$cols" \
                       | awk '{lines[NR]=$0} END{for(i=NR;i>=1;i--) print lines[i]}')
 
-                    local seen_controllers=""
-
                     while IFS= read -r line; do
-                      local ns name owner_kind owner_name check_name list controller_key
-                      ns=$(echo "$line"          | awk '{print $1}')
-                      name=$(echo "$line"        | awk '{print $2}')
+                      ns=$(echo "$line" | awk '{print $1}')
+                      name=$(echo "$line" | awk '{print $2}')
                       owner_kind="${name%%-*}"
                       owner_name="${name#*-}"
 
                       case "$owner_kind" in
-                        replicaset)             list="$replicasets"; check_name="$owner_name" ;;
-                        daemonset)              list="$daemonsets";  check_name="${owner_name%-*}" ;;
+                        replicaset)             list="$replicasets";  check_name="$owner_name" ;;
+                        daemonset)              list="$daemonsets";   check_name="${owner_name%-*}" ;;
                         statefulset)            list="$statefulsets"; check_name="${owner_name%-*}" ;;
-                        pod)                    list="$pods";        check_name="$owner_name" ;;
-                        cluster)                list="$clusters";    check_name="$owner_name" ;;
-                        virtualmachineinstance) list="$vmis";        check_name="$owner_name" ;;
+                        pod)                    list="$pods";         check_name="$owner_name" ;;
+                        cluster)                list="$clusters";     check_name="$owner_name" ;;
+                        virtualmachineinstance) list="$vmis";         check_name="$owner_name" ;;
                         *)
-                          echo "  SKIP  $ns/$name (unknown kind: $owner_kind)"
                           skipped=$((skipped + 1)); continue ;;
                       esac
 
                       if ! exists_in "$list" "$ns" "$check_name"; then
-                        echo "  DELETE $ns/$name"
+                        echo "  delete $ns/$name"
                         kubectl delete "$fq_crd" -n "$ns" "$name"
                         deleted=$((deleted + 1)); continue
                       fi
@@ -125,7 +122,7 @@ spec:
                       if [ "$owner_kind" = "daemonset" ] || [ "$owner_kind" = "statefulset" ]; then
                         controller_key="$ns/$owner_kind/$check_name"
                         if echo "$seen_controllers" | grep -qF "|$controller_key|"; then
-                          echo "  DELETE $ns/$name (old revision of $owner_kind/$check_name)"
+                          echo "  delete $ns/$name (old $owner_kind revision)"
                           kubectl delete "$fq_crd" -n "$ns" "$name"
                           deleted=$((deleted + 1))
                         else
@@ -138,7 +135,7 @@ spec:
 
                     done <<< "$profiles"
 
-                    echo "  kept=$kept deleted=$deleted skipped=$skipped"
+                    echo "$short: kept=$kept deleted=$deleted skipped=$skipped"
                   }
 
                   cleanup applicationprofiles.spdx.softwarecomposition.kubescape.io
