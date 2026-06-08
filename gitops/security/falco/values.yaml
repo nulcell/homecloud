@@ -24,7 +24,7 @@ falco:
     # - /etc/falco/falco_rules.yaml # temporarily disabled due to kubescape memory issues
     # - /etc/falco/falco-incubating_rules.yaml # temporarily disabled due to kubescape memory issues
     - /etc/falco/k8s_audit_rules.yaml
-    - /etc/falco/rules.d
+    # - /etc/falco/rules.d # temporarily disabled due to kubescape memory issues
   capture:
     # -- Set to true to enable event capturing.
     enabled: true
