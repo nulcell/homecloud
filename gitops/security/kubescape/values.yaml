@@ -183,7 +183,7 @@ nodeAgent:
       memory: 400Mi
     limits:
       cpu: 2000m
-      memory: 6144Mi
+      memory: 4096Mi
 
   sbomScanner:
     enabled: false
