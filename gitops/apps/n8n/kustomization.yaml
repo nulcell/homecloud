@@ -19,6 +19,4 @@ resources:
   - namespace.yaml
   - postgres-cluster.yaml
   - redis.yaml
-
-generators:
-  - secret-generator.yaml
+  - n8n-external-secrets.yaml
