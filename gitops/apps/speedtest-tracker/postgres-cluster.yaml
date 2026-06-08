@@ -1,0 +1,24 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: speedtest-tracker-postgres
+  namespace: speedtest-tracker
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4
+  primaryUpdateStrategy: unsupervised
+  storage:
+    size: 5Gi
+  bootstrap:
+    initdb:
+      database: speedtest_tracker
+      owner: speedtest_tracker
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  monitoring:
+    enablePodMonitor: true

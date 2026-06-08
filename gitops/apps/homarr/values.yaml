@@ -1,0 +1,30 @@
+replicaCount: 1
+
+env:
+  TZ: UTC
+
+database:
+  type: postgresql
+  externalDatabaseEnabled: true
+
+# DB_URL sourced from the CNPG-generated secret (homarr-postgres-app, key: uri).
+# Only the encryption key requires a 1Password entry: homarr-secrets/db-encryption-key
+envSecrets:
+  dbCredentials:
+    existingSecret: homarr-postgres-app
+    dbUrlKey: uri
+  dbEncryption:
+    existingSecret: db-encryption
+    key: db-encryption-key
+
+# HTTPRoute is managed via httproute.yaml to include the HTTP→HTTPS redirect.
+httproute:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

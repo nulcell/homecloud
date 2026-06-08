@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: speedtest-tracker
+  namespace: speedtest-tracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: speedtest-tracker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: speedtest-tracker
+    spec:
+      containers:
+        - name: speedtest-tracker
+          image: lscr.io/linuxserver/speedtest-tracker:latest
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: speedtest-tracker-secrets
+                  key: app-key
+            - name: DISPLAY_TIMEZONE
+              value: UTC
+            - name: DB_CONNECTION
+              value: pgsql
+            - name: DB_HOST
+              value: speedtest-tracker-postgres-rw
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_DATABASE
+              value: speedtest_tracker
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: speedtest-tracker-postgres-app
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: speedtest-tracker-postgres-app
+                  key: password
+          volumeMounts:
+            - mountPath: /config
+              name: config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: speedtest-tracker-config
