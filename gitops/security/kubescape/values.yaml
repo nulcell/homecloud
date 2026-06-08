@@ -91,11 +91,11 @@ kubescape:
   name: kubescape
   resources:
     requests:
-      cpu: 250m
-      memory: 400Mi
+      cpu: 50m
+      memory: 200Mi
     limits:
       cpu: 600m
-      memory: 1Gi
+      memory: 512Mi
   serviceMonitor:
     enabled: true
 
@@ -106,11 +106,11 @@ operator:
   name: operator
   resources:
     requests:
-      cpu: 500m
-      memory: 2048Mi
+      cpu: 50m
+      memory: 128Mi
     limits:
       cpu: 2000m
-      memory: 8192Mi
+      memory: 6144Mi
 
 # kubevuln - image vulnerability scanning microservice
 kubevuln:
@@ -118,8 +118,8 @@ kubevuln:
   replicaCount: 1
   resources:
     requests:
-      cpu: 300m
-      memory: 1000Mi
+      cpu: 50m
+      memory: 256Mi
       # Consider to increase ephemeral-storage requests in order to avoid pod eviction due to huge images
       #               https://github.com/kubescape/kubescape/issues/389
       ephemeral-storage: 5Gi
@@ -146,11 +146,11 @@ storage:
   name: "storage"
   resources:
     requests:
-      cpu: 100m
-      memory: 400Mi
+      cpu: 150m
+      memory: 150Mi
     limits:
       cpu: 1500m
-      memory: 1500Mi
+      memory: 512Mi
 
 nodeAgent:
   name: node-agent
@@ -178,11 +178,11 @@ nodeAgent:
 
   resources:
     requests:
-      cpu: 100m
-      memory: 256Mi
+      cpu: 500m
+      memory: 400Mi
     limits:
-      cpu: 1000m
-      memory: 4096Mi
+      cpu: 2000m
+      memory: 6144Mi
 
   sbomScanner:
     enabled: false
