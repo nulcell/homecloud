@@ -41,7 +41,7 @@ capabilities:
   #
   runtimeObservability: enable
   networkPolicyService: enable
-  networkEventsStreaming: enable # testing
+  networkEventsStreaming: disable
   # Runtime threat detection (Falco-style rules over eBPF events). Note: Falco is
   # also deployed in this cluster — there will be overlap. Enabling here for the
   # full kubescape feature comparison.
