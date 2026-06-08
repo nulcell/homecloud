@@ -65,9 +65,25 @@ helm upgrade --install argocd argo/argo-cd \
   --values "${SCRIPT_DIR}/argocd-values.yaml" \
   --wait
 
+# --- External Secrets Operator – bootstrap credentials -------------------------
+# The onepassword-credentials secret must exist before ArgoCD deploys ESO, so the
+# ClusterSecretStore can authenticate on first reconcile.
+echo "==> External Secrets Operator – 1Password credentials"
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-secrets
+EOF
+if ! kubectl -n external-secrets get secret onepassword-credentials >/dev/null 2>&1; then
+  echo "  -- reading service account token via op CLI"
+  kubectl -n external-secrets create secret generic onepassword-credentials \
+    --from-literal=credential="$(op read "op://homecloud/5xsyk5yefnbhsfr2rfuu62e6aq/credential")"
+fi
+
 # --- Root Application -----------------------------------------------------------
-# Hands the cluster off to GitOps. cert-manager, Longhorn, and metrics-server
-# come up via gitops/infrastructure/* from here on.
+# Hands the cluster off to GitOps. cert-manager, Longhorn, metrics-server,
+# and external-secrets come up via gitops/infrastructure/* from here on.
 echo "==> Root Application"
 kubectl apply -f "${SCRIPT_DIR}/../../gitops/root/root-app.yaml"
 
