@@ -53,12 +53,10 @@ spec:
       template:
         spec:
           serviceAccountName: profile-cleanup
-          imagePullSecrets:
-          - name: dockerhub-credentials
           restartPolicy: OnFailure
           containers:
           - name: cleanup
-            image: bitnami/kubectl:latest
+            image: registry.k8s.io/kubectl:v1.36.1
             command: ["/bin/sh", "-c"]
             args:
             - |
