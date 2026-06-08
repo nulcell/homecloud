@@ -135,7 +135,7 @@ services:
 
 collectors:
   # -- Enable/disable all the metadata collectors.
-  enabled: true
+  enabled: false # temporarily disabled due to kubescape memory issues
   containerEngine:
     # -- Enable Container Engine support.
     enabled: true
