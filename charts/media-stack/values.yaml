@@ -176,10 +176,10 @@ seerr:
       web: 5055
   resources:
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 400m
+      memory: 256Mi
     limits:
-      cpu: 500m
+      cpu: 1000m
       memory: 512Mi
   gateway:
     hostname: ""
@@ -200,7 +200,7 @@ sonarr:
       web: 8989
   resources:
     requests:
-      cpu: 100m
+      cpu: 400m
       memory: 256Mi
     limits:
       cpu: 1000m
@@ -224,7 +224,7 @@ radarr:
       web: 7878
   resources:
     requests:
-      cpu: 100m
+      cpu: 400m
       memory: 256Mi
     limits:
       cpu: 1000m
@@ -248,7 +248,7 @@ bazarr:
       web: 6767
   resources:
     requests:
-      cpu: 100m
+      cpu: 400m
       memory: 128Mi
     limits:
       cpu: 1000m
@@ -277,8 +277,8 @@ prowlarr:
       web: 9696
   resources:
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 400m
+      memory: 256Mi
     limits:
       cpu: 1000m
       memory: 1Gi

@@ -58,11 +58,11 @@ jellyfin:
     privileged: true
   resources:
     requests:
-      cpu: 2000m
-      memory: 2Gi
-    limits:
-      cpu: 8000m
-      memory: 8Gi
+      cpu: 4000m
+      memory: 4Gi
+    # limits:
+    #   cpu: 8000m
+    #   memory: 8Gi
   gateway:
     hostname: jellyfin.nulcell.com
 
