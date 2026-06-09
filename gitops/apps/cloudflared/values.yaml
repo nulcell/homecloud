@@ -1,7 +1,14 @@
+# -- This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replica:
+  # -- This will use DaemonSet to deploy cloudflared to all nodes
+  allNodes: false
+  # -- If previous flag disabled, this will use Deployment to deploy cloudflared only number of following count
+  count: 2
+
 tunnelConfig:
   # Must match the tunnel name you created with: cloudflared tunnel create <name>
   name: homecloud-k8s
-  logLevel: debug
+  logLevel: info
   protocol: auto
 
 tunnelSecrets:
@@ -20,13 +27,10 @@ ingress:
 imagePullSecrets:
   - name: dockerhub-credentials
 
-replica:
-  allNodes: true
-
 resources:
   requests:
     cpu: 50m
     memory: 64Mi
   limits:
-    cpu: 200m
+    cpu: 100m
     memory: 128Mi
