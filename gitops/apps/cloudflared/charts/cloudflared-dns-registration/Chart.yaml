@@ -1,0 +1,5 @@
+apiVersion: v2
+name: cloudflared-dns-registration
+description: PostSync Job that registers cloudflared tunnel DNS routes for every ingress hostname
+type: application
+version: 1.0.0

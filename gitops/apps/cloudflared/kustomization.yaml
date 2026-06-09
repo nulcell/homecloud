@@ -10,11 +10,15 @@ helmCharts:
     namespace: cloudflared
     valuesFile: values.yaml
     includeCRDs: false
+  - name: cloudflared-dns-registration
+    version: 1.0.0
+    releaseName: cloudflared-dns-registration
+    namespace: cloudflared
+    valuesFile: values.yaml
 
 resources:
   - namespace.yaml
   - cloudflared-external-secrets.yaml
-  - cloudflared-dns-registration.yaml
 
 ## Initial manual setup
 # 1. Login

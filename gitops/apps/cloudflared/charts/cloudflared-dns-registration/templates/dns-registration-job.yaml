@@ -1,8 +1,11 @@
+{{- $tunnel := .Values.tunnelConfig.name -}}
+{{- $certSecret := .Values.tunnelSecrets.existingPemFileSecret.name -}}
+{{- $certKey := .Values.tunnelSecrets.existingPemFileSecret.key -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: cloudflared-dns-registration
-  namespace: cloudflared
+  namespace: {{ .Release.Namespace }}
   annotations:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
@@ -11,10 +14,14 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      # cloudflare/cloudflared is distroless — call the binary directly, no shell.
-      # Add a new initContainer for each additional hostname.
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       initContainers:
-        - name: register-n8n
+        {{- range .Values.ingress }}
+        {{- if .hostname }}
+        - name: {{ printf "register-%s" (.hostname | replace "." "-") | trunc 63 | trimSuffix "-" }}
           image: cloudflare/cloudflared:latest
           imagePullPolicy: IfNotPresent
           command: ["cloudflared"]
@@ -24,12 +31,14 @@ spec:
             - /etc/cloudflared/cert.pem
             - route
             - dns
-            - homecloud-k8s
-            - n8n.nulcell.com
+            - {{ $tunnel }}
+            - {{ .hostname }}
           volumeMounts:
             - name: cert-pem
               mountPath: /etc/cloudflared
               readOnly: true
+        {{- end }}
+        {{- end }}
       containers:
         - name: done
           image: cloudflare/cloudflared:latest
@@ -39,7 +48,7 @@ spec:
       volumes:
         - name: cert-pem
           secret:
-            secretName: cloudflared-cert-pem
+            secretName: {{ $certSecret }}
             items:
-              - key: cert.pem
+              - key: {{ $certKey }}
                 path: cert.pem
