@@ -9,7 +9,7 @@ n8n:
   timezone: Europe/Amsterdam
 
 gateway:
-  enabled: true
+  enabled: false # managed separately by cloudflared chart
   parentRef:
     name: external
     namespace: gateway
