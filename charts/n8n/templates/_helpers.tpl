@@ -103,9 +103,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{- define "n8nBrokerService.name" -}}
-{{- if .Values.scaling.enabled }}
+{{- if .Values.scaling.enabled -}}
 n8n-worker
-{{- else }}
+{{- else -}}
 {{- .Values.service.name }}
-{{- end }}
+{{- end -}}
 {{- end }}
