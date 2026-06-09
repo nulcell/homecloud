@@ -11,8 +11,8 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      imagePullSecrets:
-        - name: dockerhub-credentials
+      # imagePullSecrets:
+      #   - name: dockerhub-credentials
       containers:
         - name: register-dns
           image: cloudflare/cloudflared:latest
