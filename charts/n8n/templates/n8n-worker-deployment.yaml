@@ -92,6 +92,8 @@ spec:
               value: external
             - name: N8N_RUNNERS_TASK_BROKER_URI
               value: {{ printf "http://%s.%s.svc.cluster.local:%v" .Values.service.name (include "n8n.namespace" .) .Values.service.taskBrokerPort }}
+            - name: N8N_RUNNERS_BROKER_LISTEN_ADDRESS
+              value: 0.0.0.0
             - name: N8N_RUNNERS_AUTH_TOKEN
               valueFrom:
                 secretKeyRef:

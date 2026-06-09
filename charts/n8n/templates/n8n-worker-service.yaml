@@ -1,0 +1,21 @@
+{{- if .Values.scaling.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: n8n-worker
+  namespace: {{ include "n8n.namespace" . }}
+  labels:
+    {{- include "n8n.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "n8nWorker.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: broker-port
+      port: {{ .Values.service.taskBrokerPort }}
+      targetPort: {{ .Values.service.taskBrokerPort }}
+{{- end }}
