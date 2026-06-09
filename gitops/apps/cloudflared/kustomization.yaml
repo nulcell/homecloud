@@ -25,8 +25,6 @@ resources:
 #    `cloudflared tunnel login`
 # 2. Create the tunnel and get the credentials:
 #    `cloudflared tunnel create homecloud-k8s`
-# 3. Create routes
-#    `cloudflared tunnel route dns homecloud-k8s workflow.nulcell.com`
-# 4. Store the cert.pem and credentials.json in your secret store (e.g. 1Password) with the following keys:
+# 3. Store the cert.pem and credentials.json in your secret store (e.g. 1Password) with the following keys:
 #    - cloudflared-secrets/cert-pem from `base64 -b 0 -i ~/.cloudflared/*.json`
 #    - cloudflared-secrets/credentials-json from `base64 -b 0 -i ~/.cloudflared/cert.pem`
