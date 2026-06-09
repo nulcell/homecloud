@@ -1,6 +1,9 @@
 # Overrides for the n8n chart at charts/n8n/.
 # Everything not listed here keeps the chart's default value.
 
+imagePullSecrets:
+  - name: dockerhub-credentials
+
 n8n:
   replicaCount: 1
   timezone: Europe/Amsterdam
