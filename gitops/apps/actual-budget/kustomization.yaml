@@ -13,5 +13,5 @@ helmCharts:
 
 resources:
   - namespace.yaml
-  - httproute.yaml
+  # - httproute.yaml  # migrated to cloudflared tunnel
   - hpa.yaml
