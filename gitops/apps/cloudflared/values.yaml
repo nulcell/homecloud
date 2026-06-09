@@ -1,7 +1,7 @@
 tunnelConfig:
   # Must match the tunnel name you created with: cloudflared tunnel create <name>
   name: homecloud-k8s
-  logLevel: info
+  logLevel: debug
   protocol: auto
 
 tunnelSecrets:
