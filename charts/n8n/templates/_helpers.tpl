@@ -101,3 +101,11 @@ n8n worker selector labels
 app.kubernetes.io/name: {{ include "n8nWorker.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{- define "n8nBrokerService.name" -}}
+{{- if .Values.scaling.enabled }}
+n8n-worker
+{{- else }}
+{{- .Values.service.name }}
+{{- end }}
+{{- end }}
