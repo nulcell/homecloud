@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cloudflared
+
+helmCharts:
+  - name: cloudflared
+    repo: https://community-charts.github.io/helm-charts
+    version: 2.2.8
+    releaseName: cloudflared
+    namespace: cloudflared
+    valuesFile: values.yaml
+    includeCRDs: false
+
+resources:
+  - namespace.yaml
+  - cloudflared-external-secrets.yaml
+
+## Initial manual setup
+# 1. Login
+#    `cloudflared tunnel login`
+# 2. Create the tunnel and get the credentials:
+#    `cloudflared tunnel create homecloud-k8s`
+# 3. Create routes
+#    `cloudflared tunnel route dns homecloud-k8s workflow.nulcell.com`
+# 4. Store the cert.pem and credentials.json in your secret store (e.g. 1Password) with the following keys:
+#    - cloudflared-secrets/cert-pem from `base64 -b 0 -i ~/.cloudflared/*.json`
+#    - cloudflared-secrets/credentials-json from `base64 -b 0 -i ~/.cloudflared/cert.pem`

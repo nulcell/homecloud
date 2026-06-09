@@ -1,0 +1,29 @@
+tunnelConfig:
+  # Must match the tunnel name you created with: cloudflared tunnel create <name>
+  name: homecloud-k8s
+  logLevel: info
+  protocol: auto
+
+tunnelSecrets:
+  existingPemFileSecret:
+    name: cloudflared-cert-pem
+    key: cert.pem
+  existingConfigJsonFileSecret:
+    name: cloudflared-credentials-json
+    key: credentials.json
+
+ingress:
+  - hostname: workflow.nulcell.com
+    service: http://n8n.n8n.svc.cluster.local:5678
+  - service: http_status:404
+
+replica:
+  allNodes: true
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
