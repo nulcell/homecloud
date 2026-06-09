@@ -26,8 +26,12 @@ spec:
                 secretKeyRef:
                   name: speedtest-tracker-secrets
                   key: app-key
+            - name: APP_TIMEZONE
+              value: Europe/Amsterdam
             - name: DISPLAY_TIMEZONE
-              value: UTC
+              value: Europe/Amsterdam
+            - name: SPEEDTEST_SCHEDULE
+              value: "0 */2 * * *"
             - name: DB_CONNECTION
               value: pgsql
             - name: DB_HOST
