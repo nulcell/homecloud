@@ -59,9 +59,9 @@ jellyfin:
   resources:
     requests:
       cpu: 4000m
-      memory: 2Gi
+      memory: 4Gi
     limits:
-      cpu: 12000m
+      cpu: 8000m
       memory: 8Gi
   gateway:
     hostname: jellyfin.nulcell.com
