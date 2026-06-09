@@ -14,6 +14,7 @@ helmCharts:
 resources:
   - namespace.yaml
   - cloudflared-external-secrets.yaml
+  - cloudflared-dns-registration.yaml
 
 ## Initial manual setup
 # 1. Login

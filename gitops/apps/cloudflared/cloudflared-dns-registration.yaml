@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cloudflared-dns-registration
+  namespace: cloudflared
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      imagePullSecrets:
+        - name: dockerhub-credentials
+      containers:
+        - name: register-dns
+          image: cloudflare/cloudflared:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              TUNNEL=homecloud-k8s
+              # Add one line per hostname exposed through the tunnel
+              cloudflared tunnel --origincert /etc/cloudflared/cert.pem route dns "$TUNNEL" n8n.nulcell.com
+          volumeMounts:
+            - name: cert-pem
+              mountPath: /etc/cloudflared
+              readOnly: true
+      volumes:
+        - name: cert-pem
+          secret:
+            secretName: cloudflared-cert-pem
+            items:
+              - key: cert.pem
+                path: cert.pem
