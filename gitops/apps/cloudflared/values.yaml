@@ -17,8 +17,8 @@ ingress:
     service: http://n8n.n8n.svc.cluster.local:5678
   - service: http_status:404
 
-imagePullSecrets:
-  - name: dockerhub-credentials
+# imagePullSecrets:
+#   - name: dockerhub-credentials
 
 replica:
   allNodes: true
