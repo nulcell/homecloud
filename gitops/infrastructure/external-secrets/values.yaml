@@ -1,1 +1,23 @@
+replicaCount: 2
+
+revisionHistoryLimit: 3
+
 installCRDs: true
+
+leaderElect: true
+
+concurrent: 1
+
+serviceMonitor:
+  # -- Specifies whether to create a ServiceMonitor resource for collecting Prometheus metrics
+  enabled: true
+
+grafanaDashboard:
+  # -- If true creates a Grafana dashboard.
+  enabled: true
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1 # @schema type:[integer, string]
+  nameOverride: ""
+  # maxUnavailable: "50%"
