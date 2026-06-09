@@ -13,7 +13,7 @@ tunnelSecrets:
     key: credentials.json
 
 ingress:
-  - hostname: workflow.nulcell.com
+  - hostname: n8n.nulcell.com
     service: http://n8n.n8n.svc.cluster.local:5678
   - service: http_status:404
 
