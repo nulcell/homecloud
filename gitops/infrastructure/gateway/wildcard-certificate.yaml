@@ -16,3 +16,4 @@ spec:
   dnsNames:
     - nulcell.com
     - "*.nulcell.com"
+    - "*.internal.nulcell.com"

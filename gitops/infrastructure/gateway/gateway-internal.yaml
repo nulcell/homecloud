@@ -26,3 +26,16 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    - name: https-internal
+      protocol: HTTPS
+      port: 443
+      hostname: "*.internal.nulcell.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: wildcard-nulcell-tls
+      allowedRoutes:
+        namespaces:
+          from: All
