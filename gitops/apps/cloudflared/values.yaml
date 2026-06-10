@@ -21,11 +21,20 @@ tunnelSecrets:
 
 ingress:
   - hostname: n8n.nulcell.com
-    service: http://n8n.n8n.svc.cluster.local:5678
+    service: https://cilium-gateway-internal.gateway.svc.cluster.local
+    originRequest:
+      httpHostHeader: n8n.internal.nulcell.com
+      noTLSVerify: true
   - hostname: auth.nulcell.com
-    service: http://authentik-server.authentik.svc.cluster.local:80
+    service: https://cilium-gateway-internal.gateway.svc.cluster.local
+    originRequest:
+      httpHostHeader: auth.internal.nulcell.com
+      noTLSVerify: true
   - hostname: budget.nulcell.com
-    service: http://actualbudget.actual-budget.svc.cluster.local:5006
+    service: https://cilium-gateway-internal.gateway.svc.cluster.local
+    originRequest:
+      httpHostHeader: budget.internal.nulcell.com
+      noTLSVerify: true
   - service: http_status:404
 
 # imagePullSecrets:
