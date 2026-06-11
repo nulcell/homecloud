@@ -22,7 +22,7 @@ alloy:
           "headlamp",
           "homarr",
           "speedtest-tracker",
-          "tailscale"
+          "tailscale",
           ]
         }
       }
