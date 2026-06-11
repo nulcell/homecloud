@@ -1,5 +1,8 @@
 replicaCount: 1
 
+imagePullSecrets:
+  - name: dockerhub-credentials
+
 env:
   TZ: UTC
 

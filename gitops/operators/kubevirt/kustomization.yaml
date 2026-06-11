@@ -10,7 +10,7 @@ kind: Kustomization
 # https://github.com/kubevirt/kubevirt/blob/main/docs/compatibility.md
 
 resources:
-  - https://github.com/kubevirt/kubevirt/releases/download/v1.8.2/kubevirt-operator.yaml
+  - https://github.com/kubevirt/kubevirt/releases/download/v1.8.3/kubevirt-operator.yaml
   - https://github.com/kubevirt/containerized-data-importer/releases/download/v1.65.0/cdi-operator.yaml
   # # kubevirt-manager: web UI for KubeVirt VMs. Single bundled manifest that
   # # ships its own namespace, CRDs, RBAC, Deployment, and a ClusterIP Service

@@ -11,6 +11,8 @@ authentik:
 
 # Inject secrets from Kubernetes secrets into both server and worker
 global:
+  imagePullSecrets:
+    - name: dockerhub-credentials
   # To override bitnami images
   security:
     allowInsecureImages: true

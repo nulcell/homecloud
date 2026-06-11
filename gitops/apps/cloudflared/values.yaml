@@ -37,8 +37,8 @@ ingress:
       noTLSVerify: true
   - service: http_status:404
 
-# imagePullSecrets:
-#   - name: dockerhub-credentials
+imagePullSecrets:
+  - name: dockerhub-credentials
 
 resources:
   requests:

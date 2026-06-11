@@ -11,3 +11,21 @@ resources:
   - service.yaml
   - httproute.yaml
   - servicemonitor.yaml
+
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: speedtest-tracker
+        namespace: speedtest-tracker
+      spec:
+        template:
+          spec:
+            containers:
+              - name: speedtest-tracker
+                image: lscr.io/linuxserver/speedtest-tracker:1.14.3
+    target:
+      kind: Deployment
+      name: speedtest-tracker
+      namespace: speedtest-tracker
