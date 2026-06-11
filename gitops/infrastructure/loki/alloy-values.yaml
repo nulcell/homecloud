@@ -9,7 +9,21 @@ alloy:
         role = "pod"
 
         namespaces {
-          names = ["media", "n8n", "authentik", "actual-budget"]
+          names = [
+          "media",
+          "n8n",
+          "authentik",
+          "actual-budget",
+          "cloudflared",
+          "argocd",
+          "external-dns",
+          "cert-manager",
+          "external-secrets",
+          "headlamp",
+          "homarr",
+          "speedtest-tracker",
+          "tailscale"
+          ]
         }
       }
 
