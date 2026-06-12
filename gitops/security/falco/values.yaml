@@ -82,6 +82,10 @@ customRules:
       override:
         condition: append
       condition: and not (k8s.ns.name = "longhorn-system" and container.name = "instance-manager" and proc.name = "longhorn-instan")
+    - rule: "Change thread namespace"
+      override:
+        condition: append
+      condition: and not (k8s.ns.name = "longhorn-system" and container.name = "longhorn-manager" and proc.exepath = "/usr/local/sbin/longhorn-manager" and proc.pname = "containerd-shim")
   ignore-gluetun-ping.yaml: |
     - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
       override:
