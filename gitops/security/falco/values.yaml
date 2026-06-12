@@ -131,7 +131,7 @@ falcosidekick:
       minimumpriority: "error"
       endpoint: "/api/v2/alerts"
       # -- if set to a non-zero value, alert expires after that time in seconds (default: 0)
-      expireafter: 172800 # 48h
+      expireafter: "172800" # 48h
     talon:
       # -- Talon address, if not empty, Talon output is enabled
       address: "http://falco-talon:2803"
