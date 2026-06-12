@@ -74,15 +74,11 @@ customRules:
         condition: append
       condition: >-
         and not (k8s.ns.name = "media"
-        and container.name = "sshd"
-        and proc.name = "sshd.pam")
-    - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
-      override:
-        condition: append
-      condition: >-
-        and not (k8s.ns.name = "media"
-        and container.name in ("gluetun", "qbittorrent")
-        and proc.name = "ping")
+        and (
+          (container.name = "sshd" and proc.name = "sshd.pam")
+          or 
+          (container.name in ("gluetun", "qbittorrent") and proc.name = "ping")
+        ))
 
   ignore-kubescape.yaml: |
     - rule: "BPF Program Not Profiled"
