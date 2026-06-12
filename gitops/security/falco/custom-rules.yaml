@@ -215,7 +215,8 @@ customRules:
           "system:serviceaccount:homarr:homarr-postgres",
           "system:serviceaccount:longhorn-system:longhorn-service-account",
           "system:serviceaccount:monitoring:kps-admission",
-          "system:serviceaccount:speedtest-tracker:speedtest-tracker-postgres"
+          "system:serviceaccount:speedtest-tracker:speedtest-tracker-postgres",
+          "system:serviceaccount:authentik:authentik-postgres"
         )
 
   ignore-system-sa-creation.yaml: |
