@@ -1,5 +1,5 @@
 customRules:
-  # Syscall rules
+  ##### Syscall rules #####
   core-supressions.yaml: |
     - rule: "BPF Program Not Profiled"
       override:
@@ -15,11 +15,12 @@ customRules:
       override:
         condition: append
       condition: and not (k8s.ns.name = "kube-system" and container.name = "cilium-agent" and proc.exepath = "/usr/bin/cilium-agent")
-  # disable-udp-rule.yaml: |
-  #   - rule: "Unexpected UDP Traffic"
-  #     override:
-  #       condition: append
-  #     condition: and (never_true)
+  # ignoring this rule in general as it is triggered by some normal operations of a lot of different containers and doesn't provide much value
+  disable-udp-rule.yaml: |
+    - rule: "Unexpected UDP Traffic"
+      override:
+        condition: append
+      condition: and (never_true)
   ignore-longhorn.yaml: |
     - rule: "Launch Suspicious Network Tool in Container"
       override:
@@ -44,7 +45,7 @@ customRules:
         and not (
           k8s.ns.name = "longhorn-system" 
           and container.name = "instance-manager" 
-          and proc.name = "longhorn-manager" 
+          and proc.name = "nc" 
           and proc.cmdline in ("nc -zv localhost 8503")
         )
   ignore-gluetun-ping.yaml: |
@@ -97,18 +98,8 @@ customRules:
       override:
         condition: append
       condition: and not (k8s.ns.name = "media" and container.name = "sshd" and proc.name = "sshd.pam")
-  ignore-homarr.yaml: |
-    - rule: "Unexpected UDP Traffic"
-      override:
-        condition: append
-      condition: >-
-        and not (
-          k8s.ns.name = "homarr" 
-          and container.name = "homarr" 
-          and proc.name = "libuv-worker"
-        )
 
-  # k8s audit log rules
+  ##### k8s audit log rules #####
   ignore-talos-admin.yaml: |
     - rule: "Disallowed K8s User"
       override:
