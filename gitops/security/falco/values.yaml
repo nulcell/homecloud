@@ -130,7 +130,8 @@ falcosidekick:
       # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
       minimumpriority: "error"
       endpoint: "/api/v2/alerts"
-      expireafter: 48h # duration string
+      # -- if set to a non-zero value, alert expires after that time in seconds (default: 0)
+      expireafter: 172800 # 48h
     talon:
       # -- Talon address, if not empty, Talon output is enabled
       address: "http://falco-talon:2803"
@@ -161,7 +162,7 @@ falcosidekick:
       # -- Whether to create the Web UI ingress
       enabled: false
     # -- TTL for keys, the syntax in X<unit>, with <unit>: s, m, d, w (0 for no ttl)
-    ttl: 1d
+    ttl: 1h
     redis:
       # -- Is mutually exclusive with webui.externalRedis.enabled
       enabled: true
