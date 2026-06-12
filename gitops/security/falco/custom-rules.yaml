@@ -14,11 +14,11 @@ customRules:
       override:
         condition: append
       condition: and not (k8s.ns.name = "kube-system" and container.name = "cilium-agent" and proc.exepath = "/usr/bin/cilium-agent")
-  disable-udp-rule.yaml: |
-    - rule: "Unexpected UDP Traffic"
-      override:
-        condition: append
-      condition: and (never_true)
+  # disable-udp-rule.yaml: |
+  #   - rule: "Unexpected UDP Traffic"
+  #     override:
+  #       condition: append
+  #     condition: and (never_true)
   ignore-longhorn.yaml: |
     - rule: "Launch Suspicious Network Tool in Container"
       override:
@@ -31,7 +31,7 @@ customRules:
     - rule: "Change thread namespace"
       override:
         condition: append
-      condition: and not (k8s.ns.name = "longhorn-system" and container.name = "longhorn-manager" and proc.exepath = "/usr/local/sbin/longhorn-manager" and proc.pname = "containerd-shim")
+      condition: and not (k8s.ns.name = "longhorn-system" and container.name = "longhorn-manager" and proc.pname in ("longhorn-manage","containerd-shim"))
     - rule: "Launch Package Management Process in Container"
       override:
         condition: append
@@ -54,11 +54,15 @@ customRules:
     - rule: "Contact EC2 Instance Metadata Service From Container"
       override:
         condition: append
-      condition: and not (k8s.ns.name = "kubescape" and container.name = "node-agent")
+      condition: and not (k8s.ns.name = "kubescape" and container.name = "node-agent" and proc.exepath = "/usr/bin/node-agent")
     - rule: "Packet socket created in container"
       override:
         condition: append
-      condition: and not (k8s.ns.name = "kubescape" and container.name = "node-agent")
+      condition: and not (k8s.ns.name = "kubescape" and container.name = "node-agent" and proc.exepath = "/usr/bin/node-agent")
+    - rule: "Contact cloud metadata service from container"
+      override:
+        condition: append
+      condition: and not (k8s.ns.name = "kubescape" and container.name = "node-agent" and proc.exepath = "/usr/bin/node-agent")
     - rule: "Drop and execute new binary in container"
       override:
         condition: append
