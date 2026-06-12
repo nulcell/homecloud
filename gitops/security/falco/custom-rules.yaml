@@ -14,7 +14,11 @@ customRules:
     - rule: "Drop and execute new binary in container"
       override:
         condition: append
-      condition: and not (container.id = "runtime" and proc.exe = "/opt/cni/bin/cilium-cni")
+      condition: and not (container.id = "runtime" and proc.exepath = "/opt/cni/bin/cilium-cni")
+    - rule: "Change thread namespace"
+      override:
+        condition: append
+      condition: and not (container.id = "runtime" and proc.exepath = "/opt/cni/bin/loopback")
     - rule: "BPF Program Not Profiled"
       override:
         condition: append
@@ -103,6 +107,13 @@ customRules:
         and container.name = "node-agent"
         and proc.exepath = "/usr/bin/node-agent")
     - rule: "Packet socket created in container"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "kubescape"
+        and container.name = "node-agent"
+        and proc.exepath = "/usr/bin/node-agent")
+    - rule: "Change thread namespace"
       override:
         condition: append
       condition: >-
