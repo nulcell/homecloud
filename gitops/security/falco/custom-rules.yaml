@@ -80,46 +80,36 @@ customRules:
         and not (k8s.ns.name = "media"
         and (
           (container.name = "sshd" and proc.name = "sshd.pam")
-          or 
+          or
           (container.name in ("gluetun", "qbittorrent") and proc.name = "ping")
         ))
 
   ignore-kubescape.yaml: |
+    - macro: is_kubescape_node_agent
+      condition: >-
+        k8s.ns.name = "kubescape"
+        and container.name = "node-agent"
+        and proc.exepath = "/usr/bin/node-agent"
     - rule: "BPF Program Not Profiled"
       override:
         condition: append
-      condition: >-
-        and not (k8s.ns.name = "kubescape"
-        and container.name = "node-agent"
-        and proc.exepath = "/usr/bin/node-agent")
+      condition: and not is_kubescape_node_agent
     - rule: "Contact EC2 Instance Metadata Service From Container"
       override:
         condition: append
-      condition: >-
-        and not (k8s.ns.name = "kubescape"
-        and container.name = "node-agent"
-        and proc.exepath = "/usr/bin/node-agent")
+      condition: and not is_kubescape_node_agent
     - rule: "Contact cloud metadata service from container"
       override:
         condition: append
-      condition: >-
-        and not (k8s.ns.name = "kubescape"
-        and container.name = "node-agent"
-        and proc.exepath = "/usr/bin/node-agent")
+      condition: and not is_kubescape_node_agent
     - rule: "Packet socket created in container"
       override:
         condition: append
-      condition: >-
-        and not (k8s.ns.name = "kubescape"
-        and container.name = "node-agent"
-        and proc.exepath = "/usr/bin/node-agent")
+      condition: and not is_kubescape_node_agent
     - rule: "Change thread namespace"
       override:
         condition: append
-      condition: >-
-        and not (k8s.ns.name = "kubescape"
-        and container.name = "node-agent"
-        and proc.exepath = "/usr/bin/node-agent")
+      condition: and not is_kubescape_node_agent
     - rule: "Drop and execute new binary in container"
       override:
         condition: append
@@ -172,42 +162,44 @@ customRules:
 
   # ArgoCD application controller manages RBAC resources as part of normal GitOps sync.
   ignore-argocd-rbac.yaml: |
+    - macro: is_argocd_app_controller
+      condition: ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
     - rule: "K8s ClusterRole Created"
       override:
         condition: append
-      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+      condition: and not is_argocd_app_controller
     - rule: "K8s ClusterRole Deleted"
       override:
         condition: append
-      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+      condition: and not is_argocd_app_controller
     - rule: "K8s ClusterRoleBinding Created"
       override:
         condition: append
-      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+      condition: and not is_argocd_app_controller
     - rule: "K8s ClusterRoleBinding Deleted"
       override:
         condition: append
-      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+      condition: and not is_argocd_app_controller
     - rule: "K8s Role Created"
       override:
         condition: append
-      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+      condition: and not is_argocd_app_controller
     - rule: "K8s Role Deleted"
       override:
         condition: append
-      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+      condition: and not is_argocd_app_controller
     - rule: "K8s RoleBinding Created"
       override:
         condition: append
-      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+      condition: and not is_argocd_app_controller
     - rule: "K8s RoleBinding Deleted"
       override:
         condition: append
-      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+      condition: and not is_argocd_app_controller
     - rule: "K8s Serviceaccount Deleted"
       override:
         condition: append
-      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+      condition: and not is_argocd_app_controller
 
   ignore-secret-access.yaml: |
     - rule: "K8s Secret Get Successfully"
@@ -227,15 +219,15 @@ customRules:
         )
 
   ignore-system-sa-creation.yaml: |
+    - macro: is_system_kube_user
+      condition: >-
+        ka.user.name = "system:kube-controller-manager"
+        or ka.user.name startswith "system:node:"
     - rule: "K8s Serviceaccount Created"
       override:
         condition: append
-      condition: >-
-        and not (ka.user.name = "system:kube-controller-manager"
-        or ka.user.name startswith "system:node:")
+      condition: and not is_system_kube_user
     - rule: "Service Account Created in Kube Namespace"
       override:
         condition: append
-      condition: >-
-        and not (ka.user.name = "system:kube-controller-manager"
-        or ka.user.name startswith "system:node:")
+      condition: and not is_system_kube_user
