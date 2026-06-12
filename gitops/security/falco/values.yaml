@@ -128,14 +128,14 @@ falcosidekick:
     alertmanager:
       hostport: "http://kps-alertmanager.monitoring:9093"
       # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
-      minimumpriority: "critical"
+      minimumpriority: "error"
       endpoint: "/api/v2/alerts"
       expireafter: 48h # duration string
     talon:
       # -- Talon address, if not empty, Talon output is enabled
       address: "http://falco-talon:2803"
       # -- minimum priority of event to use this output, order is `emergency\|alert\|critical\|error\|warning\|notice\|informational\|debug or ""`
-      minimumpriority: "critical"
+      minimumpriority: "error"
     webhook:
       # -- Webhook address, if not empty, Webhook output is *enabled*
       address: ""
