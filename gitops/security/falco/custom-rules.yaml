@@ -54,8 +54,8 @@ customRules:
         condition: append
       condition: >-
         and not (k8s.ns.name = "longhorn-system"
-        and container.name = "longhorn-manager"
-        and proc.pname in ("longhorn-manage", "containerd-shim"))
+        and container.name in ("longhorn-manager", "instance-manager")
+        and proc.pname in ("longhorn-manage", "containerd-shim", "longhorn"))
     - rule: "Launch Package Management Process in Container"
       override:
         condition: append
