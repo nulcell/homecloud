@@ -62,7 +62,7 @@ falco:
   load_plugins: [k8saudit, json]
 
 customRules:
-  core-supressions: |
+  core-supressions.yaml: |
     - rule: "BPF Program Not Profiled"
       override:
         condition: append
@@ -145,6 +145,73 @@ customRules:
       override:
         condition: append
       condition: and not (k8s.ns.name = "media" and container.name = "sshd" and proc.name = "sshd.pam")
+  ignore-talos-admin.yaml: |
+    - rule: "Disallowed K8s User"
+      override:
+        condition: append
+      condition: and not (ka.user.name = "talos:admin" and ka.target.resource = "endpointslices")
+  ignore-argocd-rbac.yaml: |
+    - rule: "K8s ClusterRole Created"
+      override:
+        condition: append
+      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+    - rule: "K8s ClusterRole Deleted"
+      override:
+        condition: append
+      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+    - rule: "K8s ClusterRoleBinding Created"
+      override:
+        condition: append
+      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+    - rule: "K8s ClusterRoleBinding Deleted"
+      override:
+        condition: append
+      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+    - rule: "K8s Role Created"
+      override:
+        condition: append
+      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+    - rule: "K8s Role Deleted"
+      override:
+        condition: append
+      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+    - rule: "K8s RoleBinding Created"
+      override:
+        condition: append
+      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+    - rule: "K8s RoleBinding Deleted"
+      override:
+        condition: append
+      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+    - rule: "K8s Serviceaccount Deleted"
+      override:
+        condition: append
+      condition: and not ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+  ignore-secret-access.yaml: |
+    - rule: "K8s Secret Get Successfully"
+      override:
+        condition: append
+      condition: >-
+        and not ka.user.name in (
+          "system:serviceaccount:argocd:argocd-application-controller",
+          "system:serviceaccount:cdi:cdi-operator",
+          "system:serviceaccount:cnpg-system:cnpg-cloudnative-pg",
+          "system:serviceaccount:external-secrets:external-secrets",
+          "system:serviceaccount:external-secrets:external-secrets-cert-controller",
+          "system:serviceaccount:homarr:homarr-postgres",
+          "system:serviceaccount:longhorn-system:longhorn-service-account",
+          "system:serviceaccount:monitoring:kps-admission",
+          "system:serviceaccount:speedtest-tracker:speedtest-tracker-postgres"
+        )
+  ignore-system-sa-creation.yaml: |
+    - rule: "K8s Serviceaccount Created"
+      override:
+        condition: append
+      condition: and not (ka.user.name = "system:kube-controller-manager" or ka.user.name startswith "system:node:")
+    - rule: "Service Account Created in Kube Namespace"
+      override:
+        condition: append
+      condition: and not (ka.user.name = "system:kube-controller-manager" or ka.user.name startswith "system:node:")
 
 driver:
   enabled: true
