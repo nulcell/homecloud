@@ -48,17 +48,17 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if eq .Values.database.type "mariadb" }}
           env:
-            - name: DATABASE_TYPE
+            - name: UPTIME_KUMA_DB_TYPE
               value: mariadb
-            - name: DATABASE_HOSTNAME
+            - name: UPTIME_KUMA_DB_HOSTNAME
               value: {{ .Values.database.mariadb.hostname | quote }}
-            - name: DATABASE_PORT
+            - name: UPTIME_KUMA_DB_PORT
               value: {{ .Values.database.mariadb.port | quote }}
-            - name: DATABASE_NAME
+            - name: UPTIME_KUMA_DB_NAME
               value: {{ .Values.database.mariadb.name | quote }}
-            - name: DATABASE_USERNAME
+            - name: UPTIME_KUMA_DB_USERNAME
               value: {{ .Values.database.mariadb.username | quote }}
-            - name: DATABASE_PASSWORD
+            - name: UPTIME_KUMA_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.database.mariadb.existingSecret }}
