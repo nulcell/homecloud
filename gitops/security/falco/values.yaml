@@ -23,6 +23,7 @@ falco:
   rules_files:
     - /etc/falco/falco_rules.yaml
     - /etc/falco/falco-incubating_rules.yaml
+    # - /etc/falco/falco-sandbox_rules.yaml
     - /etc/falco/k8s_audit_rules.yaml
     - /etc/falco/rules.d
   capture:
@@ -80,9 +81,9 @@ falcoctl:
   config:
     artifact:
       install:
-        refs: [falco-rules:latest, falco-incubating-rules:latest, k8saudit-rules:latest]
+        refs: [falco-rules:latest, falco-incubating-rules:latest, falco-sandbox-rules:latest, k8saudit-rules:latest]
       follow:
-        refs: [falco-rules:latest, falco-incubating-rules:latest, k8saudit-rules:latest]
+        refs: [falco-rules:latest, falco-incubating-rules:latest, falco-sandbox-rules:latest, k8saudit-rules:latest]
 
 # -- Network services configuration (scenario requirement)
 # Add here your services to be deployed together with Falco.
