@@ -42,8 +42,8 @@ capabilities:
   runtimeObservability: enable
   networkPolicyService: enable
   networkEventsStreaming: enable
-  runtimeDetection: enable # testing
-  malwareDetection: enable
+  runtimeDetection: disable # testing
+  malwareDetection: disable
   # Build per-node application profiles used by relevancy and network policy gen.
   nodeProfileService: enable
   admissionController: enable
