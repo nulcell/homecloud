@@ -23,6 +23,8 @@ alloy:
           "homarr",
           "speedtest-tracker",
           "tailscale",
+          "uptime-kuma",
+          "mariadb",
           ]
         }
       }
