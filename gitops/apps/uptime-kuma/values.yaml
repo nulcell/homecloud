@@ -6,11 +6,11 @@ imagePullSecrets:
 
 gateway:
   enabled: true
-  hostname: status.nulcell.com
+  hostname: status.internal.nulcell.com
   parentRef:
-    name: external
+    name: internal
     namespace: gateway
-    sectionName: https
+    sectionName: https-internal
     httpSectionName: http
   httpRedirect: true
 
