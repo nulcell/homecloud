@@ -1,0 +1,18 @@
+apiVersion: v2
+name: uptime-kuma
+description: Uptime Kuma - A fancy self-hosted monitoring tool
+icon: https://uptime.kuma.pet/img/icon.svg
+type: application
+version: "2.4.0"
+appVersion: "2.4.0"
+sources:
+  - https://github.com/nulcell/homecloud
+  - https://github.com/louislam/uptime-kuma
+keywords:
+  - uptime
+  - monitoring
+  - status
+home: https://uptime.kuma.pet
+maintainers:
+  - name: Salimon Ayanleye
+    email: cloud@nulcell.com

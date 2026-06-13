@@ -1,0 +1,15 @@
+image:
+  repository: dhi.io/uptime-kuma
+
+imagePullSecrets:
+  - name: dockerhub-credentials
+
+gateway:
+  enabled: true
+  hostname: status.nulcell.com
+  parentRef:
+    name: external
+    namespace: gateway
+    sectionName: https
+    httpSectionName: http
+  httpRedirect: true

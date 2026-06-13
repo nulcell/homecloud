@@ -1,0 +1,95 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/louislam/uptime-kuma
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+
+updateStrategy: {}
+podAnnotations: {}
+podLabels: {}
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsUser: 1000
+  runAsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+  capabilities:
+    drop:
+      - ALL
+    # add:
+    #   - NET_RAW  # required for ICMP ping monitors
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+  fsGroup: 1000
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3001
+  initialDelaySeconds: 30
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3001
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+service:
+  type: ClusterIP
+  name: uptime-kuma
+  port: 3001
+
+# Gateway API HTTPRoute config.
+# Set gateway.enabled=false to omit routing (e.g. when cloudflared manages ingress).
+gateway:
+  enabled: false
+  hostname: status.example.com
+  parentRef:
+    name: external
+    namespace: gateway
+    sectionName: https
+    httpSectionName: http
+  httpRedirect: true
+
+persistence:
+  enabled: true
+  storageClass: longhorn
+  accessMode: ReadWriteOnce
+  size: 1Gi
+
+commonAnnotations: {}
+priorityClassName: ""
+hostNetwork: false
+dnsPolicy: ClusterFirst
