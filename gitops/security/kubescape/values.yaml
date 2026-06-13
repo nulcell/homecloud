@@ -104,11 +104,11 @@ operator:
   triggerSecurityFramework: true
   resources:
     requests:
-      cpu: 200m
-      memory: 256Mi
+      cpu: 250m
+      memory: 512Mi
     limits:
       cpu: 2000m
-      memory: 6144Mi
+      memory: 8192Mi
 
 # kubevuln - image vulnerability scanning microservice
 kubevuln:
