@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: mariadb-system
+  name: mariadb
   annotations:
     argocd.argoproj.io/sync-wave: "-5"
