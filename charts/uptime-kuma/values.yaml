@@ -89,6 +89,18 @@ persistence:
   accessMode: ReadWriteOnce
   size: 1Gi
 
+# External database configuration (uptime-kuma v2+).
+# Set database.type=mariadb to switch from the built-in SQLite to MariaDB.
+database:
+  type: sqlite
+  mariadb:
+    hostname: ""
+    port: 3306
+    name: ""
+    username: ""
+    existingSecret: ""
+    secretPasswordKey: password
+
 commonAnnotations: {}
 priorityClassName: ""
 hostNetwork: false

@@ -1,0 +1,97 @@
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: mariadb
+  namespace: uptime-kuma
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  rootPasswordSecretKeyRef:
+    name: mariadb-root
+    key: password
+    generate: true
+
+  replicas: 1
+  port: 3306
+
+  storage:
+    storageClassName: longhorn
+    size: 10Gi
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  myCnf: |
+    [mariadb]
+    bind-address=*
+    default_storage_engine=InnoDB
+    max_allowed_packet=256M
+    innodb_buffer_pool_size=512M
+
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  mariaDbRef:
+    name: mariadb
+  characterSet: utf8mb4
+  collate: utf8mb4_unicode_ci
+  cleanupPolicy: Delete
+
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  mariaDbRef:
+    name: mariadb
+  passwordSecretKeyRef:
+    name: mariadb-uptime-kuma-password
+    key: password
+    generate: true
+  host: "%"
+  maxUserConnections: 20
+  cleanupPolicy: Delete
+
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  mariaDbRef:
+    name: mariadb
+  privileges:
+    - SELECT
+    - INSERT
+    - UPDATE
+    - DELETE
+    - CREATE
+    - DROP
+    - ALTER
+    - INDEX
+    - REFERENCES
+  database: uptime-kuma
+  table: "*"
+  username: uptime-kuma
+  host: "%"
+  grantOption: false
+  cleanupPolicy: Delete

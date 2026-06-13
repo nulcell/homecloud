@@ -1,0 +1,37 @@
+# mariadb-operator v26.6.0
+# Installs the controller and webhook with the built-in cert-controller for
+# webhook TLS. Enable certManager below if cert-manager is installed.
+#
+# CRDs (MariaDB, Database, User, Grant, Connection, Backup, Restore, etc.)
+# are installed separately via the mariadb-operator-crds chart.
+#
+# Example MariaDB instance:
+#   apiVersion: k8s.mariadb.com/v1alpha1
+#   kind: MariaDB
+#   metadata:
+#     name: mariadb
+#     namespace: my-app
+#   spec:
+#     replicas: 1
+#     storage:
+#       storageClassName: longhorn
+#       size: 10Gi
+
+image:
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+metrics:
+  enabled: false
+
+webhook:
+  cert:
+    certManager:
+      enabled: false

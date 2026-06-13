@@ -13,3 +13,13 @@ gateway:
     sectionName: https
     httpSectionName: http
   httpRedirect: true
+
+# database:
+#   type: mariadb
+#   mariadb:
+#     hostname: mariadb
+#     port: 3306
+#     name: uptime-kuma
+#     username: uptime-kuma
+#     existingSecret: mariadb-uptime-kuma-password
+#     secretPasswordKey: password
