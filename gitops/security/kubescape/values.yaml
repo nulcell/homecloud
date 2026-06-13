@@ -165,7 +165,7 @@ nodeAgent:
     skipKernelVersionCheck: false
     malwareScanAllFiles: false
     hostMalwareSensor: disable
-    hostNetworkSensor: enable # testing
+    hostNetworkSensor: disable
     hostSensor:
       enabled: true
       interval: 10m # duration string
