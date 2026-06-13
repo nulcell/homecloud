@@ -22,7 +22,7 @@ capabilities:
   # Watch-mode scanning: re-evaluates posture on every resource change (creates/updates).
   # Combined with configurationScan, this keeps the posture dashboard live rather than
   # only refreshing on a schedule.
-  continuousScan: disable # testing
+  continuousScan: enable
   nodeScan: enable
 
   # ====== Image vulnerabilities ======
@@ -41,9 +41,9 @@ capabilities:
   #
   runtimeObservability: enable
   networkPolicyService: enable
-  networkEventsStreaming: disable
+  networkEventsStreaming: enable
   runtimeDetection: enable # testing
-  malwareDetection: disable
+  malwareDetection: enable
   # Build per-node application profiles used by relevancy and network policy gen.
   nodeProfileService: enable
   admissionController: enable
@@ -154,8 +154,8 @@ nodeAgent:
   name: node-agent
 
   config:
-    maxLearningPeriod: 24h # duration string
-    learningPeriod: 10m # duration string
+    maxLearningPeriod: 48h # duration string
+    learningPeriod: 2h # duration string
     updatePeriod: 10m # duration string
     nodeProfileInterval: 10m # duration string
     networkStreamingInterval: 5m # duration string
