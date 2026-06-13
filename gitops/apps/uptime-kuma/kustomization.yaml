@@ -12,6 +12,17 @@ helmCharts:
     valuesFile: values.yaml
     includeCRDs: false
 
+  # # mariadb-cluster manages the MariaDB instance, Database, User, and Grant
+  # # CRs in a single Helm release via the mariadb-operator.
+  # # Requires the mariadb-operator-crds and mariadb-operator charts to be
+  # # installed first (gitops/operators/mariadb).
+  # - name: mariadb-cluster
+  #   repo: oci://ghcr.io/mariadb-operator/charts
+  #   version: 26.6.0
+  #   releaseName: mariadb
+  #   namespace: uptime-kuma
+  #   valuesFile: mariadb-values.yaml
+  #   includeCRDs: false
+
 resources:
   - namespace.yaml
-  # - mariadb.yaml
