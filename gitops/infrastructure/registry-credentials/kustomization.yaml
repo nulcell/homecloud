@@ -3,3 +3,4 @@ kind: Kustomization
 
 resources:
   - dockerhub-cluster-external-secret.yaml
+  - dhi-cluster-external-secret.yaml
