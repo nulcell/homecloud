@@ -4,7 +4,21 @@ mariadb:
     key: password
     generate: true
 
+  # Initial database and user. The operator grants the initial user
+  # ALL PRIVILEGES on the initial database automatically.
+  database: uptime-kuma
+  username: uptime-kuma
+  passwordSecretKeyRef:
+    name: mariadb-uptime-kuma-password
+    key: password
+    generate: true
+
   replicas: 1
+
+  galera:
+    enabled: false
+  replication:
+    enabled: false
 
   storage:
     storageClassName: longhorn
@@ -24,37 +38,3 @@ mariadb:
     default_storage_engine=InnoDB
     max_allowed_packet=256M
     innodb_buffer_pool_size=512M
-
-databases:
-  - name: uptime-kuma
-    characterSet: utf8mb4
-    collate: utf8mb4_unicode_ci
-    cleanupPolicy: Delete
-
-users:
-  - name: uptime-kuma
-    passwordSecretKeyRef:
-      name: mariadb-uptime-kuma-password
-      key: password
-      generate: true
-    host: "%"
-    cleanupPolicy: Delete
-
-grants:
-  - name: uptime-kuma
-    privileges:
-      - SELECT
-      - INSERT
-      - UPDATE
-      - DELETE
-      - CREATE
-      - DROP
-      - ALTER
-      - INDEX
-      - REFERENCES
-    database: uptime-kuma
-    table: "*"
-    username: uptime-kuma
-    host: "%"
-    grantOption: false
-    cleanupPolicy: Delete
