@@ -40,6 +40,11 @@ ingress:
     originRequest:
       httpHostHeader: home.internal.nulcell.com
       noTLSVerify: true
+  - hostname: status.nulcell.com
+    service: https://cilium-gateway-internal.gateway.svc.cluster.local
+    originRequest:
+      httpHostHeader: status.internal.nulcell.com
+      noTLSVerify: true
   - service: http_status:404
 
 imagePullSecrets:
