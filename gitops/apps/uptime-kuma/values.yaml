@@ -1,8 +1,9 @@
-# image:
-#   repository: dhi.io/uptime-kuma
+image:
+  repository: dhi.io/uptime-kuma
 
 imagePullSecrets:
   - name: dockerhub-credentials
+  - name: dhi-credentials
 
 gateway:
   enabled: true
