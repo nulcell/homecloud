@@ -42,7 +42,7 @@ capabilities:
   runtimeObservability: enable
   networkPolicyService: enable
   networkEventsStreaming: disable
-  runtimeDetection: disable # testing
+  runtimeDetection: enable # testing
   malwareDetection: disable
   # Build per-node application profiles used by relevancy and network policy gen.
   nodeProfileService: enable
@@ -104,8 +104,8 @@ operator:
   triggerSecurityFramework: true
   resources:
     requests:
-      cpu: 50m
-      memory: 128Mi
+      cpu: 200m
+      memory: 256Mi
     limits:
       cpu: 2000m
       memory: 6144Mi
@@ -116,7 +116,7 @@ kubevuln:
   replicaCount: 1
   resources:
     requests:
-      cpu: 50m
+      cpu: 200m
       memory: 256Mi
       # Consider to increase ephemeral-storage requests in order to avoid pod eviction due to huge images
       #               https://github.com/kubescape/kubescape/issues/389
@@ -155,10 +155,10 @@ nodeAgent:
 
   config:
     maxLearningPeriod: 24h # duration string
-    learningPeriod: 2m # duration string
+    learningPeriod: 10m # duration string
     updatePeriod: 10m # duration string
     nodeProfileInterval: 10m # duration string
-    networkStreamingInterval: 2m # duration string
+    networkStreamingInterval: 5m # duration string
     prometheusExporter: disable
     alertManagerExporterUrls:
       - kps-alertmanager.monitoring:9093
@@ -168,7 +168,7 @@ nodeAgent:
     hostNetworkSensor: enable # testing
     hostSensor:
       enabled: true
-      interval: 5m # duration string
+      interval: 10m # duration string
     stdoutExporter: true
 
   serviceMonitor:
@@ -180,7 +180,7 @@ nodeAgent:
       memory: 512Mi
     limits:
       cpu: 1000m
-      memory: 1024Mi
+      memory: 2048Mi
 
   sbomScanner:
     enabled: false
