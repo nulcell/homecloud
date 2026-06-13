@@ -3,6 +3,14 @@ kind: Kustomization
 namespace: falco
 
 helmCharts:
+  - name: falco
+    repo: https://falcosecurity.github.io/charts
+    version: 9.1.0
+    releaseName: falco
+    namespace: falco
+    valuesFile: values.yaml
+    additionalValuesFiles:
+      - custom-rules.yaml
   - name: fluent-bit
     repo: https://fluent.github.io/helm-charts
     version: v0.57.6
@@ -11,11 +19,5 @@ helmCharts:
     valuesFile: fluentbit-values.yaml
 
 resources:
-  - falco-instance.yaml
-  - plugins.yaml
-  # - fluentbit-daemonset.yaml
-  - detection-rules.yaml
-  - falcosidekick.yaml
-  - falcosidekick-ui.yaml
+  - namespaces.yaml
   - falcosidekick-ui-http-routes.yaml
-  - metacollector.yaml

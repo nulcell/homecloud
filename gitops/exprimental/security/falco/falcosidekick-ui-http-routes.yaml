@@ -19,7 +19,7 @@ spec:
       backendRefs:
         - group: ""
           kind: Service
-          name: sidekick-ui
+          name: falco-falcosidekick-ui
           port: 2802
           weight: 1
 ---
