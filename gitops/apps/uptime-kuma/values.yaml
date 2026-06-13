@@ -17,9 +17,9 @@ gateway:
 # database:
 #   type: mariadb
 #   mariadb:
-#     hostname: mariadb
+#     hostname: mariadb-cluster
 #     port: 3306
 #     name: uptime-kuma
 #     username: uptime-kuma
-#     existingSecret: mariadb-uptime-kuma-password
+#     existingSecret: mariadb-cluster-uptime-kuma-password
 #     secretPasswordKey: password
