@@ -56,20 +56,20 @@ spec:
   # Switch to Always once installation is complete and Windows is configured.
   runStrategy: Manual
   dataVolumeTemplates:
-    # Windows Server 2025 Evaluation ISO — imported directly from Microsoft CDN.
-    # ~5.5 GB download; CDI will store it in a 6 Gi PVC via Longhorn.
-    # Delete this DataVolume after installation to reclaim storage.
-    - metadata:
-        name: windows-server-2025-iso
-      spec:
-        source:
-          http:
-            url: "https://software-static.download.prss.microsoft.com/dbazure/998969d5-f34g-4e03-ac9d-1f9786c66749/26100.32230.260111-0550.lt_release_svc_refresh_SERVER_EVAL_x64FRE_en-us.iso"
-        storage:
-          resources:
-            requests:
-              storage: 10Gi
-          accessModes: [ReadWriteOnce]
+    # # Windows Server 2025 Evaluation ISO — imported directly from Microsoft CDN.
+    # # ~5.5 GB download; CDI will store it in a 6 Gi PVC via Longhorn.
+    # # Delete this DataVolume after installation to reclaim storage.
+    # - metadata:
+    #     name: windows-server-2025-iso
+    #   spec:
+    #     source:
+    #       http:
+    #         url: "https://software-static.download.prss.microsoft.com/dbazure/998969d5-f34g-4e03-ac9d-1f9786c66749/26100.32230.260111-0550.lt_release_svc_refresh_SERVER_EVAL_x64FRE_en-us.iso"
+    #     storage:
+    #       resources:
+    #         requests:
+    #           storage: 10Gi
+    #       accessModes: [ReadWriteMany]
     # Blank system disk — Windows installs here.
     - metadata:
         name: windows-server-2025-disk
@@ -136,12 +136,12 @@ spec:
               bootOrder: 2
               disk:
                 bus: virtio
-            # Boot from ISO first so the installer runs on first start.
-            - name: windows-iso
-              bootOrder: 1
-              cdrom:
-                bus: sata
-                readonly: true
+            # # Boot from ISO first so the installer runs on first start.
+            # - name: windows-iso
+            #   bootOrder: 1
+            #   cdrom:
+            #     bus: sata
+            #     readonly: true
             # VirtIO driver pack (storage, network, balloon, etc.).
             # Load storage driver during install; run virtio-win-gt-x64.msi
             # post-install for full driver coverage.
@@ -155,7 +155,7 @@ spec:
             # change this to `model: virtio` for better throughput.
             - name: default
               bridge: {}
-              model: e1000e
+              model: virtio
       networks:
         - name: default
           pod: {}
@@ -163,9 +163,9 @@ spec:
         - name: systemdisk
           dataVolume:
             name: windows-server-2025-disk
-        - name: windows-iso
-          dataVolume:
-            name: windows-server-2025-iso
+        # - name: windows-iso
+        #   dataVolume:
+        #     name: windows-server-2025-iso
         - name: virtio-drivers
           containerDisk:
             image: quay.io/kubevirt/virtio-container-disk:v1.8.2
