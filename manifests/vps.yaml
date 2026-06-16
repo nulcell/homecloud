@@ -45,37 +45,37 @@ metadata:
   namespace: vps
 spec:
   runStrategy: Always # restart on crash; switch to Manual for virtctl start/stop control
-  dataVolumeTemplates:
-    - metadata:
-        name: ubuntu-vps-root
-      spec:
-        source:
-          http:
-            url: https://cloud-images.ubuntu.com/releases/26.04/release/ubuntu-26.04-server-cloudimg-amd64.img
-        storage:
-          resources:
-            requests:
-              storage: 20Gi
-          accessModes: [ReadWriteMany]
-          # storageClassName omitted — Longhorn is the cluster default. Override
-          # here only if you want a non-default class for this VM.
   template:
-    metadata:
-      labels:
-        kubevirt.io/vm: vps
-      annotations:
-        kubevirt.io/allow-pod-bridge-network-live-migration: "true"
+    metadata: {}
     spec:
       evictionStrategy: LiveMigrate
       domain:
+        machine:
+          type: q35
         cpu:
           cores: 2
-          model: host-passthrough
+          sockets: 1
+          threads: 1
+          model: host-model
         memory:
           guest: 2Gi
+        resources:
+          requests:
+            memory: 2Gi
+            cpu: 2
+          limits:
+            memory: 2.5Gi
+            cpu: 2
+        firmware:
+          bootloader:
+            efi:
+              secureBoot: true
+        features:
+          smm:
+            enabled: true
         devices:
           disks:
-            - name: rootdisk
+            - name: boot-volume
               disk:
                 bus: virtio
             - name: cloudinitdisk
@@ -83,17 +83,18 @@ spec:
                 bus: virtio
           interfaces:
             - name: default
-              bridge: {}
+              model: virtio
+              masquerade: {}
+          tpm:
+            persistent: true
           rng: {}
-        machine:
-          type: q35
       networks:
         - name: default
           pod: {}
       volumes:
-        - name: rootdisk
+        - name: boot-volume
           dataVolume:
-            name: ubuntu-vps-root
+            name: boot-volume
         - name: cloudinitdisk
           cloudInitNoCloud:
             userData: |
@@ -117,16 +118,33 @@ spec:
                 - fastfetch
               runcmd:
                 - systemctl enable --now qemu-guest-agent
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: vps-ssh
-  namespace: vps
-spec:
-  type: LoadBalancer
-  selector:
-    kubevirt.io/vm: vps
-  ports:
-    - port: 22
-      targetPort: 22
+  dataVolumeTemplates:
+    - metadata:
+        name: boot-volume
+      spec:
+        source:
+          # registry:
+          #   url: docker://quay.io/containerdisks/ubuntu:24.04
+          http:
+            url: https://cloud-images.ubuntu.com/releases/26.04/release/ubuntu-26.04-server-cloudimg-amd64.img
+        storage:
+          resources:
+            requests:
+              storage: 15Gi
+          accessModes: [ReadWriteMany]
+          storageClassName: longhorn
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: vps-ssh
+#   namespace: vps
+# spec:
+#   type: LoadBalancer
+#   selector:
+#     kubevirt.io/vm: vps
+#   ports:
+#     - name: ssh
+#       port: 22
+#       targetPort: 22
+#       protocol: TCP
