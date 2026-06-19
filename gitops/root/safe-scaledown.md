@@ -221,13 +221,16 @@ kubectl get nodes                       # wait for both Ready
 kubectl -n longhorn-system get volumes.longhorn.io   # volumes still detached, intact
 ```
 
-### 2. Un-hibernate Postgres (annotations don't auto-revert)
+### 2. Un-hibernate Postgres and operators (annotations don't auto-revert)
 
 ```bash
 for c in authentik/authentik-postgres homarr/homarr-postgres \
          n8n/n8n-postgres speedtest-tracker/speedtest-tracker-postgres; do
   kubectl cnpg hibernate off "${c#*/}" -n "${c%/*}"
 done
+
+kubectl -n monitoring scale deployment kps-operator      --replicas=1   # prometheus-operator
+kubectl -n mariadb    scale deployment mariadb-operator  --replicas=1
 ```
 
 ### 3. Unfreeze ArgoCD — it restores everything else
