@@ -154,7 +154,7 @@ jellyfin:
       cpu: 1000m
       memory: 1Gi
     limits:
-      cpu: 4000m
+      # cpu: 4000m
       memory: 4Gi
   gateway:
     hostname: "" # e.g. jellyfin.example.com
@@ -179,7 +179,7 @@ seerr:
       cpu: 400m
       memory: 256Mi
     limits:
-      cpu: 1000m
+      # cpu: 1000m
       memory: 512Mi
   gateway:
     hostname: ""
@@ -203,7 +203,7 @@ sonarr:
       cpu: 400m
       memory: 256Mi
     limits:
-      cpu: 1000m
+      # cpu: 1000m
       memory: 1Gi
   gateway:
     hostname: ""
@@ -227,7 +227,7 @@ radarr:
       cpu: 400m
       memory: 256Mi
     limits:
-      cpu: 1000m
+      # cpu: 1000m
       memory: 1Gi
   gateway:
     hostname: ""
@@ -251,7 +251,7 @@ bazarr:
       cpu: 400m
       memory: 128Mi
     limits:
-      cpu: 1000m
+      # cpu: 1000m
       memory: 512Mi
   gateway:
     hostname: ""
@@ -280,7 +280,7 @@ prowlarr:
       cpu: 400m
       memory: 256Mi
     limits:
-      cpu: 1000m
+      # cpu: 1000m
       memory: 1Gi
   gateway:
     hostname: ""
@@ -322,7 +322,7 @@ tdarr:
       cpu: 500m
       memory: 1Gi
     limits:
-      cpu: 4000m
+      # cpu: 4000m
       memory: 4Gi
   gateway:
     hostname: "" # e.g. tdarr.example.com
@@ -345,7 +345,7 @@ qbittorrent:
       cpu: 500m
       memory: 512Mi
     limits:
-      cpu: 2000m
+      # cpu: 2000m
       memory: 2Gi
   gateway:
     hostname: ""
