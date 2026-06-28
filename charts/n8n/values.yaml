@@ -35,10 +35,10 @@ n8n:
 
   resources:
     requests:
-      cpu: 100m
+      cpu: 250m
       memory: 256Mi
     limits:
-      cpu: 500m
+      # cpu: 500m
       memory: 512Mi
 
 n8nTaskRunner:
@@ -77,11 +77,11 @@ n8nTaskRunner:
 
   resources:
     requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 500m
+      cpu: 250m
       memory: 256Mi
+    limits:
+      # cpu: 500m
+      memory: 512Mi
 
 imagePullSecrets: []
 nameOverride: ""
@@ -169,13 +169,13 @@ scaling:
     host: ""
     port: 5432
     name: n8n
-    existingSecret: ""      # e.g. n8n-postgres-app
+    existingSecret: "" # e.g. n8n-postgres-app
     secretUsernameKey: username
     secretPasswordKey: password
 
   # External Redis (unauthenticated).
   redis:
-    host: ""   # e.g. n8n-redis
+    host: "" # e.g. n8n-redis
     port: 6379
 
   # All nodes (main + workers) must share the same encryption key.
