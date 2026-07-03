@@ -5,7 +5,7 @@ metadata:
 spec:
   replicas: 1
   hostnamePrefix: ts-home-cidrs
-  exitNode: false
+  exitNode: true
   subnetRouter:
     advertiseRoutes:
       - "10.10.16.0/20"
