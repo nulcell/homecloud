@@ -48,7 +48,7 @@ vpn:
 jellyfin:
   replicas: 1
   image:
-    tag: 10.11.9
+    tag: 10.11.11
   publishedServerUrl: https://jellyfin.nulcell.com
   hwAccel:
     enabled: true
@@ -69,21 +69,21 @@ jellyfin:
 seerr:
   replicas: 1
   image:
-    tag: v3.2.0
+    tag: v3.3.0
   gateway:
     hostname: seerr.nulcell.com
 
 sonarr:
   replicas: 1
   image:
-    tag: 4.0.17
+    tag: 4.0.19
   gateway:
     hostname: sonarr.nulcell.com
 
 radarr:
   replicas: 1
   image:
-    tag: 6.1.1
+    tag: 6.2.1
   gateway:
     hostname: radarr.nulcell.com
 
@@ -99,13 +99,13 @@ servarr:
 
 prowlarr:
   image:
-    tag: 2.3.5
+    tag: 2.4.0
   gateway:
     hostname: prowlarr.nulcell.com
 
 qbittorrent:
   image:
-    tag: 5.2.0
+    tag: 5.2.2
   gateway:
     hostname: qbittorrent.nulcell.com
 

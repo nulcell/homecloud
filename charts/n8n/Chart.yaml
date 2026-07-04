@@ -3,8 +3,8 @@ name: n8n
 description: n8n workflow automation tool - Helm Chart
 icon: https://n8n.io/brandguidelines/logo-dark.svg
 type: application
-version: "2.25.7"
-appVersion: "2.25.7"
+version: "2.29.1"
+appVersion: "2.29.1"
 sources:
   - https://github.com/nulcell/homecloud
 keywords:
