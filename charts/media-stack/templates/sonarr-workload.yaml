@@ -37,6 +37,20 @@ spec:
             - containerPort: {{ .Values.sonarr.service.ports.web }}
               name: web
               protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: web
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: web
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
           resources:
             {{- toYaml .Values.sonarr.resources | nindent 12 }}
           securityContext:

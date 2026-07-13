@@ -135,6 +135,20 @@ spec:
           imagePullPolicy: {{ .Values.prowlarr.image.pullPolicy }}
           env:
             {{- include "mediaStack.commonEnv" . | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: {{ .Values.prowlarr.service.ports.web }}
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: {{ .Values.prowlarr.service.ports.web }}
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
           resources:
             {{- toYaml .Values.prowlarr.resources | nindent 12 }}
           securityContext:
