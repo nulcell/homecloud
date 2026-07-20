@@ -6,7 +6,7 @@ helmCharts:
   - name: authentik
     repo: https://charts.goauthentik.io
     releaseName: authentik
-    version: 2026.5.3
+    version: 2026.5.5
     namespace: authentik
     valuesFile: values.yaml
     includeCRDs: false
