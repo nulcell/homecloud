@@ -9,6 +9,7 @@
   extends: ["config:recommended"],
 
   dependencyDashboard: true,
+  dependencyDashboardApproval: true, // list candidate updates as checkboxes; only open a PR once ticked
   timezone: "Europe/Amsterdam", // matches common.timezone in gitops/apps/media-stack/values.yaml
   // No `schedule` here on purpose: the weekly cron in
   // .github/workflows/renovate.yml already controls cadence. A `schedule`
