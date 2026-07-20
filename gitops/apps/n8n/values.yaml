@@ -37,6 +37,44 @@ main:
 webhook:
   url: "https://n8n.nulcell.com/"
 
+# -- Node configurations for built-in and external npm packages
+nodes:
+  # -- Enable built-in node functions (e.g., HTTP Request, Code Node, etc.)
+  builtin:
+    # -- Enable built-in modules for the Code node
+    enabled: true
+    # -- List of built-in Node.js modules to allow in the Code node (e.g., crypto, fs). Use '*' to allow all.
+    modules: []
+      # - crypto
+      # - fs
+  # -- External npm packages to install and allow in the Code node
+  external:
+    # -- Allow all external npm packages
+    allowAll: false
+    # -- Whether to reinstall missing packages. For more information, see https://docs.n8n.io/integrations/community-nodes/troubleshooting/#error-missing-packages
+    reinstallMissingPackages: false
+    # -- List of npm package names and versions (e.g., "package-name@1.0.0")
+    packages: []
+      # - "moment@2.29.4"
+      # - "lodash@4.17.21"
+  # -- Python Code node configuration. Requires n8n 1.111.0+ and taskRunners.mode: external.
+  python:
+    # -- Enable Python code execution in the Code node via external task runners.
+    enabled: true
+    # -- Built-in Python module access for the Code node.
+    builtin:
+      # -- Python standard library modules allowed in Code nodes. Use ['*'] to allow all.
+      modules: []
+        # - "*"
+    # -- External Python package access for the Code node.
+    external:
+      # -- Allow all external Python packages in Code nodes. When true, sets N8N_RUNNERS_EXTERNAL_ALLOW=* regardless of packages list.
+      allowAll: false
+      # -- Python packages to install via uv before starting the runner (e.g. ["pandas", "numpy"]). Each listed package is also automatically allowed as an external package in Code nodes.
+      packages: []
+        # - pandas
+        # - numpy
+
 db:
   type: postgresdb
 
