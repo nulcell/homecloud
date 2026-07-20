@@ -4,7 +4,7 @@ kind: Kustomization
 helmCharts:
   - name: falco-operator
     repo: https://falcosecurity.github.io/charts
-    version: 0.1.0
+    version: 0.3.1
     releaseName: falco-operator
     namespace: falco-operator
     valuesFile: values.yaml
