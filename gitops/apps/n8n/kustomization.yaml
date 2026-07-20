@@ -2,14 +2,16 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: n8n
 
-# Chart lives at charts/n8n/, referenced via chartHome.
-# Requires the CMP plugin to be invoked with --load-restrictor=LoadRestrictionsNone
-# (set in cluster/bootstrap/argocd-values.yaml) so kustomize can read files above this dir.
-helmGlobals:
-  chartHome: ../../../charts
-
+# Migrated from the local chart at charts/n8n/ to the community-charts n8n
+# chart so version bumps flow through Renovate's kustomize manager like the
+# other third-party charts, instead of being hand-maintained. charts/n8n/ is
+# kept in the repo (unreferenced) as a rollback fallback — see git history for
+# the previous helmCharts entry (chartHome: ../../../charts, name: n8n) and
+# values.yaml if it's ever needed.
 helmCharts:
   - name: n8n
+    repo: https://community-charts.github.io/helm-charts
+    version: 1.24.14
     releaseName: n8n
     namespace: n8n
     valuesFile: values.yaml

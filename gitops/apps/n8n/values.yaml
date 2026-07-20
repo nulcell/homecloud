@@ -1,54 +1,93 @@
-# Overrides for the n8n chart at charts/n8n/.
+# Overrides for the community-charts n8n chart.
+# https://github.com/community-charts/helm-charts/tree/main/charts/n8n
+# https://community-charts.github.io/docs/charts/n8n/usage
 # Everything not listed here keeps the chart's default value.
 
 imagePullSecrets:
   - name: dockerhub-credentials
 
-n8n:
-  replicaCount: 1
-  timezone: Europe/Amsterdam
+timezone: Europe/Amsterdam
 
-gateway:
-  enabled: false # managed separately by cloudflared chart
-  parentRef:
-    name: external
-    namespace: gateway
-  hostname: n8n.nulcell.com
+main:
+  count: 1
+  editorBaseUrl: "https://n8n.nulcell.com/"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  # N8N_HOST/N8N_PROTOCOL aren't first-class chart values (only editorBaseUrl
+  # and webhook.url are) — set explicitly so generated links match the old
+  # custom chart's behavior instead of falling back to localhost/http.
+  extraEnvVars:
+    N8N_HOST: n8n.nulcell.com
+    N8N_PROTOCOL: https
 
-# Reference to the SOPS-encrypted Secret in this folder (n8n-runner-auth.enc.yaml).
-taskRunner:
-  authToken:
-    secretName: n8n-runner-auth
-    secretKey: auth-token
+webhook:
+  url: "https://n8n.nulcell.com/"
 
-scaling:
+db:
+  type: postgresdb
+
+# External PostgreSQL — CNPG cluster `n8n-postgres` (postgres-cluster.yaml).
+# CNPG auto-creates a secret named <cluster>-app with keys: username, password.
+externalPostgresql:
+  host: n8n-postgres-rw # CNPG read-write service
+  port: 5432
+  username: n8n # matches spec.bootstrap.initdb.owner in postgres-cluster.yaml
+  database: n8n
+  existingSecret: n8n-postgres-app
+  existingSecretPasswordKey: password
+
+# External Redis (unauthenticated) — see redis.yaml.
+externalRedis:
+  host: n8n-redis
+  port: 6379
+
+# 1Password-backed ExternalSecret (n8n-external-secrets.yaml), unchanged from
+# before the migration.
+existingEncryptionKeySecret: n8n-encryption-key
+
+worker:
+  mode: queue
+  concurrency: 10
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 10
+  extraEnvVars:
+    N8N_HOST: n8n.nulcell.com
+    N8N_PROTOCOL: https
+
+# Isolate Code-node execution in a task-runner sidecar, matching the previous
+# custom chart's architecture. In worker.mode=queue this sidecar attaches only
+# to worker pods (not main, which never executes workflow code directly —
+# OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS is on by default in queue mode). Note
+# this does change the scaling shape versus before: previously task-runner was
+# one standalone deployment; now one sidecar comes and goes with every worker
+# replica (1-10, per autoscaling above) instead of a fixed single instance.
+taskRunners:
+  mode: external
+  external:
+    # Shared token between n8n and its own task-runner sidecar — purely
+    # internal, same-pod/localhost auth, never exposed externally, so it
+    # doesn't need real secret management. Fixed here (rather than left
+    # unset) because the chart has no `lookup`-based persistence for its
+    # auto-generated default: with no fixed value, it re-randomizes on every
+    # render, which would churn the Secret (and roll pods) on every ArgoCD
+    # sync for no reason.
+    mainNodeAuthToken: "n8n-task-runner-shared-secret"
+    workerNodeAuthToken: "n8n-task-runner-shared-secret"
+
+# -- The service monitor configuration. Please refer to the following link for more information: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md
+serviceMonitor:
+  # -- When set true then use a ServiceMonitor to configure scraping
   enabled: true
-  database:
-    host: n8n-postgres-rw # CNPG read-write service
-    port: 5432
-    name: n8n
-    existingSecret: n8n-postgres-app # auto-created by CNPG
-    secretUsernameKey: username
-    secretPasswordKey: password
-  redis:
-    host: n8n-redis
-    port: 6379
-  # Encryption key is SOPS-encrypted at n8n-encryption-key.enc.yaml
-  # and wired into secret-generator.yaml.
-  encryptionKey:
-    existingSecret: n8n-encryption-key
-    secretKey: N8N_ENCRYPTION_KEY
-  worker:
-    concurrency: 10
-    resources:
-      requests:
-        cpu: 500m
-        memory: 512Mi
-      limits:
-        cpu: 2000m
-        memory: 1Gi
-    autoscaling:
-      minReplicas: 1
-      maxReplicas: 10
-      targetCPUUtilizationPercentage: 80
-      targetMemoryUtilizationPercentage: 80
