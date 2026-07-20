@@ -8,7 +8,7 @@
 # ── Kubernetes ───────────────────────────────────────────────────────────────
 kubectl  = "1.36.1"
 helm     = "4.2.0"
-argocd   = "3.4.2"
+argocd   = "3.4.5"
 
 # ── Talos Linux ──────────────────────────────────────────────────────────────
 # talosctl manages Talos Linux nodes and clusters.
