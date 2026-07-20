@@ -88,7 +88,7 @@ radarr:
   replicas: 1
   # renovate: datasource=docker depName=lscr.io/linuxserver/radarr
   image:
-    tag: 6.2.1
+    tag: 6.3.0
   gateway:
     hostname: radarr.nulcell.com
 
@@ -96,7 +96,7 @@ bazarr:
   replicas: 1
   # renovate: datasource=docker depName=lscr.io/linuxserver/bazarr
   image:
-    tag: 1.5.6
+    tag: 1.6.0
   gateway:
     hostname: bazarr.nulcell.com
 
@@ -113,7 +113,7 @@ prowlarr:
 qbittorrent:
   # renovate: datasource=docker depName=lscr.io/linuxserver/qbittorrent
   image:
-    tag: 5.2.2
+    tag: 5.2.3
   gateway:
     hostname: qbittorrent.nulcell.com
 
