@@ -10,7 +10,12 @@
 
   dependencyDashboard: true,
   timezone: "Europe/Amsterdam", // matches common.timezone in gitops/apps/media-stack/values.yaml
-  schedule: ["before 6am on monday"],
+  // No `schedule` here on purpose: the weekly cron in
+  // .github/workflows/renovate.yml already controls cadence. A `schedule`
+  // here would additionally gate *whether* Renovate is allowed to open
+  // branches/PRs during that run, and unless the two windows are kept in
+  // exact sync, runs land outside it and every branch comes back
+  // "not-scheduled" with nothing opened (this is what happened on the first run).
   prConcurrentLimit: 5,
   prHourlyLimit: 2,
   labels: ["renovate"],
