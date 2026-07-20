@@ -22,6 +22,7 @@ gateway:
 
 vpn:
   enabled: true
+  # renovate: datasource=docker depName=qmcgaw/gluetun
   image:
     tag: v3.41.1
   provider: nordvpn
@@ -47,6 +48,7 @@ vpn:
 # Hostnames published via external-dns. Omit any to keep that app internal-only.
 jellyfin:
   replicas: 1
+  # renovate: datasource=docker depName=lscr.io/linuxserver/jellyfin
   image:
     tag: 10.11.11
   publishedServerUrl: https://jellyfin.nulcell.com
@@ -68,6 +70,7 @@ jellyfin:
 
 seerr:
   replicas: 1
+  # renovate: datasource=docker depName=ghcr.io/seerr-team/seerr
   image:
     tag: v3.3.0
   gateway:
@@ -75,6 +78,7 @@ seerr:
 
 sonarr:
   replicas: 1
+  # renovate: datasource=docker depName=lscr.io/linuxserver/sonarr
   image:
     tag: 4.0.19
   gateway:
@@ -82,6 +86,7 @@ sonarr:
 
 radarr:
   replicas: 1
+  # renovate: datasource=docker depName=lscr.io/linuxserver/radarr
   image:
     tag: 6.2.1
   gateway:
@@ -89,6 +94,7 @@ radarr:
 
 bazarr:
   replicas: 1
+  # renovate: datasource=docker depName=lscr.io/linuxserver/bazarr
   image:
     tag: 1.5.6
   gateway:
@@ -98,12 +104,14 @@ servarr:
   replicas: 1
 
 prowlarr:
+  # renovate: datasource=docker depName=lscr.io/linuxserver/prowlarr
   image:
     tag: 2.4.0
   gateway:
     hostname: prowlarr.nulcell.com
 
 qbittorrent:
+  # renovate: datasource=docker depName=lscr.io/linuxserver/qbittorrent
   image:
     tag: 5.2.2
   gateway:

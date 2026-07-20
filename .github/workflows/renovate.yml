@@ -1,0 +1,28 @@
+name: Renovate
+
+on:
+  schedule:
+    # Mondays at 05:00 UTC. Renovate's own `schedule` setting in renovate.json5
+    # still decides when PRs are actually created; this just controls how
+    # often the bot wakes up to check.
+    - cron: "0 5 * * 1"
+  workflow_dispatch: {}
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@3064367f740a1a91cca218698a63902689cce200 # v46.1.20
+        with:
+          configurationFile: .github/renovate-global.json5
+          token: "${{ secrets.RENOVATE_TOKEN }}"
+        env:
+          LOG_LEVEL: debug

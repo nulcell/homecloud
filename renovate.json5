@@ -1,0 +1,68 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+
+  // Self-hosted-only options (platform, repositories, onboarding,
+  // requireConfig) live in .github/renovate-global.json5, which is what
+  // the workflow passes to the action as `configurationFile`. Renovate
+  // separately auto-discovers *this* file as the repo-level config, so
+  // self-hosted-only fields must stay out of it or they raise config warnings.
+  extends: ["config:recommended"],
+
+  dependencyDashboard: true,
+  timezone: "Europe/Amsterdam", // matches common.timezone in gitops/apps/media-stack/values.yaml
+  schedule: ["before 6am on monday"],
+  prConcurrentLimit: 5,
+  prHourlyLimit: 2,
+  labels: ["renovate"],
+
+  packageRules: [
+    // The ~20 third-party Helm charts pulled inline via `helmCharts:` in
+    // kustomization.yaml (repo: + version:) are picked up automatically by
+    // Renovate's built-in `kustomize` manager — no extra config needed for
+    // detection, just grouping/scheduling below.
+    {
+      matchManagers: ["kustomize"],
+      matchFileNames: ["gitops/infrastructure/**", "gitops/operators/**", "gitops/security/**"],
+      groupName: "cluster infrastructure helm charts",
+    },
+    {
+      matchManagers: ["kustomize"],
+      matchFileNames: ["gitops/apps/**"],
+      groupName: "app helm charts",
+    },
+    // Container image tags declared alongside their `repository:` (chart
+    // defaults in charts/*/values.yaml, plugin images in
+    // gitops/infrastructure/headlamp/values.yaml) are handled by the
+    // built-in `helm-values` manager automatically.
+    {
+      matchManagers: ["helm-values", "custom.regex"],
+      matchFileNames: ["charts/media-stack/values.yaml", "gitops/apps/media-stack/values.yaml"],
+      groupName: "media-stack container images",
+    },
+    {
+      matchManagers: ["github-actions"],
+      groupName: "renovate workflow action versions",
+    },
+  ],
+
+  customManagers: [
+    {
+      // Some app-level overrides (e.g. gitops/apps/media-stack/values.yaml)
+      // set only `tag:` without a sibling `repository:` in the same file —
+      // the repository default lives in charts/*/values.yaml instead, so the
+      // built-in helm-values manager can't resolve a package name on its
+      // own. Annotate those blocks with a hint comment, e.g.:
+      //
+      //   jellyfin:
+      //     # renovate: datasource=docker depName=lscr.io/linuxserver/jellyfin
+      //     image:
+      //       tag: 10.11.11
+      customType: "regex",
+      description: "Docker image tags in app-level values.yaml overrides that lack an adjacent repository:",
+      managerFilePatterns: ["/^gitops\\/apps\\/.+\\/values\\.yaml$/"],
+      matchStrings: [
+        "#\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+) depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>[a-z-]+))?[\\s\\S]*?tag:\\s*[\"']?(?<currentValue>[\\w][\\w.-]*)[\"']?",
+      ],
+    },
+  ],
+}
