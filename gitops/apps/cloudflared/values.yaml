@@ -35,6 +35,11 @@ ingress:
     originRequest:
       httpHostHeader: budget.internal.nulcell.com
       noTLSVerify: true
+  - hostname: wiki.nulcell.com
+    service: https://cilium-gateway-internal.gateway.svc.cluster.local
+    originRequest:
+      httpHostHeader: wiki.internal.nulcell.com
+      noTLSVerify: true
   - hostname: home.nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
     originRequest:
