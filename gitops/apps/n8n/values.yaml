@@ -10,7 +10,7 @@ timezone: Europe/Amsterdam
 
 main:
   count: 1
-  editorBaseUrl: "https://n8n.nulcell.com/"
+  editorBaseUrl: "https://workflow.nulcell.com/"
   # 256Mi/512Mi (carried over from the old chart's stated defaults) crashed in
   # practice: "JavaScript heap out of memory" right around ~256MB. Modern
   # Node auto-sizes its default V8 old-space heap to roughly half the
@@ -30,12 +30,12 @@ main:
   # NODE_OPTIONS caps the V8 heap at 768Mi, leaving ~256Mi of the 1Gi limit
   # for non-heap/native memory instead of trusting cgroup auto-detection.
   extraEnvVars:
-    N8N_HOST: n8n.nulcell.com
+    N8N_HOST: workflow.nulcell.com
     N8N_PROTOCOL: https
     NODE_OPTIONS: "--max-old-space-size=768"
 
 webhook:
-  url: "https://n8n.nulcell.com/"
+  url: "https://workflow.nulcell.com/"
 
 # -- Node configurations for built-in and external npm packages
 nodes:
@@ -114,7 +114,7 @@ worker:
   # Same NODE_OPTIONS reasoning as main: pin the V8 heap explicitly (768Mi of
   # the 1Gi limit) rather than relying on cgroup-based auto-sizing.
   extraEnvVars:
-    N8N_HOST: n8n.nulcell.com
+    N8N_HOST: workflow.nulcell.com
     N8N_PROTOCOL: https
     NODE_OPTIONS: "--max-old-space-size=768"
 

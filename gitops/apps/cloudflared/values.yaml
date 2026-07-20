@@ -20,10 +20,10 @@ tunnelSecrets:
     key: credentials.json
 
 ingress:
-  - hostname: n8n.nulcell.com
+  - hostname: workflow.nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
     originRequest:
-      httpHostHeader: n8n.internal.nulcell.com
+      httpHostHeader: workflow.internal.nulcell.com
       noTLSVerify: true
   - hostname: auth.nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local

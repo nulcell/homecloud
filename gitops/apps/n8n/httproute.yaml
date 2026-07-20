@@ -12,7 +12,7 @@ spec:
       namespace: gateway
       sectionName: https-internal
   hostnames:
-    - n8n.internal.nulcell.com
+    - workflow.internal.nulcell.com
   rules:
     - matches:
         - path: { type: PathPrefix, value: / }
@@ -36,7 +36,7 @@ spec:
       namespace: gateway
       sectionName: http
   hostnames:
-    - n8n.internal.nulcell.com
+    - workflow.internal.nulcell.com
   rules:
     - matches:
         - path: { type: PathPrefix, value: / }
