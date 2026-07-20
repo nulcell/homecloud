@@ -11,18 +11,28 @@ timezone: Europe/Amsterdam
 main:
   count: 1
   editorBaseUrl: "https://n8n.nulcell.com/"
+  # 256Mi/512Mi (carried over from the old chart's stated defaults) crashed in
+  # practice: "JavaScript heap out of memory" right around ~256MB. Modern
+  # Node auto-sizes its default V8 old-space heap to roughly half the
+  # container's cgroup memory limit when not told otherwise, which left main
+  # (UI + API + DB + webhooks) with far too little headroom. Sized up and
+  # pinned NODE_OPTIONS explicitly below instead of relying on that
+  # auto-detection.
   resources:
     requests:
       cpu: 250m
-      memory: 256Mi
-    limits:
       memory: 512Mi
+    limits:
+      memory: 1Gi
   # N8N_HOST/N8N_PROTOCOL aren't first-class chart values (only editorBaseUrl
   # and webhook.url are) — set explicitly so generated links match the old
   # custom chart's behavior instead of falling back to localhost/http.
+  # NODE_OPTIONS caps the V8 heap at 768Mi, leaving ~256Mi of the 1Gi limit
+  # for non-heap/native memory instead of trusting cgroup auto-detection.
   extraEnvVars:
     N8N_HOST: n8n.nulcell.com
     N8N_PROTOCOL: https
+    NODE_OPTIONS: "--max-old-space-size=768"
 
 webhook:
   url: "https://n8n.nulcell.com/"
@@ -63,9 +73,12 @@ worker:
     enabled: true
     minReplicas: 1
     maxReplicas: 10
+  # Same NODE_OPTIONS reasoning as main: pin the V8 heap explicitly (768Mi of
+  # the 1Gi limit) rather than relying on cgroup-based auto-sizing.
   extraEnvVars:
     N8N_HOST: n8n.nulcell.com
     N8N_PROTOCOL: https
+    NODE_OPTIONS: "--max-old-space-size=768"
 
 # Isolate Code-node execution in a task-runner sidecar, matching the previous
 # custom chart's architecture. In worker.mode=queue this sidecar attaches only
