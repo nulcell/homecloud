@@ -1,0 +1,89 @@
+# Overrides for the community-charts outline chart.
+# https://github.com/community-charts/helm-charts/tree/main/charts/outline
+# https://community-charts.github.io/docs/category/outline
+# Everything not listed here keeps the chart's default value.
+
+replicaCount: 1
+
+imagePullSecrets:
+  - name: dockerhub-credentials
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    # cpu: 1000m
+    memory: 1Gi
+
+url: "https://wiki.nulcell.com/"
+
+# secretKey/utilsSecret come from the 1Password-backed outline-secrets
+# Secret (outline-external-secrets.yaml) instead of being auto-generated, so
+# they stay stable across ArgoCD syncs/pod restarts.
+secretKeyExternalSecret:
+  name: outline-secrets
+  key: secret-key
+utilsSecretExternalSecret:
+  name: outline-secrets
+  key: utils-secret
+
+# External PostgreSQL — CNPG cluster `outline-postgres` (postgres-cluster.yaml).
+# CNPG auto-creates a secret named <cluster>-app with keys: username, password.
+postgresql:
+  enabled: false
+externalPostgresql:
+  host: outline-postgres-rw # CNPG read-write service
+  port: 5432
+  username: outline # matches spec.bootstrap.initdb.owner in postgres-cluster.yaml
+  database: outline
+  existingSecret: outline-postgres-app
+  passwordSecretKey: password
+
+# External Redis (unauthenticated, cluster-internal only) — see redis.yaml.
+# externalRedis.password is a fixed non-secret placeholder purely to satisfy
+# the chart's `required` guard on its own auto-generated redis secret; the
+# server has no --requirepass set, so this value is never actually checked.
+redis:
+  enabled: false
+externalRedis:
+  host: outline-redis
+  port: 6379
+  password: "unused-outline-redis-has-no-auth"
+
+# Outline requires an SSO provider — there is no built-in username/password
+# login. Using Authentik (already deployed at auth.nulcell.com) as a generic
+# OIDC provider. authUri/tokenUri/userInfoUri are Authentik's global OAuth2
+# endpoints (not per-application), per https://docs.goauthentik.io/docs/add-secure-apps/providers/oauth2/
+#
+# Before this works you must, in Authentik's admin UI:
+#   1. Create an OAuth2/OpenID Provider named "outline" with redirect URI
+#      https://wiki.nulcell.com/auth/oidc.callback and scopes openid, profile, email.
+#   2. Create an Application using that provider.
+#   3. Put the provider's Client ID below, and its Client Secret into the
+#      "outline-secrets" 1Password item (see outline-external-secrets.yaml).
+auth:
+  oidc:
+    enabled: true
+    clientId: "yVwnT6BaKaERN1fzCdNxRIANTuccUsBmP2cthaR7" # from Authentik's outline OAuth2 provider
+    authUri: "https://auth.nulcell.com/application/o/authorize/"
+    tokenUri: "https://auth.nulcell.com/application/o/token/"
+    userInfoUri: "https://auth.nulcell.com/application/o/userinfo/"
+    usernameClaim: preferred_username
+    displayName: "Authentik"
+    existingSecret:
+      name: outline-secrets
+      clientSecretKey: client-secret
+
+# Local file storage (avatars/attachments) on a Longhorn volume.
+# ReadWriteMany (not the chart's default ReadWriteOnce) because a RollingUpdate
+# briefly runs old and new pods together, which RWO can't satisfy across nodes
+fileStorage:
+  mode: local
+  local:
+    persistence:
+      enabled: true
+      accessModes:
+        - ReadWriteMany
+      storageClass: longhorn
+      size: 10Gi
