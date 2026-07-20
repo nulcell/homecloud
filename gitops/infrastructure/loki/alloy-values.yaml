@@ -25,6 +25,7 @@ alloy:
           "tailscale",
           "uptime-kuma",
           "mariadb",
+          "outline",
           ]
         }
       }
