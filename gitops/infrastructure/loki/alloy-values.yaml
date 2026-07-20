@@ -4,39 +4,28 @@ controller:
 alloy:
   configMap:
     content: |
-      // Discover pods in target namespaces only
+      // Discover pods across all namespaces; infra/system namespaces are
+      // dropped below instead of hand-maintaining an allow-list of every
+      // app namespace here.
       discovery.kubernetes "pods" {
         role = "pod"
-
-        namespaces {
-          names = [
-          "media",
-          "n8n",
-          "authentik",
-          "actual-budget",
-          "cloudflared",
-          "argocd",
-          "external-dns",
-          "cert-manager",
-          "external-secrets",
-          "headlamp",
-          "homarr",
-          "speedtest-tracker",
-          "tailscale",
-          "uptime-kuma",
-          "mariadb",
-          "outline",
-          ]
-        }
       }
 
-      // Relabel: drop completed pods, set Loki labels
+      // Relabel: drop completed pods and infra/system namespaces, set Loki labels
       discovery.relabel "pod_logs" {
         targets = discovery.kubernetes.pods.targets
 
         rule {
           source_labels = ["__meta_kubernetes_pod_phase"]
           regex         = "Succeeded|Failed"
+          action        = "drop"
+        }
+
+        // Kubernetes built-ins, plus this repo's gitops/infrastructure,
+        // gitops/operators, and gitops/security namespaces.
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          regex         = "kube-system|kube-public|kube-node-lease|default|gateway|monitoring|loki|longhorn-system|registry-credentials|cnpg-system|kubevirt|falco|kubescape"
           action        = "drop"
         }
 
