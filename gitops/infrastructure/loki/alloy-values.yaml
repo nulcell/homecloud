@@ -25,7 +25,7 @@ alloy:
         // gitops/operators, and gitops/security namespaces.
         rule {
           source_labels = ["__meta_kubernetes_namespace"]
-          regex         = "kube-system|kube-public|kube-node-lease|default|gateway|monitoring|loki|longhorn-system|registry-credentials|cnpg-system|kubevirt|falco|kubescape"
+          regex         = "kube-system|kube-public|kube-node-lease|monitoring|loki|longhorn-system|cnpg-system|kubevirt|falco|kubescape"
           action        = "drop"
         }
 
