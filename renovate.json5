@@ -49,6 +49,14 @@
       matchManagers: ["github-actions"],
       groupName: "renovate workflow action versions",
     },
+    // .mise.toml pins dev-tool CLI versions (kubectl, helm, argocd, talosctl,
+    // etc.) that are updated manually rather than via Renovate — the built-in
+    // `mise` manager would otherwise open PRs for it automatically.
+    {
+      matchManagers: ["mise"],
+      matchFileNames: [".mise.toml"],
+      enabled: false,
+    },
   ],
 
   customManagers: [
@@ -94,6 +102,28 @@
       matchStrings: [
         "#\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+) depName=(?<depName>\\S+)\\s*\\n\\s*(?:version|appVersion):\\s*[\"']?(?<currentValue>[\\w][\\w.-]*)[\"']?",
       ],
+    },
+    {
+      // Cilium's Helm chart version is pinned as a plain bash variable in the
+      // bootstrap script rather than in a values.yaml/kustomization.yaml, so
+      // neither the kustomize nor helm-values manager can see it.
+      customType: "regex",
+      description: "Cilium Helm chart version pinned in the bootstrap install script",
+      managerFilePatterns: ["/^cluster\\/bootstrap\\/install\\.sh$/"],
+      matchStrings: ["CILIUM_VERSION=\"(?<currentValue>[\\w.-]+)\""],
+      datasourceTemplate: "helm",
+      depNameTemplate: "cilium",
+      registryUrlTemplate: "https://helm.cilium.io",
+    },
+    {
+      // Same situation as Cilium above, for the argo-cd chart.
+      customType: "regex",
+      description: "Argo CD Helm chart version pinned in the bootstrap install script",
+      managerFilePatterns: ["/^cluster\\/bootstrap\\/install\\.sh$/"],
+      matchStrings: ["ARGOCD_VERSION=\"(?<currentValue>[\\w.-]+)\""],
+      datasourceTemplate: "helm",
+      depNameTemplate: "argo-cd",
+      registryUrlTemplate: "https://argoproj.github.io/argo-helm",
     },
   ],
 }
