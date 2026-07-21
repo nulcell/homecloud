@@ -14,4 +14,3 @@ helmCharts:
 resources:
   - namespace.yaml
   - httproute.yaml
-  - hpa.yaml
