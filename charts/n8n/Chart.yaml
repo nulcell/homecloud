@@ -3,9 +3,7 @@ name: n8n
 description: n8n workflow automation tool - Helm Chart
 icon: https://n8n.io/brandguidelines/logo-dark.svg
 type: application
-# renovate: datasource=docker depName=docker.n8n.io/n8nio/n8n
 version: "2.31.4"
-# renovate: datasource=docker depName=docker.n8n.io/n8nio/n8n
 appVersion: "2.31.4"
 sources:
   - https://github.com/nulcell/homecloud
