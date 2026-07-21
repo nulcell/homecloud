@@ -11,7 +11,7 @@ namespace: n8n
 helmCharts:
   - name: n8n
     repo: https://community-charts.github.io/helm-charts
-    version: 1.24.14
+    version: 1.24.15
     releaseName: n8n
     namespace: n8n
     valuesFile: values.yaml
