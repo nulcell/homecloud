@@ -57,6 +57,17 @@
       matchFileNames: [".mise.toml"],
       enabled: false,
     },
+    // linuxserver/qbittorrent publishes clean `X.Y.Z` release tags alongside
+    // noisy variants (latest, arm64v8-*, libtorrentv1-*, and compound
+    // "<qbt>_v<libtorrent>-ls<build>" tags). Renovate's default `docker`
+    // versioning tries to sort all of them together and can surface a bogus
+    // "newer" version out of the compound tags (e.g. proposing "v20", which
+    // isn't a real tag). Restrict comparison to plain X.Y.Z tags.
+    {
+      matchDatasources: ["docker"],
+      matchPackageNames: ["lscr.io/linuxserver/qbittorrent"],
+      versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$",
+    },
   ],
 
   customManagers: [
