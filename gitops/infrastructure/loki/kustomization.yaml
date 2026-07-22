@@ -5,13 +5,13 @@ namespace: loki
 helmCharts:
   - name: loki
     repo: https://grafana-community.github.io/helm-charts
-    version: 18.5.1
+    version: 18.5.2
     releaseName: loki
     namespace: loki
     valuesFile: loki-values.yaml
   - name: alloy
     repo: https://grafana.github.io/helm-charts
-    version: 1.10.1
+    version: 1.11.0
     releaseName: alloy
     namespace: loki
     valuesFile: alloy-values.yaml
