@@ -106,7 +106,7 @@ servarr:
 prowlarr:
   # renovate: datasource=docker depName=lscr.io/linuxserver/prowlarr
   image:
-    tag: 2.4.0
+    tag: 2.5.2
   gateway:
     hostname: prowlarr.nulcell.com
 
