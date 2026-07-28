@@ -72,7 +72,7 @@ seerr:
   replicas: 1
   # renovate: datasource=docker depName=ghcr.io/seerr-team/seerr
   image:
-    tag: v3.3.0
+    tag: v3.4.0
   gateway:
     hostname: seerr.nulcell.com
 
