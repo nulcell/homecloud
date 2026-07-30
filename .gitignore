@@ -109,3 +109,6 @@ age-keys.txt
 # AI
 .ai/
 .claude/
+
+# Other
+.DS_Store

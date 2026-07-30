@@ -50,6 +50,17 @@ ingress:
     originRequest:
       httpHostHeader: status.internal.nulcell.com
       noTLSVerify: true
+  # Public portfolio site. Both the apex and www serve the same origin.
+  - hostname: nulcell.com
+    service: https://cilium-gateway-internal.gateway.svc.cluster.local
+    originRequest:
+      httpHostHeader: portfolio.internal.nulcell.com
+      noTLSVerify: true
+  - hostname: www.nulcell.com
+    service: https://cilium-gateway-internal.gateway.svc.cluster.local
+    originRequest:
+      httpHostHeader: portfolio.internal.nulcell.com
+      noTLSVerify: true
   - service: http_status:404
 
 imagePullSecrets:

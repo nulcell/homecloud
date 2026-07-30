@@ -1,0 +1,18 @@
+Portfolio has been deployed.
+
+Image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+
+{{- if .Values.gateway.enabled }}
+Origin hostname: https://{{ .Values.gateway.hostname }}
+
+This is the in-cluster origin, not the published address. Public hostnames are
+served by the cloudflared tunnel, which rewrites the Host header to the above.
+{{- else }}
+Gateway routing is disabled. Configure your own HTTPRoute or cloudflared tunnel to expose the service.
+
+Internal service: {{ .Values.service.name }}.{{ include "portfolio.namespace" . }}.svc.cluster.local:{{ .Values.service.port }}
+{{- end }}
+
+The container serves a read-only root filesystem; nginx scratch space is an
+emptyDir at /tmp. Probes hit /health — that location must exist in the image's
+nginx config or pods will never become ready.

@@ -29,7 +29,7 @@ Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap steps: [`clu
 | [`gitops/root/`](gitops/root/) | Root Application + three ApplicationSets (`infrastructure`, `security`, `apps`) ordered by sync wave. |
 | [`gitops/infrastructure/`](gitops/infrastructure/) | Base platform — every other layer can assume these are up: cert-manager, cnpg, external-dns, gateway, infra-app-httproutes, kube-prometheus-stack, kubevirt, longhorn, metrics-server, sops-secrets. Operator-only directories install CRDs the upper layers consume. |
 | [`gitops/security/`](gitops/security/) | Security stack — Cilium Tetragon (eBPF runtime observability). OPA will land alongside as a sibling dir. |
-| [`gitops/apps/`](gitops/apps/) | Workloads (`media-stack`, `n8n`). |
+| [`gitops/apps/`](gitops/apps/) | Workloads (`actual-budget`, `authentik`, `cloudflared`, `homarr`, `media-stack`, `n8n`, `outline`, `portfolio`, `speedtest-tracker`, `uptime-kuma`). |
 | [`gitops/deprecated/`](gitops/deprecated/) | Retired manifests — never reference from an active ApplicationSet. |
 | [`charts/`](charts/) | Helm umbrella charts referenced via `chartHome: ../../../charts` from `gitops/apps/*`. |
 | [`manifests/`](manifests/) | Ad-hoc / one-shot manifests applied manually — NOT reconciled by ArgoCD. |
@@ -44,6 +44,7 @@ Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap steps: [`clu
 - **New workloads**: umbrella Helm chart under [`charts/<name>/`](charts/) (chart depends on upstream, vendored `.tgz`, `values.yaml` overrides), then a directory under [`gitops/apps/<name>/`](gitops/apps/) with a `kustomization.yaml` referencing the chart via `helmGlobals.chartHome: ../../../charts`. The `apps` ApplicationSet picks it up on the next reconcile.
 - **Ad-hoc / one-shot manifests** go in [`manifests/`](manifests/) and are applied manually.
 - **Helm chart values**: prefer Gateway API `HTTPRoute` over Ingress; `storageClassName: longhorn`; security context `runAsNonRoot: true` with explicit `runAsUser`/`runAsGroup`; always set both `resources.requests` and `resources.limits`.
+- **Publishing an app to the internet**: apps never bind a public hostname directly. Give the `HTTPRoute` an origin hostname on the `internal` Gateway's `https-internal` listener (`<app>.internal.nulcell.com`, covered by the wildcard cert), then add the public hostname to `ingress` in [`gitops/apps/cloudflared/values.yaml`](gitops/apps/cloudflared/values.yaml) with `originRequest.httpHostHeader` set to that origin hostname. Cloudflare terminates public TLS; the PostSync job in that chart registers the tunnel DNS record for every `hostname` in the list.
 - **Talos changes** go through [`cluster/talos/patches/`](cluster/talos/patches/) — never edit `generated/` directly. System extensions (iscsi-tools, util-linux-tools, microcode, amdgpu) bake into the image at install time; adding them later needs an OS upgrade — flag this on any change.
 - **Secrets**: `.enc.yaml` files only (per `.sops.yaml`'s `path_regex`); `.env` files generated locally from `.env.example` via `op inject` and gitignored; never commit a `.env` or raw token.
 - **Shell scripts** target Ubuntu 24.04 LTS unless otherwise noted; idempotent where possible.

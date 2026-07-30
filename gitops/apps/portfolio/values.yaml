@@ -1,0 +1,31 @@
+replicaCount: 3
+
+image:
+  repository: nullcell/portfolio
+
+imagePullSecrets:
+  - name: dockerhub-credentials
+
+# Origin route only. nulcell.com and www.nulcell.com are published by the
+# cloudflared tunnel (gitops/apps/cloudflared/values.yaml), which rewrites the
+# Host header to this hostname before forwarding to the internal gateway.
+gateway:
+  enabled: true
+  hostname: portfolio.internal.nulcell.com
+  parentRef:
+    name: internal
+    namespace: gateway
+    sectionName: https-internal
+    httpSectionName: http
+  httpRedirect: true
+
+# Single-node cluster today, so ScheduleAnyway — DoNotSchedule would leave the
+# second replica pending until the control plane grows to 3 nodes.
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: portfolio
+        app.kubernetes.io/instance: portfolio
