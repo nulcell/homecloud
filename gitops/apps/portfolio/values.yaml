@@ -6,6 +6,14 @@ image:
 imagePullSecrets:
   - name: dockerhub-credentials
 
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    # cpu: 200m
+    memory: 256Mi
+
 # Origin route only. nulcell.com and www.nulcell.com are published by the
 # cloudflared tunnel (gitops/apps/cloudflared/values.yaml), which rewrites the
 # Host header to this hostname before forwarding to the internal gateway.
