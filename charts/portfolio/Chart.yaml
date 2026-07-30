@@ -3,9 +3,9 @@ name: portfolio
 description: nulcell.com — personal portfolio site (static Astro build served by nginx)
 type: application
 # renovate: datasource=docker depName=nullcell/portfolio
-version: "1.0.2"
+version: "1.0.3"
 # renovate: datasource=docker depName=nullcell/portfolio
-appVersion: "1.0.2"
+appVersion: "1.0.3"
 sources:
   - https://github.com/nulcell/homecloud
   - https://github.com/nulcell/portfolio
