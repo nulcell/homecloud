@@ -24,7 +24,7 @@ vpn:
   enabled: true
   # renovate: datasource=docker depName=qmcgaw/gluetun
   image:
-    tag: v3.41.1
+    tag: v3.41.3
   provider: nordvpn
   # Switch between openvpn / wireguard freely — both sets of credentials live
   # in the same Secret, so flipping type and resyncing is enough.
@@ -72,7 +72,7 @@ seerr:
   replicas: 1
   # renovate: datasource=docker depName=ghcr.io/seerr-team/seerr
   image:
-    tag: v3.4.0
+    tag: v3.4.1
   gateway:
     hostname: seerr.nulcell.com
 
