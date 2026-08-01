@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v7.0.1
 
       - name: Self-hosted Renovate
-        uses: renovatebot/github-action@v46.1.21
+        uses: renovatebot/github-action@v46.2.0
         with:
           configurationFile: .github/renovate-global.json5
           token: "${{ secrets.RENOVATE_TOKEN }}"
@@ -35,4 +35,5 @@ jobs:
           # RENOVATE_-prefixed vars reach the container via the action's default
           # env allowlist; anything else would need an `env-regex` override.
           RENOVATE_HOST_RULES: >-
-            [{"hostType":"docker","matchHost":"docker.io","username":"${{ secrets.DOCKERHUB_USERNAME }}","password":"${{ secrets.DOCKERHUB_TOKEN }}"}]
+            [{"hostType":"docker","matchHost":"docker.io","username":"${{ secrets.DOCKERHUB_USERNAME }}","password":"${{
+            secrets.DOCKERHUB_TOKEN }}"}]
