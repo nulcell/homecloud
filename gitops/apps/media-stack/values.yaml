@@ -116,12 +116,3 @@ qbittorrent:
     tag: 5.2.3
   gateway:
     hostname: qbittorrent.nulcell.com
-
-tdarr:
-  enabled: false
-  # All cluster nodes carry an AMD iGPU exposed at /dev/dri, so no nodeName
-  # pin — tdarr can land anywhere and use VAAPI from whichever node hosts it.
-  hwAccel:
-    enabled: true
-  gateway:
-    hostname: tdarr.nulcell.com

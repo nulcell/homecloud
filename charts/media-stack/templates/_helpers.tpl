@@ -119,7 +119,7 @@ The shared config + data volumes block, referenced by every pod.
 
 {{/*
 hostPath volume for the iGPU render device(s) (DRM / VAAPI / QSV). Mounted
-into pods that do hardware-accelerated video work (jellyfin, tdarr). Pass
+into pods that do hardware-accelerated video work (jellyfin). Pass
 the per-app hwAccel block as the context.
 Usage: {{ include "mediaStack.hwAccelVolume" .Values.jellyfin.hwAccel | nindent 8 }}
 */}}

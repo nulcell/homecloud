@@ -288,48 +288,6 @@ prowlarr:
   gateway:
     hostname: ""
 
-# ---------- Tdarr (transcode manager) ----------
-# Web UI + internal node in a single pod (Tdarr's "internalNode" mode). The
-# node is what actually runs ffmpeg, so it's the one that needs the iGPU.
-# Library paths are configured in Tdarr's UI; mount the media data at /media
-# (Tdarr docs convention) and an emptyDir at /temp for in-flight transcodes.
-tdarr:
-  enabled: false
-  replicas: 1
-  # StatefulSet pins config/db identity (tdarr-0) — important for the queue/db.
-  workloadKind: StatefulSet
-  image:
-    repository: ghcr.io/haveagitgat/tdarr
-    tag: latest
-    pullPolicy: IfNotPresent
-  # Pin to the iGPU-bearing node when hwAccel below is enabled.
-  nodeName: ""
-  hwAccel:
-    enabled: false
-    devicePath: /dev/dri
-    supplementalGroups: []
-  service:
-    type: ClusterIP
-    ports:
-      web: 8265 # Web UI
-      server: 8266 # Server <-> Node coordination port
-  # FFmpeg shipped with the image; "7" is current. Pin if you need stability.
-  ffmpegVersion: "7"
-  # In-progress transcode scratch space. EmptyDir = scoped to the pod lifetime
-  # (in-flight jobs restart from source on pod restart, which is fine). Switch
-  # to a PVC if you need cache durability.
-  cache:
-    sizeLimit: 50Gi
-  resources:
-    requests:
-      cpu: 500m
-      memory: 1Gi
-    limits:
-      # cpu: 4000m
-      memory: 4Gi
-  gateway:
-    hostname: "" # e.g. tdarr.example.com
-
 # ---------- qBittorrent (torrent client) ----------
 qbittorrent:
   enabled: true
