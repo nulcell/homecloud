@@ -137,8 +137,11 @@ gateway:
     name: default
     namespace: gateway
     sectionName: https # HTTPS listener on the parent Gateway
-    httpSectionName: http # used by the redirect route below
-  httpRedirect: true # render a second HTTPRoute that 301s :80 → :443
+    httpSectionName: http # only used when httpRedirect is true
+  # Off by default: the cluster's gateway app owns a catch-all HTTP→HTTPS
+  # redirect covering every host. Set true only against a Gateway that has no
+  # such route — a hostname-scoped redirect still wins over the catch-all.
+  httpRedirect: false
 
 # Shared HMAC secret between n8n and the task-runner. Create the Secret
 # externally (e.g. SOPS-encrypted) with a key matching `secretKey` below.

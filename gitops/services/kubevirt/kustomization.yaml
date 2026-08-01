@@ -8,4 +8,4 @@ kind: Kustomization
 resources:
   - kubevirt.yaml
   - cdi.yaml
-  # - gateway-kubevirt-manager.yaml
+  # - httproute.yaml

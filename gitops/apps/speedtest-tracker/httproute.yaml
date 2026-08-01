@@ -24,28 +24,3 @@ spec:
           name: speedtest-tracker
           port: 80
           weight: 1
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: speedtest-tracker-http-redirect
-  namespace: speedtest-tracker
-spec:
-  parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: internal
-      namespace: gateway
-      sectionName: http
-  hostnames:
-    - speedtest.nulcell.com
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      filters:
-        - type: RequestRedirect
-          requestRedirect:
-            scheme: https
-            statusCode: 301
