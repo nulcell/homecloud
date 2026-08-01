@@ -52,6 +52,17 @@
       ],
       groupName: "media-stack container images",
     },
+    // Some linuxserver.io images carry stale 2021–2022 tags that are *not*
+    // application versions — base-image and OS releases that leaked into the
+    // tag namespace. They sort above the real version, so Renovate reads them
+    // as major bumps.
+    {
+      matchDatasources: ["docker"],
+      matchPackageNames: ["lscr.io/linuxserver/qbittorrent"],
+      // Headroom for real majors 6–9; excludes 14.3.9 and 20.04.1. Revisit if
+      // qBittorrent ever approaches 10.
+      allowedVersions: "<10",
+    },
     {
       matchManagers: ["github-actions"],
       groupName: "renovate workflow action versions",
