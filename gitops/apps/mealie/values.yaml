@@ -8,7 +8,7 @@ imagePullSecrets:
 
 resources:
   requests:
-    cpu: 100m
+    cpu: 250m
     memory: 512Mi
   limits:
     # cpu: 1000m
@@ -46,7 +46,7 @@ mealie:
   allowPasswordLogin: true
 
   # Postgres backs the database, so uvicorn can run more than one worker.
-  uvicornWorkers: 3
+  uvicornWorkers: 1
 
   oidc:
     # Flip to true after finishing steps 1-4 below. Left off until then so the
