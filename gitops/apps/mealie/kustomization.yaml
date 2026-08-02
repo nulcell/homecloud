@@ -15,4 +15,4 @@ helmCharts:
 resources:
   - namespace.yaml
   - postgres-cluster.yaml
-  # - mealie-external-secrets.yaml
+  - mealie-external-secrets.yaml

@@ -43,7 +43,7 @@ mealie:
   # Still true so there is a way in while the Authentik provider is being set
   # up, and a way back in if it ever breaks. Flip to false once OIDC logins are
   # confirmed working — see step 5 below.
-  allowPasswordLogin: true
+  allowPasswordLogin: false
 
   # Postgres backs the database, so uvicorn can run more than one worker.
   uvicornWorkers: 1
@@ -51,12 +51,12 @@ mealie:
   oidc:
     # Flip to true after finishing steps 1-4 below. Left off until then so the
     # first sync doesn't come up pointing at a provider that doesn't exist yet.
-    enabled: false
+    enabled: true
     providerName: Authentik
     # Authentik's per-application discovery document. <slug> is the application
     # slug, not the provider name.
     configurationUrl: https://auth.nulcell.com/application/o/mealie/.well-known/openid-configuration
-    clientId: "" # from Authentik's mealie OAuth2 provider
+    clientId: "Wfg1gOEoYaDbFr6CgaQjSwODeQe5t53ZZkzcWP4P" # from Authentik's mealie OAuth2 provider
     existingSecret: mealie-secrets
     secretClientSecretKey: oidc-client-secret
     # Provision a Mealie account on first login, restricted to userGroup.
@@ -70,7 +70,7 @@ mealie:
     rememberMe: true
     # Keep Mealie's own login page reachable while allowPasswordLogin is true;
     # turning both around at once would leave no local fallback.
-    autoRedirect: false
+    autoRedirect: true
 
 # Authentik setup, before flipping mealie.oidc.enabled to true:
 #   1. Create an OAuth2/OpenID provider named "mealie" with a signing key and
