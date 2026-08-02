@@ -14,7 +14,12 @@ Database: {{ .Values.database.type }}
 {{- if eq .Values.database.type "postgres" }} ({{ .Values.database.postgres.host }}:{{ .Values.database.postgres.port }}/{{ .Values.database.postgres.name }})
 {{- end }}
 
+{{ if .Values.persistence.enabled -}}
 Recipe images and backups persist at /app/data (PVC: mealie-data).
+{{- else -}}
+WARNING: persistence is off. /app/data is an emptyDir, so uploaded images are
+lost on every restart and the regenerated .secret logs every user out.
+{{- end }}
 
 {{- if .Values.mealie.oidc.enabled }}
 

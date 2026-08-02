@@ -26,10 +26,10 @@ gateway:
     sectionName: https-internal
 
 persistence:
-  enabled: false
+  enabled: true
   storageClass: longhorn
-  accessMode: ReadWriteOnce
-  size: 10Gi
+  accessMode: ReadWriteMany
+  size: 1Gi
 
 mealie:
   # The public hostname, not the gateway origin — Mealie builds notification

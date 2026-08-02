@@ -98,11 +98,16 @@ gateway:
   # such route — a hostname-scoped redirect still wins over the catch-all.
   httpRedirect: false
 
-# Recipe images, backups and (when database.type=sqlite) the database itself.
+# Recipe images, backups, the .secret token-signing key, and (when
+# database.type=sqlite) the database itself.
+# Disabling this does not remove the /app/data mount — it downgrades it to an
+# emptyDir, since the container cannot start without one. Postgres holds recipe
+# text, but uploaded images are lost on restart and a regenerated .secret logs
+# every user out, so leave this on outside of throwaway testing.
 persistence:
   enabled: true
   storageClass: longhorn
-  accessMode: ReadWriteOnce
+  accessMode: ReadWriteOnce # Change to ReadWriteMany if multiple pods are needed
   size: 10Gi
 
 # Application settings. Names map 1:1 onto the upstream env vars documented at

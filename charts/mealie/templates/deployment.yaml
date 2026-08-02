@@ -189,22 +189,27 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
-          {{- if .Values.persistence.enabled }}
           volumeMounts:
             - mountPath: /app/data
               name: data
-          {{- end }}
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.persistence.enabled }}
+      # /app/data always needs a mount, persistent or not. The image ships it
+      # root-owned and only fixes that by chowning as root at startup, which
+      # the entrypoint skips when it is already non-root — so unmounted it is
+      # unwritable and Mealie dies writing .secret. A mounted volume picks up
+      # fsGroup and stays writable either way.
       volumes:
         - name: data
+          {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
             claimName: mealie-data
-      {{- end }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
