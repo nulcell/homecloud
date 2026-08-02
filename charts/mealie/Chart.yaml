@@ -1,0 +1,23 @@
+apiVersion: v2
+name: mealie
+description: Mealie - A self-hosted recipe manager and meal planner
+icon: https://docs.mealie.io/assets/img/favicon.png
+type: application
+# Chart version does not mirror appVersion here (unlike the other local charts):
+# Mealie's image tags carry a leading "v", which is not a valid Helm chart
+# version. Bump by hand when the templates change.
+version: "1.0.0"
+# renovate: datasource=docker depName=ghcr.io/mealie-recipes/mealie
+appVersion: "v3.22.0"
+sources:
+  - https://github.com/nulcell/homecloud
+  - https://github.com/mealie-recipes/mealie
+keywords:
+  - recipes
+  - meal-planner
+  - shopping-list
+  - kitchen
+home: https://mealie.io
+maintainers:
+  - name: Salimon Ayanleye
+    email: cloud@nulcell.com

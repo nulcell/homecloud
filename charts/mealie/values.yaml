@@ -1,0 +1,208 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/mealie-recipes/mealie
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+
+# Mealie holds an open connection to its data volume, so a rolling update would
+# leave two pods contending for the same ReadWriteOnce PVC. Recreate instead.
+updateStrategy:
+  type: Recreate
+podAnnotations: {}
+podLabels: {}
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  # Mealie writes scraped recipe images and its NLTK cache outside /app/data.
+  readOnlyRootFilesystem: false
+  runAsUser: 1000
+  runAsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+  capabilities:
+    drop:
+      - ALL
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+  fsGroup: 1000
+
+# Upstream recommends capping Mealie at ~1000M; idle usage grows without it.
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# Mealie's own healthcheck hits /api/app/about, which needs no auth.
+# First boot runs Alembic migrations and seeds the recipe data, so the startup
+# probe carries the slow path (up to 5m) and liveness stays tight afterwards.
+startupProbe:
+  httpGet:
+    path: /api/app/about
+    port: 9000
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
+
+livenessProbe:
+  httpGet:
+    path: /api/app/about
+    port: 9000
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/app/about
+    port: 9000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+service:
+  type: ClusterIP
+  name: mealie
+  port: 9000
+
+# Gateway API HTTPRoute config.
+# Set gateway.enabled=false to omit routing (e.g. when cloudflared manages ingress).
+gateway:
+  enabled: false
+  hostname: recipes.example.com
+  parentRef:
+    name: external
+    namespace: gateway
+    sectionName: https
+    httpSectionName: http # only used when httpRedirect is true
+  # Off by default: the cluster's gateway app owns a catch-all HTTP→HTTPS
+  # redirect covering every host. Set true only against a Gateway that has no
+  # such route — a hostname-scoped redirect still wins over the catch-all.
+  httpRedirect: false
+
+# Recipe images, backups and (when database.type=sqlite) the database itself.
+persistence:
+  enabled: true
+  storageClass: longhorn
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+# Application settings. Names map 1:1 onto the upstream env vars documented at
+# https://docs.mealie.io/documentation/getting-started/installation/backend-config/
+mealie:
+  # Public URL Mealie builds notification and OIDC callback links from. Set this
+  # to the hostname users actually type, which behind cloudflared is the public
+  # name — not the gateway origin hostname.
+  baseUrl: http://localhost:8080
+  timezone: UTC
+  logLevel: info
+  # Names of the group/household created on first boot. Changing them later has
+  # no effect — Mealie only reads these when seeding an empty database.
+  defaultGroup: Home
+  defaultHousehold: Family
+  # Local time of day (HH:MM) for daily server tasks: meal-plan rollover,
+  # scheduled notifications, expired-token cleanup.
+  dailyScheduleTime: "23:45"
+  # Serve /docs and /openapi.json. Off by default here (upstream defaults to on)
+  # since this chart assumes a publicly reachable instance.
+  apiDocs: false
+  # Allow account creation without an invite token. Keep false and invite users
+  # from the admin UI, or provision them through OIDC below.
+  allowSignup: false
+  # Show the username/password fields on the login page. Safe to turn off only
+  # once OIDC is confirmed working, otherwise there is no way back in.
+  allowPasswordLogin: true
+  # Hours a login token stays valid.
+  tokenTime: 48
+  # Number of uvicorn workers. Above 1 needs database.type=postgres — the
+  # workers would otherwise contend for the same SQLite file.
+  uvicornWorkers: 1
+
+  security:
+    maxLoginAttempts: 5
+    userLockoutTime: 24
+    # Comma-separated hosts allowed to embed recipes in an iframe.
+    allowedIframeHosts: ""
+
+  # OpenID Connect. Mealie derives its callback from baseUrl above, so that must
+  # be the public hostname before this will work.
+  oidc:
+    enabled: false
+    # Label on the SSO button.
+    providerName: OAuth
+    configurationUrl: ""
+    clientId: ""
+    # Client secret, read from an existing Secret (e.g. an ExternalSecret).
+    existingSecret: ""
+    secretClientSecretKey: oidc-client-secret
+    # Create a Mealie account on first successful login. With userGroup set,
+    # only members of that group can get one.
+    signupEnabled: true
+    # Require the provider to assert email_verified before letting a user in.
+    requiresEmailVerification: true
+    # Claim carrying group membership, and the groups gating access/admin.
+    # Leave the groups empty to let any authenticated user in as a normal user.
+    groupsClaim: groups
+    userGroup: ""
+    adminGroup: ""
+    # Skip Mealie's login page and go straight to the provider.
+    autoRedirect: false
+    rememberMe: false
+    userClaim: email
+    nameClaim: name
+
+  # SMTP, used for invitation links, password resets and notifications.
+  smtp:
+    enabled: false
+    host: ""
+    port: 587
+    fromName: Mealie
+    fromEmail: ""
+    authStrategy: TLS # TLS, SSL or NONE
+    user: ""
+    existingSecret: ""
+    secretPasswordKey: smtp-password
+
+  # Escape hatch for the settings this chart does not model: LDAP_*, THEME_*,
+  # SCRAPER_*, OPENAI_*. Keys are env var names, values are strings.
+  extraEnv: {}
+
+# Database backend: "sqlite" (upstream default, lives on the PVC) or "postgres".
+# https://docs.mealie.io/documentation/getting-started/installation/postgres/
+database:
+  type: sqlite
+  postgres:
+    host: ""
+    port: 5432
+    name: mealie
+    # CNPG creates a secret named <cluster>-app with keys: username, password.
+    existingSecret: ""
+    secretUsernameKey: username
+    secretPasswordKey: password
+
+commonAnnotations: {}
+priorityClassName: ""
+hostNetwork: false
+dnsPolicy: ClusterFirst
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

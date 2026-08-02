@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: mealie
+
+helmGlobals:
+  chartHome: ../../../charts
+
+helmCharts:
+  - name: mealie
+    releaseName: mealie
+    namespace: mealie
+    valuesFile: values.yaml
+    includeCRDs: false
+
+resources:
+  - namespace.yaml
+  - postgres-cluster.yaml
+  # - mealie-external-secrets.yaml

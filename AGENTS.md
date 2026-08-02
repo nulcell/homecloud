@@ -29,7 +29,7 @@ Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap steps: [`clu
 | [`gitops/root/`](gitops/root/) | Root Application + three ApplicationSets (`infrastructure`, `security`, `apps`) ordered by sync wave. |
 | [`gitops/infrastructure/`](gitops/infrastructure/) | Base platform — every other layer can assume these are up: cert-manager, cnpg, external-dns, gateway, infra-app-httproutes, kube-prometheus-stack, kubevirt, longhorn, metrics-server, sops-secrets. Operator-only directories install CRDs the upper layers consume. |
 | [`gitops/security/`](gitops/security/) | Security stack — Cilium Tetragon (eBPF runtime observability). OPA will land alongside as a sibling dir. |
-| [`gitops/apps/`](gitops/apps/) | Workloads (`actual-budget`, `authentik`, `cloudflared`, `homarr`, `media-stack`, `n8n`, `outline`, `portfolio`, `speedtest-tracker`, `uptime-kuma`). |
+| [`gitops/apps/`](gitops/apps/) | Workloads (`actual-budget`, `authentik`, `cloudflared`, `homarr`, `mealie`, `media-stack`, `n8n`, `outline`, `portfolio`, `speedtest-tracker`, `uptime-kuma`). |
 | [`gitops/deprecated/`](gitops/deprecated/) | Retired manifests — never reference from an active ApplicationSet. |
 | [`charts/`](charts/) | Helm umbrella charts referenced via `chartHome: ../../../charts` from `gitops/apps/*`. |
 | [`manifests/`](manifests/) | Ad-hoc / one-shot manifests applied manually — NOT reconciled by ArgoCD. |

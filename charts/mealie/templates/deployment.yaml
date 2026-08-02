@@ -1,0 +1,219 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  namespace: {{ include "mealie.namespace" . }}
+  labels:
+    {{- include "mealie.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "mealie.selectorLabels" . | nindent 6 }}
+  {{- if .Values.updateStrategy }}
+  strategy:
+    {{- toYaml .Values.updateStrategy | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "mealie.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.hostNetwork }}
+      hostNetwork: {{ .Values.hostNetwork }}
+      {{- end }}
+      {{- if .Values.dnsPolicy }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      {{- end }}
+      enableServiceLinks: false
+      serviceAccountName: {{ include "mealie.serviceAccountName" . }}
+      containers:
+        - name: mealie
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            # The image entrypoint only drops privileges when started as root.
+            # Started non-root it keeps the uid it was given, so PUID/PGID are
+            # derived from the security context to keep the two from drifting.
+            - name: PUID
+              value: {{ .Values.containerSecurityContext.runAsUser | default 911 | quote }}
+            - name: PGID
+              value: {{ .Values.containerSecurityContext.runAsGroup | default 911 | quote }}
+            - name: TZ
+              value: {{ .Values.mealie.timezone | quote }}
+            - name: BASE_URL
+              value: {{ .Values.mealie.baseUrl | quote }}
+            - name: API_PORT
+              value: {{ .Values.service.port | quote }}
+            - name: API_DOCS
+              value: {{ .Values.mealie.apiDocs | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.mealie.logLevel | quote }}
+            - name: DEFAULT_GROUP
+              value: {{ .Values.mealie.defaultGroup | quote }}
+            - name: DEFAULT_HOUSEHOLD
+              value: {{ .Values.mealie.defaultHousehold | quote }}
+            - name: DAILY_SCHEDULE_TIME
+              value: {{ .Values.mealie.dailyScheduleTime | quote }}
+            - name: ALLOW_SIGNUP
+              value: {{ .Values.mealie.allowSignup | quote }}
+            - name: ALLOW_PASSWORD_LOGIN
+              value: {{ .Values.mealie.allowPasswordLogin | quote }}
+            - name: TOKEN_TIME
+              value: {{ .Values.mealie.tokenTime | quote }}
+            - name: UVICORN_WORKERS
+              value: {{ .Values.mealie.uvicornWorkers | quote }}
+            - name: SECURITY_MAX_LOGIN_ATTEMPTS
+              value: {{ .Values.mealie.security.maxLoginAttempts | quote }}
+            - name: SECURITY_USER_LOCKOUT_TIME
+              value: {{ .Values.mealie.security.userLockoutTime | quote }}
+            - name: ALLOWED_IFRAME_HOSTS
+              value: {{ .Values.mealie.security.allowedIframeHosts | quote }}
+            {{- if eq .Values.database.type "postgres" }}
+            - name: DB_ENGINE
+              value: postgres
+            - name: POSTGRES_SERVER
+              value: {{ .Values.database.postgres.host | quote }}
+            - name: POSTGRES_PORT
+              value: {{ .Values.database.postgres.port | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.database.postgres.name | quote }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.postgres.existingSecret }}
+                  key: {{ .Values.database.postgres.secretUsernameKey }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.postgres.existingSecret }}
+                  key: {{ .Values.database.postgres.secretPasswordKey }}
+            {{- else }}
+            - name: DB_ENGINE
+              value: sqlite
+            {{- end }}
+            {{- with .Values.mealie.oidc }}
+            {{- if .enabled }}
+            - name: OIDC_AUTH_ENABLED
+              value: "true"
+            - name: OIDC_PROVIDER_NAME
+              value: {{ .providerName | quote }}
+            - name: OIDC_CONFIGURATION_URL
+              value: {{ required "mealie.oidc.configurationUrl is required when OIDC is enabled" .configurationUrl | quote }}
+            - name: OIDC_CLIENT_ID
+              value: {{ required "mealie.oidc.clientId is required when OIDC is enabled" .clientId | quote }}
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "mealie.oidc.existingSecret is required when OIDC is enabled" .existingSecret }}
+                  key: {{ .secretClientSecretKey }}
+            - name: OIDC_SIGNUP_ENABLED
+              value: {{ .signupEnabled | quote }}
+            - name: OIDC_REQUIRES_EMAIL_VERIFICATION
+              value: {{ .requiresEmailVerification | quote }}
+            - name: OIDC_GROUPS_CLAIM
+              value: {{ .groupsClaim | quote }}
+            {{- with .userGroup }}
+            - name: OIDC_USER_GROUP
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .adminGroup }}
+            - name: OIDC_ADMIN_GROUP
+              value: {{ . | quote }}
+            {{- end }}
+            - name: OIDC_AUTO_REDIRECT
+              value: {{ .autoRedirect | quote }}
+            - name: OIDC_REMEMBER_ME
+              value: {{ .rememberMe | quote }}
+            - name: OIDC_USER_CLAIM
+              value: {{ .userClaim | quote }}
+            - name: OIDC_NAME_CLAIM
+              value: {{ .nameClaim | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with .Values.mealie.smtp }}
+            {{- if .enabled }}
+            - name: SMTP_HOST
+              value: {{ .host | quote }}
+            - name: SMTP_PORT
+              value: {{ .port | quote }}
+            - name: SMTP_FROM_NAME
+              value: {{ .fromName | quote }}
+            - name: SMTP_FROM_EMAIL
+              value: {{ .fromEmail | quote }}
+            - name: SMTP_AUTH_STRATEGY
+              value: {{ .authStrategy | quote }}
+            {{- if ne .authStrategy "NONE" }}
+            - name: SMTP_USER
+              value: {{ .user | quote }}
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "mealie.smtp.existingSecret is required unless authStrategy is NONE" .existingSecret }}
+                  key: {{ .secretPasswordKey }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- range $key, $value := .Values.mealie.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: http
+              protocol: TCP
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - mountPath: /app/data
+              name: data
+          {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mealie-data
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

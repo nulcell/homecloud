@@ -1,0 +1,104 @@
+# Overrides for the local mealie chart (charts/mealie/).
+# Everything not listed here keeps the chart's default value.
+
+replicaCount: 1
+
+imagePullSecrets:
+  - name: dockerhub-credentials
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    # cpu: 1000m
+    memory: 1Gi
+
+# Origin route only. recipes.nulcell.com is published by the cloudflared tunnel
+# (gitops/apps/cloudflared/values.yaml), which rewrites the Host header to this
+# hostname before forwarding to the internal gateway.
+gateway:
+  enabled: true
+  hostname: recipes.internal.nulcell.com
+  parentRef:
+    name: internal
+    namespace: gateway
+    sectionName: https-internal
+
+persistence:
+  enabled: false
+  storageClass: longhorn
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+mealie:
+  # The public hostname, not the gateway origin — Mealie builds notification
+  # links and the OIDC callback from this.
+  baseUrl: https://recipes.nulcell.com
+  timezone: Europe/Amsterdam
+
+  # Signup without an invite token stays off: accounts come from Authentik via
+  # OIDC below, or from an admin invite in Settings → Users.
+  allowSignup: false
+  # Still true so there is a way in while the Authentik provider is being set
+  # up, and a way back in if it ever breaks. Flip to false once OIDC logins are
+  # confirmed working — see step 5 below.
+  allowPasswordLogin: true
+
+  # Postgres backs the database, so uvicorn can run more than one worker.
+  uvicornWorkers: 3
+
+  oidc:
+    # Flip to true after finishing steps 1-4 below. Left off until then so the
+    # first sync doesn't come up pointing at a provider that doesn't exist yet.
+    enabled: false
+    providerName: Authentik
+    # Authentik's per-application discovery document. <slug> is the application
+    # slug, not the provider name.
+    configurationUrl: https://auth.nulcell.com/application/o/mealie/.well-known/openid-configuration
+    clientId: "" # from Authentik's mealie OAuth2 provider
+    existingSecret: mealie-secrets
+    secretClientSecretKey: oidc-client-secret
+    # Provision a Mealie account on first login, restricted to userGroup.
+    signupEnabled: true
+    # Authentik exposes group membership as application entitlements rather
+    # than a plain `groups` claim.
+    # https://integrations.goauthentik.io/documentation/mealie/
+    groupsClaim: entitlements
+    userGroup: mealie-users
+    adminGroup: mealie-admins
+    rememberMe: true
+    # Keep Mealie's own login page reachable while allowPasswordLogin is true;
+    # turning both around at once would leave no local fallback.
+    autoRedirect: false
+
+# Authentik setup, before flipping mealie.oidc.enabled to true:
+#   1. Create an OAuth2/OpenID provider named "mealie" with a signing key and
+#      two Strict redirect URIs:
+#        https://recipes.nulcell.com/login
+#        https://recipes.nulcell.com/login?direct=1
+#      Under Advanced protocol settings, add the scope mapping
+#      "authentik default OAuth Mapping: Application Entitlements".
+#   2. Create an Application using that provider with slug "mealie" (the slug
+#      is what configurationUrl above resolves against).
+#   3. On that Application, create two entitlements — "mealie-users" and
+#      "mealie-admins" — and bind the groups/users that should get access and
+#      admin rights respectively.
+#   4. Put the provider's Client Secret into the "mealie-secrets" 1Password
+#      item (see mealie-external-secrets.yaml) and its Client ID in clientId
+#      above.
+#   5. Set mealie.oidc.enabled: true. Once an Authentik login lands you in
+#      Mealie as an admin, delete the seeded changeme@example.com account and
+#      set mealie.allowPasswordLogin: false.
+
+# External PostgreSQL — CNPG cluster `mealie-postgres` (postgres-cluster.yaml).
+# CNPG auto-creates a secret named <cluster>-app with keys: username, password.
+database:
+  type: postgres
+  postgres:
+    host: mealie-postgres-rw # CNPG read-write service
+    port: 5432
+    name: mealie
+    existingSecret: mealie-postgres-app
+    secretUsernameKey: username
+    secretPasswordKey: password

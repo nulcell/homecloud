@@ -1,0 +1,39 @@
+Mealie has been deployed.
+
+{{- if .Values.gateway.enabled }}
+Origin route: https://{{ .Values.gateway.hostname }}
+{{- else }}
+Gateway routing is disabled. Configure your own HTTPRoute or cloudflared tunnel to expose the service.
+
+Internal service: {{ .Values.service.name }}.{{ include "mealie.namespace" . }}.svc.cluster.local:{{ .Values.service.port }}
+{{- end }}
+
+Users reach it at: {{ .Values.mealie.baseUrl }}
+
+Database: {{ .Values.database.type }}
+{{- if eq .Values.database.type "postgres" }} ({{ .Values.database.postgres.host }}:{{ .Values.database.postgres.port }}/{{ .Values.database.postgres.name }})
+{{- end }}
+
+Recipe images and backups persist at /app/data (PVC: mealie-data).
+
+{{- if .Values.mealie.oidc.enabled }}
+
+OIDC is enabled against "{{ .Values.mealie.oidc.providerName }}". The provider must
+allow these redirect URIs:
+  {{ .Values.mealie.baseUrl }}/login
+  {{ .Values.mealie.baseUrl }}/login?direct=1
+{{- if not .Values.mealie.allowPasswordLogin }}
+
+Password login is OFF — OIDC is the only way in. If the provider breaks, set
+mealie.allowPasswordLogin=true to restore the username/password fields.
+{{- end }}
+{{- end }}
+
+{{- if not .Values.mealie.allowSignup }}
+
+Signup without an invite token is disabled. Invite users from Settings → Users
+{{- if .Values.mealie.oidc.enabled }}, or let them sign in through OIDC{{ if .Values.mealie.oidc.userGroup }} (members of "{{ .Values.mealie.oidc.userGroup }}" only){{ end }}{{ end }}.
+{{- end }}
+
+The first boot seeds an admin account: changeme@example.com / MyPassword.
+Change or delete it once a real admin exists.
