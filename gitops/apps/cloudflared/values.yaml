@@ -24,51 +24,43 @@ ingress:
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
     originRequest:
       httpHostHeader: workflow.internal.nulcell.com
-      noTLSVerify: false
-      http2Origin: true
+      noTLSVerify: true
   - hostname: auth.nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
     originRequest:
       httpHostHeader: auth.internal.nulcell.com
-      noTLSVerify: false
-      http2Origin: true
+      noTLSVerify: true
   - hostname: budget.nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
     originRequest:
       httpHostHeader: budget.internal.nulcell.com
-      noTLSVerify: false
-      http2Origin: true
+      noTLSVerify: true
   - hostname: wiki.nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
     originRequest:
       httpHostHeader: wiki.internal.nulcell.com
-      noTLSVerify: false
-      http2Origin: true
+      noTLSVerify: true
   - hostname: home.nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
     originRequest:
       httpHostHeader: home.internal.nulcell.com
-      noTLSVerify: false
-      http2Origin: true
+      noTLSVerify: true
   - hostname: status.nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
     originRequest:
       httpHostHeader: status.internal.nulcell.com
-      noTLSVerify: false
-      http2Origin: true
+      noTLSVerify: true
   # Public portfolio site. Both the apex and www serve the same origin.
   - hostname: nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
     originRequest:
       httpHostHeader: portfolio.internal.nulcell.com
-      noTLSVerify: false
-      http2Origin: true
+      noTLSVerify: true
   - hostname: www.nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
     originRequest:
       httpHostHeader: portfolio.internal.nulcell.com
-      noTLSVerify: false
-      http2Origin: true
+      noTLSVerify: true
   - hostname: recipes.nulcell.com
     service: http://mealie.mealie.svc.cluster.local:9000
   - service: http_status:404
