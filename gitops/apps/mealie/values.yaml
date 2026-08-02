@@ -15,7 +15,7 @@ resources:
     memory: 1Gi
 
 gateway:
-  enabled: true
+  enabled: false
   hostname: recipes.nulcell.com
   parentRef:
     name: internal
