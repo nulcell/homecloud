@@ -14,16 +14,13 @@ resources:
     # cpu: 1000m
     memory: 1Gi
 
-# Origin route only. recipes.nulcell.com is published by the cloudflared tunnel
-# (gitops/apps/cloudflared/values.yaml), which rewrites the Host header to this
-# hostname before forwarding to the internal gateway.
 gateway:
   enabled: true
-  hostname: recipes.internal.nulcell.com
+  hostname: recipes.nulcell.com
   parentRef:
     name: internal
     namespace: gateway
-    sectionName: https-internal
+    sectionName: https
 
 persistence:
   enabled: true
@@ -32,8 +29,8 @@ persistence:
   size: 1Gi
 
 mealie:
-  # The public hostname, not the gateway origin — Mealie builds notification
-  # links and the OIDC callback from this.
+  # Must match gateway.hostname above — Mealie builds notification links and the
+  # OIDC callback from this.
   baseUrl: https://recipes.nulcell.com
   timezone: Europe/Amsterdam
 
@@ -61,6 +58,9 @@ mealie:
     secretClientSecretKey: oidc-client-secret
     # Provision a Mealie account on first login, restricted to userGroup.
     signupEnabled: true
+    # Authentik's OIDC provider doesn't assert email_verified, so leaving this
+    # on would reject every login.
+    requiresEmailVerification: false
     # Authentik exposes group membership as application entitlements rather
     # than a plain `groups` claim.
     # https://integrations.goauthentik.io/documentation/mealie/

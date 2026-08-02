@@ -50,11 +50,6 @@ ingress:
     originRequest:
       httpHostHeader: status.internal.nulcell.com
       noTLSVerify: true
-  - hostname: recipes.nulcell.com
-    service: https://cilium-gateway-internal.gateway.svc.cluster.local
-    originRequest:
-      httpHostHeader: recipes.internal.nulcell.com
-      noTLSVerify: true
   # Public portfolio site. Both the apex and www serve the same origin.
   - hostname: nulcell.com
     service: https://cilium-gateway-internal.gateway.svc.cluster.local
