@@ -61,6 +61,8 @@ ingress:
     originRequest:
       httpHostHeader: portfolio.internal.nulcell.com
       noTLSVerify: true
+  - hostname: recipes.nulcell.com
+    service: http://mealie.mealie.svc.cluster.local:9000
   - service: http_status:404
 
 imagePullSecrets:
