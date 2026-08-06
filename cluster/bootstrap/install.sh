@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # cert-manager, Longhorn, and metrics-server are now managed by Argo CD; see
 # gitops/infrastructure/{cert-manager,longhorn,metrics-server}/ for their versions.
 GATEWAY_API_VERSION="v1.4.1" # https://docs.cilium.io/en/v1.19/network/servicemesh/gateway-api/gateway-api/#cilium-gateway-api-support
-CILIUM_VERSION="1.19.6"
+CILIUM_VERSION="1.20.0"
 ARGOCD_VERSION="10.2.1"
 
 # --- Helm repos -----------------------------------------------------------------
