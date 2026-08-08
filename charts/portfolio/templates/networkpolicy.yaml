@@ -21,9 +21,9 @@ spec:
   endpointSelector:
     matchLabels:
       {{- include "portfolio.selectorLabels" . | nindent 6 }}
-  # Explicit default-deny in both directions; the rules below are the only
-  # openings. Kubelet probes come from the host identity, which Cilium always
-  # allows, so they are unaffected.
+  # Both directions carry rules, so both are in default-deny and the rules
+  # below are the only openings. Kubelet probes come from the host identity,
+  # which Cilium always allows, so they are unaffected.
   enableDefaultDeny:
     ingress: true
     egress: true
@@ -84,6 +84,17 @@ spec:
     {{- with $np.ingress.extraRules }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
+  {{- else }}
+  ingress:
+    # No ingress allowances configured. An allow-list that matches nothing is
+    # what puts the endpoint into ingress default-deny — an absent section
+    # would leave the direction unenforced (enableDefaultDeny does not enforce
+    # a direction that has no rules). Cilium still trusts the host identity,
+    # so kubelet probes keep working.
+    - fromEndpoints:
+        - matchExpressions:
+            - key: k8s:io.kubernetes.pod.namespace
+              operator: DoesNotExist
   {{- end }}
   {{- if $hasEgress }}
   egress:
@@ -146,6 +157,17 @@ spec:
     {{- with $np.egress.extraRules }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
+  {{- else }}
+  egress:
+    # No egress allowances configured. An allow-list that matches nothing is
+    # what puts the endpoint into egress default-deny — an absent section
+    # would leave the direction unenforced (enableDefaultDeny does not enforce
+    # a direction that has no rules). Replies to inbound connections are
+    # conntrack-tracked and unaffected.
+    - toEndpoints:
+        - matchExpressions:
+            - key: k8s:io.kubernetes.pod.namespace
+              operator: DoesNotExist
   {{- end }}
 {{- else }}
 apiVersion: networking.k8s.io/v1
