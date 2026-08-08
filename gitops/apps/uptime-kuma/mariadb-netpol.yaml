@@ -1,0 +1,49 @@
+# Least-privilege policy for the MariaDB pods. Cilium-only (no plain
+# NetworkPolicy twin): this overlay is specific to this cluster.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mariadb-cluster
+  namespace: uptime-kuma
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: mariadb
+      app.kubernetes.io/instance: mariadb-cluster
+  # Kubelet probes come from the host identity, which Cilium always allows.
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+  ingress:
+    # The app.
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: uptime-kuma
+      toPorts:
+        - ports:
+            - port: "3306"
+              protocol: TCP
+    # mariadb-operator connects to provision the initial database/user and
+    # for health checks.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mariadb
+      toPorts:
+        - ports:
+            - port: "3306"
+              protocol: TCP
+  egress:
+    # Standalone instance (no Galera, no replication): DNS is all it needs.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"

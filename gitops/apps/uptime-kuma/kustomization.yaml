@@ -21,3 +21,4 @@ helmCharts:
 
 resources:
   - namespace.yaml
+  - mariadb-netpol.yaml

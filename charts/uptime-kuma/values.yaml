@@ -104,6 +104,61 @@ database:
     existingSecret: ""
     secretPasswordKey: password
 
+# Network policy for the app pods. The database gets its own policy where it
+# is deployed (e.g. the gitops overlay).
+# flavor "cilium" renders a CiliumNetworkPolicy — required to admit traffic
+# from Cilium's Gateway API, which arrives with the reserved `ingress`
+# identity that plain NetworkPolicies cannot select. flavor "kubernetes"
+# renders a portable NetworkPolicy instead; its gateway rule matches pods in
+# gateway.parentRef.namespace, which only works where the gateway data path
+# runs as pods (nginx, Envoy Gateway, ...).
+networkPolicy:
+  enabled: true
+  flavor: cilium
+  ingress:
+    # Open ingress entirely, ignoring every rule below. Escape hatch for
+    # debugging or gradual rollout — leave false for least privilege.
+    allowAll: false
+    # Let any pod in this namespace reach the app on any port.
+    intraNamespace: false
+    # Allow traffic forwarded by the Gateway to the web port.
+    gateway: true
+    # cilium only: wrap the web-port rules in an allow-all HTTP rule. Routes
+    # those flows through the per-node Envoy for Hubble HTTP metrics and
+    # future path/method restrictions, at the cost of a second proxy hop.
+    l7Http: false
+    # Allow cloudflared to reach the pod directly (tunnel origin pointing at
+    # a Service instead of the gateway).
+    cloudflared:
+      enabled: false
+      namespace: cloudflared
+    # In-cluster consumers allowed to hit the web port via the Service
+    # (dashboards, uptime monitors, ...), by namespace name.
+    allowedNamespaces: []
+    # Extra ingress rules appended verbatim — schema follows the selected flavor.
+    extraRules: []
+  egress:
+    # Monitors probe arbitrary endpoints (HTTP, TCP, ping), so egress stays
+    # open. Set false to fall back to the granular rules below.
+    allowAll: true
+    # Allow DNS to CoreDNS. Under cilium this goes through the DNS proxy,
+    # which is what makes `fqdns` below enforceable.
+    dns: true
+    # Let the app reach any pod in this namespace.
+    intraNamespace: false
+    # cilium only: hostnames the app may reach on 443, enforced via toFQDNs.
+    fqdns: []
+    # Explicit allowance to the database pods. Independent of allowAll, so
+    # tightening egress later can't cut the app off from its database.
+    database:
+      enabled: true
+      # Label selector for the database pods; empty selects the whole namespace.
+      podSelector: {}
+      # Port; empty derives it from database.mariadb.port.
+      port: ""
+    # Extra egress rules appended verbatim — schema follows the selected flavor.
+    extraRules: []
+
 commonAnnotations: {}
 priorityClassName: ""
 hostNetwork: false

@@ -27,3 +27,17 @@ database:
     username: uptime-kuma
     existingSecret: mariadb-uptime-kuma-password
     secretPasswordKey: password
+
+# The MariaDB pods get their own policy in mariadb-netpol.yaml.
+networkPolicy:
+  ingress:
+    # Unverified whether homarr widgets use the internal Service URL —
+    # allowed for now, tighten once confirmed unused.
+    allowedNamespaces:
+      - homarr
+  egress:
+    database:
+      # Pods created by mariadb-operator for the mariadb-cluster resource.
+      podSelector:
+        app.kubernetes.io/name: mariadb
+        app.kubernetes.io/instance: mariadb-cluster
