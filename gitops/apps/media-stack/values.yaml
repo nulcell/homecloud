@@ -20,6 +20,14 @@ gateway:
     name: external
     namespace: gateway
 
+networkPolicy:
+  ingress:
+    # Unverified whether homarr widgets / uptime-kuma monitors use the
+    # internal Service URLs — allowed for now, tighten once confirmed unused.
+    allowedNamespaces:
+      - homarr
+      - uptime-kuma
+
 vpn:
   enabled: true
   # renovate: datasource=docker depName=qmcgaw/gluetun
@@ -67,6 +75,11 @@ jellyfin:
       memory: 8Gi
   gateway:
     hostname: jellyfin.nulcell.com
+  # TEMPORARY open egress until the FQDN allowlist for this app's external
+  # providers is populated (networkPolicy.egress.fqdns in the chart).
+  networkPolicy:
+    egress:
+      allowAll: true
 
 seerr:
   replicas: 1
@@ -75,6 +88,11 @@ seerr:
     tag: v3.4.1
   gateway:
     hostname: seerr.nulcell.com
+  # TEMPORARY open egress until the FQDN allowlist for this app's external
+  # providers is populated (networkPolicy.egress.fqdns in the chart).
+  networkPolicy:
+    egress:
+      allowAll: true
 
 sonarr:
   replicas: 1
@@ -83,6 +101,11 @@ sonarr:
     tag: 4.0.19
   gateway:
     hostname: sonarr.nulcell.com
+  # TEMPORARY open egress until the FQDN allowlist for this app's external
+  # providers is populated (networkPolicy.egress.fqdns in the chart).
+  networkPolicy:
+    egress:
+      allowAll: true
 
 radarr:
   replicas: 1
@@ -91,6 +114,11 @@ radarr:
     tag: 6.3.0
   gateway:
     hostname: radarr.nulcell.com
+  # TEMPORARY open egress until the FQDN allowlist for this app's external
+  # providers is populated (networkPolicy.egress.fqdns in the chart).
+  networkPolicy:
+    egress:
+      allowAll: true
 
 bazarr:
   replicas: 1
@@ -99,6 +127,11 @@ bazarr:
     tag: 1.6.0
   gateway:
     hostname: bazarr.nulcell.com
+  # TEMPORARY open egress until the FQDN allowlist for this app's external
+  # providers is populated (networkPolicy.egress.fqdns in the chart).
+  networkPolicy:
+    egress:
+      allowAll: true
 
 servarr:
   replicas: 1

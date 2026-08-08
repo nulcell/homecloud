@@ -62,6 +62,71 @@ gateway:
   httpRedirect: false
 
 # =============================================================================
+# Network policy — one policy per app; prowlarr + qbittorrent are covered by
+# the servarr pod's policy. Each app's own `networkPolicy` block below is a
+# partial override deep-merged onto this one, so both use the same schema.
+#
+# flavor "cilium" renders CiliumNetworkPolicies — required to admit traffic
+# from Cilium's Gateway API, which arrives with the reserved `ingress`
+# identity that plain NetworkPolicies cannot select. flavor "kubernetes"
+# renders portable NetworkPolicies instead; their gateway rule matches pods
+# in gateway.parentRef.namespace, which only works where the gateway data
+# path runs as pods (nginx, Envoy Gateway, ...).
+# =============================================================================
+networkPolicy:
+  enabled: true
+  flavor: cilium
+  ingress:
+    # Open ingress entirely, ignoring every rule below. Escape hatch for
+    # debugging or gradual rollout — leave false for least privilege.
+    allowAll: false
+    # Let any pod in this namespace reach the app on any port. On by default:
+    # the apps talk to each other constantly (sonarr → prowlarr/qbittorrent,
+    # bazarr → sonarr/radarr, seerr → everything).
+    intraNamespace: true
+    # Allow traffic forwarded by the Gateway to the web port.
+    gateway: true
+    # cilium only: wrap the web-port rules in an allow-all HTTP rule. Routes
+    # those flows through the per-node Envoy for Hubble HTTP metrics and
+    # future path/method restrictions, at the cost of a second proxy hop.
+    l7Http: false
+    # Allow cloudflared to reach the pods directly (tunnel origin pointing at
+    # a Service instead of the gateway).
+    cloudflared:
+      enabled: false
+      namespace: cloudflared
+    # In-cluster consumers allowed to hit the web ports via the Services
+    # (dashboards, uptime monitors, ...), by namespace name.
+    allowedNamespaces: []
+    # Extra ingress rules appended verbatim — schema follows the selected flavor.
+    extraRules: []
+  egress:
+    # Open egress entirely, ignoring every rule below except `database`.
+    # Overridden per app: servarr sets true (its pod egresses through the
+    # gluetun tunnel, whose killswitch is the enforcement point).
+    allowAll: false
+    # Allow DNS to CoreDNS. Under cilium this goes through the DNS proxy,
+    # which is what makes `fqdns` below enforceable.
+    dns: true
+    # Let the app reach any pod in this namespace.
+    intraNamespace: true
+    # cilium only: hostnames the app may reach on 443, enforced via toFQDNs.
+    # The *arr apps need this (or allowAll) for metadata — skyhook.sonarr.tv,
+    # api.radarr.video, TMDB — and bazarr for subtitle providers. Set it per
+    # app rather than here.
+    fqdns: []
+    # Explicit allowance to the database pods. Independent of allowAll, so
+    # tightening egress later can't cut the app off from its database.
+    database:
+      enabled: false
+      # Label selector for the database pods; empty selects the whole namespace.
+      podSelector: {}
+      # Port; unset when database.enabled is false.
+      port: ""
+    # Extra egress rules appended verbatim — schema follows the selected flavor.
+    extraRules: []
+
+# =============================================================================
 # VPN — Gluetun sidecar in the same pod as Prowlarr + qBittorrent.
 # Credentials MUST come from a Secret (never set them in values).
 # Create the Secret externally (SOPS-encrypted manifest is the recommended
@@ -266,6 +331,12 @@ bazarr:
 servarr:
   enabled: true
   replicas: 1
+  # Overrides merged onto the chart-level networkPolicy block above.
+  networkPolicy:
+    egress:
+      # The whole pod egresses through the gluetun VPN tunnel; the killswitch
+      # inside the pod is the enforcement point, so the policy stays open.
+      allowAll: true
 
 # ---------- Prowlarr (indexer aggregator) ----------
 prowlarr:

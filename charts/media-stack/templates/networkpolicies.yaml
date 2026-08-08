@@ -1,0 +1,309 @@
+{{- if .Values.networkPolicy.enabled -}}
+{{- $ctx := . }}
+{{- $global := .Values.networkPolicy }}
+{{/*
+One policy per app. Prowlarr and qBittorrent share the servarr pod (and its
+gluetun network namespace), so they are covered by the single servarr policy.
+Each app's `networkPolicy` block is a partial override deep-merged onto the
+chart-level one, so both use the same schema.
+*/}}
+{{- $apps := list }}
+{{- if .Values.jellyfin.enabled }}
+{{- $apps = append $apps (dict "name" "jellyfin" "values" .Values.jellyfin "webPorts" (list .Values.jellyfin.service.ports.web)) }}
+{{- end }}
+{{- if .Values.seerr.enabled }}
+{{- $apps = append $apps (dict "name" "seerr" "values" .Values.seerr "webPorts" (list .Values.seerr.service.ports.web)) }}
+{{- end }}
+{{- if .Values.sonarr.enabled }}
+{{- $apps = append $apps (dict "name" "sonarr" "values" .Values.sonarr "webPorts" (list .Values.sonarr.service.ports.web)) }}
+{{- end }}
+{{- if .Values.radarr.enabled }}
+{{- $apps = append $apps (dict "name" "radarr" "values" .Values.radarr "webPorts" (list .Values.radarr.service.ports.web)) }}
+{{- end }}
+{{- if .Values.bazarr.enabled }}
+{{- $apps = append $apps (dict "name" "bazarr" "values" .Values.bazarr "webPorts" (list .Values.bazarr.service.ports.web)) }}
+{{- end }}
+{{- if .Values.servarr.enabled }}
+{{- $servarrPorts := list }}
+{{- if .Values.prowlarr.enabled }}{{- $servarrPorts = append $servarrPorts .Values.prowlarr.service.ports.web }}{{- end }}
+{{- if .Values.qbittorrent.enabled }}{{- $servarrPorts = append $servarrPorts .Values.qbittorrent.service.ports.web }}{{- end }}
+{{- $apps = append $apps (dict "name" "servarr" "values" .Values.servarr "webPorts" $servarrPorts) }}
+{{- end }}
+{{- range $app := $apps }}
+{{- $np := mergeOverwrite (deepCopy $global) ($app.values.networkPolicy | default dict) }}
+{{- $webPorts := $app.webPorts }}
+{{- $database := $np.egress.database.enabled }}
+{{- $dbPort := $np.egress.database.port }}
+{{- $hasIngress := or $np.ingress.intraNamespace (and $np.ingress.gateway $webPorts) $np.ingress.cloudflared.enabled $np.ingress.allowedNamespaces $np.ingress.extraRules }}
+{{- $hasEgress := or $np.egress.allowAll $np.egress.dns $np.egress.intraNamespace $database $np.egress.fqdns $np.egress.extraRules }}
+---
+{{- if eq $np.flavor "cilium" }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ $app.name }}
+  namespace: {{ include "mediaStack.namespace" $ctx }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" $ctx "app" $app.name) | nindent 4 }}
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- include "mediaStack.selectorLabels" (dict "ctx" $ctx "app" $app.name) | nindent 6 }}
+  # Explicit default-deny in both directions; the rules below are the only
+  # openings. Kubelet probes come from the host identity, which Cilium always
+  # allows, so they are unaffected.
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+  {{- if $np.ingress.allowAll }}
+  ingress:
+    # Open ingress: any peer, any port.
+    - fromEntities:
+        - all
+  {{- else if $hasIngress }}
+  ingress:
+    {{- if $np.ingress.intraNamespace }}
+    # Anything in the namespace may reach the app on any port (sonarr →
+    # prowlarr/qbittorrent, bazarr → sonarr/radarr, seerr → everything,
+    # jellyfin discovery/DLNA, ...).
+    - fromEndpoints:
+        - {}
+    {{- end }}
+    {{- if and $np.ingress.gateway $webPorts }}
+    # Cilium's Gateway API forwards traffic with the reserved `ingress` identity.
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            {{- range $p := $webPorts }}
+            - port: {{ $p | quote }}
+              protocol: TCP
+            {{- end }}
+          {{- if $np.ingress.l7Http }}
+          rules:
+            http:
+              - {}
+          {{- end }}
+    {{- end }}
+    {{- if and $np.ingress.cloudflared.enabled $webPorts }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ $np.ingress.cloudflared.namespace }}
+      toPorts:
+        - ports:
+            {{- range $p := $webPorts }}
+            - port: {{ $p | quote }}
+              protocol: TCP
+            {{- end }}
+          {{- if $np.ingress.l7Http }}
+          rules:
+            http:
+              - {}
+          {{- end }}
+    {{- end }}
+    {{- range $ns := $np.ingress.allowedNamespaces }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ $ns }}
+      {{- if $webPorts }}
+      toPorts:
+        - ports:
+            {{- range $p := $webPorts }}
+            - port: {{ $p | quote }}
+              protocol: TCP
+            {{- end }}
+          {{- if $np.ingress.l7Http }}
+          rules:
+            http:
+              - {}
+          {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- with $np.ingress.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if $hasEgress }}
+  egress:
+    {{- if $np.egress.allowAll }}
+    # Open egress: any destination, any port.
+    - toEntities:
+        - all
+    {{- else }}
+    {{- if $np.egress.dns }}
+    # DNS to CoreDNS, through Cilium's DNS proxy so fqdns rules work and
+    # Hubble records queries.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    {{- end }}
+    {{- if $np.egress.intraNamespace }}
+    # Reach the other pods in the namespace.
+    - toEndpoints:
+        - {}
+    {{- end }}
+    {{- with $np.egress.fqdns }}
+    # Enumerated external hosts, resolved via the DNS proxy above.
+    - toFQDNs:
+        {{- range $fqdn := . }}
+        - matchName: {{ $fqdn }}
+        {{- end }}
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    {{- end }}
+    {{- end }}
+    {{- if $database }}
+    # Explicit allowance to the database pods, so tightening egress can
+    # never cut the app off from its database.
+    - toEndpoints:
+        {{- if $np.egress.database.podSelector }}
+        - matchLabels:
+            {{- toYaml $np.egress.database.podSelector | nindent 12 }}
+        {{- else }}
+        - {}
+        {{- end }}
+      {{- if $dbPort }}
+      toPorts:
+        - ports:
+            - port: {{ $dbPort | quote }}
+              protocol: TCP
+      {{- end }}
+    {{- end }}
+    {{- with $np.egress.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+{{- else }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $app.name }}
+  namespace: {{ include "mediaStack.namespace" $ctx }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" $ctx "app" $app.name) | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "mediaStack.selectorLabels" (dict "ctx" $ctx "app" $app.name) | nindent 6 }}
+  # Both directions enforced; a direction with no rules below is a full deny.
+  policyTypes:
+    - Ingress
+    - Egress
+  {{- if $np.ingress.allowAll }}
+  ingress:
+    # Open ingress: any peer, any port.
+    - {}
+  {{- else if $hasIngress }}
+  ingress:
+    {{- if $np.ingress.intraNamespace }}
+    # Anything in the namespace may reach the app on any port.
+    - from:
+        - podSelector: {}
+    {{- end }}
+    {{- if and $np.ingress.gateway $webPorts }}
+    # Matches pods in the gateway namespace. Only effective where the gateway
+    # data path runs as pods (nginx, Envoy Gateway, ...) — traffic from
+    # Cilium's own Gateway API carries the reserved `ingress` identity, which
+    # NetworkPolicy cannot select; use flavor: cilium there.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $ctx.Values.gateway.parentRef.namespace }}
+      ports:
+        {{- range $p := $webPorts }}
+        - port: {{ $p }}
+          protocol: TCP
+        {{- end }}
+    {{- end }}
+    {{- if and $np.ingress.cloudflared.enabled $webPorts }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $np.ingress.cloudflared.namespace }}
+      ports:
+        {{- range $p := $webPorts }}
+        - port: {{ $p }}
+          protocol: TCP
+        {{- end }}
+    {{- end }}
+    {{- range $ns := $np.ingress.allowedNamespaces }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $ns }}
+      {{- if $webPorts }}
+      ports:
+        {{- range $p := $webPorts }}
+        - port: {{ $p }}
+          protocol: TCP
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- with $np.ingress.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if $hasEgress }}
+  egress:
+    {{- if $np.egress.allowAll }}
+    # Open egress: any destination, any port. (fqdns is cilium-only and
+    # ignored here.)
+    - {}
+    {{- else }}
+    {{- if $np.egress.dns }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    {{- end }}
+    {{- if $np.egress.intraNamespace }}
+    # Reach the other pods in the namespace. (fqdns is cilium-only and
+    # ignored here.)
+    - to:
+        - podSelector: {}
+    {{- end }}
+    {{- end }}
+    {{- if $database }}
+    # Explicit allowance to the database pods, so tightening egress can
+    # never cut the app off from its database.
+    - to:
+        {{- if $np.egress.database.podSelector }}
+        - podSelector:
+            matchLabels:
+              {{- toYaml $np.egress.database.podSelector | nindent 14 }}
+        {{- else }}
+        - podSelector: {}
+        {{- end }}
+      {{- if $dbPort }}
+      ports:
+        - port: {{ $dbPort }}
+          protocol: TCP
+      {{- end }}
+    {{- end }}
+    {{- with $np.egress.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
