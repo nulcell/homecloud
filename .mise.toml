@@ -19,7 +19,7 @@ talhelper = "3.1.10"
 # ── Networking ───────────────────────────────────────────────────────────────
 # cilium-cli: debug Cilium / Gateway API / L2 announcements.
 # tailscale CLI: interact with the tailnet during operator work.
-cilium-cli                 = "0.19.2"
+cilium-cli                 = "0.19.7"
 "aqua:tailscale/tailscale" = "1.96.2"
 
 # ── Data processing ──────────────────────────────────────────────────────────
