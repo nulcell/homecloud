@@ -102,3 +102,21 @@ database:
     existingSecret: mealie-postgres-app
     secretUsernameKey: username
     secretPasswordKey: password
+
+# The postgres pods get their own policy in postgres-netpol.yaml.
+networkPolicy:
+  ingress:
+    # No HTTPRoute today (gateway.enabled=false above) — cloudflared forwards
+    # straight to the pod. Flip gateway back on together with gateway.enabled.
+    gateway: false
+    cloudflared:
+      enabled: true
+    # Unverified whether uptime-kuma monitors / homarr widgets use the
+    # internal Service URL — allowed for now, tighten once confirmed unused.
+    allowedNamespaces:
+      - uptime-kuma
+      - homarr
+  egress:
+    database:
+      podSelector:
+        cnpg.io/cluster: mealie-postgres

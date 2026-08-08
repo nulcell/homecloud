@@ -15,4 +15,5 @@ helmCharts:
 resources:
   - namespace.yaml
   - postgres-cluster.yaml
+  - postgres-netpol.yaml
   - mealie-external-secrets.yaml

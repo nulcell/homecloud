@@ -1,0 +1,83 @@
+# Least-privilege policy for the CNPG postgres pods. Cilium-only (no plain
+# NetworkPolicy twin): this overlay is specific to this cluster, and only a
+# CiliumNetworkPolicy can express the kube-apiserver entity below.
+# The cnpg.io/cluster label also matches CNPG's transient job pods (initdb,
+# join), which need the same API-server + DNS egress.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mealie-postgres
+  namespace: mealie
+spec:
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: mealie-postgres
+  # Kubelet probes come from the host identity, which Cilium always allows.
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+  ingress:
+    # The app.
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: mealie
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    # Replication / pg_basebackup between instances of this cluster.
+    - fromEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: mealie-postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    # CNPG operator probes the instance-manager status server.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: cnpg-system
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+    # Prometheus scrapes the PodMonitor target (monitoring.enablePodMonitor).
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "9187"
+              protocol: TCP
+  egress:
+    # The instance manager watches/updates cluster resources. host/remote-node
+    # are included because the Talos API server runs in the host network
+    # namespace, where traffic can classify as (remote-)node rather than
+    # kube-apiserver depending on which node answers the VIP.
+    - toEntities:
+        - kube-apiserver
+        - host
+        - remote-node
+    # Replication between instances of this cluster.
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: mealie-postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    # DNS.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
