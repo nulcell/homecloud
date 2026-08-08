@@ -35,3 +35,12 @@ topologySpreadConstraints:
       matchLabels:
         app.kubernetes.io/name: portfolio
         app.kubernetes.io/instance: portfolio
+
+# Ingress only from the gateway; egress fully denied (chart defaults).
+networkPolicy:
+  ingress:
+    # Unverified whether uptime-kuma monitors / homarr widgets use the
+    # internal Service URL — allowed for now, tighten once confirmed unused.
+    allowedNamespaces:
+      - uptime-kuma
+      - homarr

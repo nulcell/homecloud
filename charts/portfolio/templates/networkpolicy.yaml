@@ -1,0 +1,266 @@
+{{- if .Values.networkPolicy.enabled -}}
+{{- $np := .Values.networkPolicy }}
+{{- $webPort := .Values.service.targetPort }}
+{{- $database := $np.egress.database.enabled }}
+{{- $dbPort := $np.egress.database.port }}
+{{- $hasIngress := or $np.ingress.intraNamespace $np.ingress.gateway $np.ingress.cloudflared.enabled $np.ingress.allowedNamespaces $np.ingress.extraRules }}
+{{- $hasEgress := or $np.egress.allowAll $np.egress.dns $np.egress.intraNamespace $database $np.egress.fqdns $np.egress.extraRules }}
+{{- if eq $np.flavor "cilium" }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "portfolio.fullname" . }}
+  namespace: {{ include "portfolio.namespace" . }}
+  labels:
+    {{- include "portfolio.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- include "portfolio.selectorLabels" . | nindent 6 }}
+  # Explicit default-deny in both directions; the rules below are the only
+  # openings. Kubelet probes come from the host identity, which Cilium always
+  # allows, so they are unaffected.
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+  {{- if $np.ingress.allowAll }}
+  ingress:
+    # Open ingress: any peer, any port.
+    - fromEntities:
+        - all
+  {{- else if $hasIngress }}
+  ingress:
+    {{- if $np.ingress.intraNamespace }}
+    # Anything in the namespace may reach the app on any port.
+    - fromEndpoints:
+        - {}
+    {{- end }}
+    {{- if $np.ingress.gateway }}
+    # Cilium's Gateway API forwards traffic with the reserved `ingress` identity.
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: {{ $webPort | quote }}
+              protocol: TCP
+          {{- if $np.ingress.l7Http }}
+          rules:
+            http:
+              - {}
+          {{- end }}
+    {{- end }}
+    {{- if $np.ingress.cloudflared.enabled }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ $np.ingress.cloudflared.namespace }}
+      toPorts:
+        - ports:
+            - port: {{ $webPort | quote }}
+              protocol: TCP
+          {{- if $np.ingress.l7Http }}
+          rules:
+            http:
+              - {}
+          {{- end }}
+    {{- end }}
+    {{- range $ns := $np.ingress.allowedNamespaces }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ $ns }}
+      toPorts:
+        - ports:
+            - port: {{ $webPort | quote }}
+              protocol: TCP
+          {{- if $np.ingress.l7Http }}
+          rules:
+            http:
+              - {}
+          {{- end }}
+    {{- end }}
+    {{- with $np.ingress.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if $hasEgress }}
+  egress:
+    {{- if $np.egress.allowAll }}
+    # Open egress: any destination, any port.
+    - toEntities:
+        - all
+    {{- else }}
+    {{- if $np.egress.dns }}
+    # DNS to CoreDNS, through Cilium's DNS proxy so fqdns rules work and
+    # Hubble records queries.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    {{- end }}
+    {{- if $np.egress.intraNamespace }}
+    # Reach the other pods in the namespace.
+    - toEndpoints:
+        - {}
+    {{- end }}
+    {{- with $np.egress.fqdns }}
+    # Enumerated external hosts, resolved via the DNS proxy above.
+    - toFQDNs:
+        {{- range $fqdn := . }}
+        - matchName: {{ $fqdn }}
+        {{- end }}
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    {{- end }}
+    {{- end }}
+    {{- if $database }}
+    # Explicit allowance to the database pods, so tightening egress can
+    # never cut the app off from its database.
+    - toEndpoints:
+        {{- if $np.egress.database.podSelector }}
+        - matchLabels:
+            {{- toYaml $np.egress.database.podSelector | nindent 12 }}
+        {{- else }}
+        - {}
+        {{- end }}
+      {{- if $dbPort }}
+      toPorts:
+        - ports:
+            - port: {{ $dbPort | quote }}
+              protocol: TCP
+      {{- end }}
+    {{- end }}
+    {{- with $np.egress.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+{{- else }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "portfolio.fullname" . }}
+  namespace: {{ include "portfolio.namespace" . }}
+  labels:
+    {{- include "portfolio.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "portfolio.selectorLabels" . | nindent 6 }}
+  # Both directions enforced; a direction with no rules below is a full deny.
+  policyTypes:
+    - Ingress
+    - Egress
+  {{- if $np.ingress.allowAll }}
+  ingress:
+    # Open ingress: any peer, any port.
+    - {}
+  {{- else if $hasIngress }}
+  ingress:
+    {{- if $np.ingress.intraNamespace }}
+    # Anything in the namespace may reach the app on any port.
+    - from:
+        - podSelector: {}
+    {{- end }}
+    {{- if $np.ingress.gateway }}
+    # Matches pods in the gateway namespace. Only effective where the gateway
+    # data path runs as pods (nginx, Envoy Gateway, ...) — traffic from
+    # Cilium's own Gateway API carries the reserved `ingress` identity, which
+    # NetworkPolicy cannot select; use flavor: cilium there.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.gateway.parentRef.namespace }}
+      ports:
+        - port: {{ $webPort }}
+          protocol: TCP
+    {{- end }}
+    {{- if $np.ingress.cloudflared.enabled }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $np.ingress.cloudflared.namespace }}
+      ports:
+        - port: {{ $webPort }}
+          protocol: TCP
+    {{- end }}
+    {{- range $ns := $np.ingress.allowedNamespaces }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $ns }}
+      ports:
+        - port: {{ $webPort }}
+          protocol: TCP
+    {{- end }}
+    {{- with $np.ingress.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if $hasEgress }}
+  egress:
+    {{- if $np.egress.allowAll }}
+    # Open egress: any destination, any port. (fqdns is cilium-only and
+    # ignored here.)
+    - {}
+    {{- else }}
+    {{- if $np.egress.dns }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    {{- end }}
+    {{- if $np.egress.intraNamespace }}
+    # Reach the other pods in the namespace. (fqdns is cilium-only and
+    # ignored here.)
+    - to:
+        - podSelector: {}
+    {{- end }}
+    {{- end }}
+    {{- if $database }}
+    # Explicit allowance to the database pods, so tightening egress can
+    # never cut the app off from its database.
+    - to:
+        {{- if $np.egress.database.podSelector }}
+        - podSelector:
+            matchLabels:
+              {{- toYaml $np.egress.database.podSelector | nindent 14 }}
+        {{- else }}
+        - podSelector: {}
+        {{- end }}
+      {{- if $dbPort }}
+      ports:
+        - port: {{ $dbPort }}
+          protocol: TCP
+      {{- end }}
+    {{- end }}
+    {{- with $np.egress.extraRules }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
