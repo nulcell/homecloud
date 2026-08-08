@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: sonarr
-  namespace: {{ include "mediaStack.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "mediaStack.labels" (dict "ctx" . "app" "sonarr") | nindent 4 }}
 spec:

@@ -5,7 +5,7 @@ Origin route: https://{{ .Values.gateway.hostname }}
 {{- else }}
 Gateway routing is disabled. Configure your own HTTPRoute or cloudflared tunnel to expose the service.
 
-Internal service: {{ .Values.service.name }}.{{ include "mealie.namespace" . }}.svc.cluster.local:{{ .Values.service.port }}
+Internal service: {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
 {{- end }}
 
 Users reach it at: {{ .Values.mealie.baseUrl }}

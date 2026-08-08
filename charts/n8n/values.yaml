@@ -86,7 +86,6 @@ n8nTaskRunner:
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-namespaceOverride: ""
 
 serviceAccount:
   create: true

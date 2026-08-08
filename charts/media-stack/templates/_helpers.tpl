@@ -1,11 +1,4 @@
 {{/*
-Resolve the install namespace (defaults to .Release.Namespace).
-*/}}
-{{- define "mediaStack.namespace" -}}
-{{- default .Release.Namespace .Values.namespaceOverride -}}
-{{- end -}}
-
-{{/*
 Chart name.
 */}}
 {{- define "mediaStack.name" -}}

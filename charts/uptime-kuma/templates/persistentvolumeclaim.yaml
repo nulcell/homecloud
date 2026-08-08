@@ -3,7 +3,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: uptime-kuma-data
-  namespace: {{ include "uptime-kuma.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "uptime-kuma.labels" . | nindent 4 }}
   {{- with .Values.commonAnnotations }}

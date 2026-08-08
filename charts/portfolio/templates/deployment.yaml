@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.service.name }}
-  namespace: {{ include "portfolio.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "portfolio.labels" . | nindent 4 }}
   {{- with .Values.commonAnnotations }}

@@ -1,11 +1,3 @@
-{{- define "uptime-kuma.namespace" -}}
-  {{- if .Values.namespaceOverride -}}
-    {{- .Values.namespaceOverride -}}
-  {{- else -}}
-    {{- .Release.Namespace -}}
-  {{- end -}}
-{{- end -}}
-
 {{- define "uptime-kuma.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}

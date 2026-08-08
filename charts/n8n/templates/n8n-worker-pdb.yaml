@@ -3,7 +3,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: n8n-worker
-  namespace: {{ include "n8n.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "n8n.labels" . | nindent 4 }}
 spec:

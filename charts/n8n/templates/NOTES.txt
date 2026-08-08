@@ -5,5 +5,5 @@ Access your n8n instance at:
   https://{{ .Values.gateway.hostname }}/
 {{- else }}
 n8n is reachable in-cluster at:
-  http://{{ .Values.service.name }}.{{ include "n8n.namespace" . }}.svc.cluster.local:{{ .Values.service.webPort }}
+  http://{{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.webPort }}
 {{- end }}

@@ -42,7 +42,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: {{ $app.name }}
-  namespace: {{ include "mediaStack.namespace" $ctx }}
+  namespace: {{ $ctx.Release.Namespace }}
   labels:
     {{- include "mediaStack.labels" (dict "ctx" $ctx "app" $app.name) | nindent 4 }}
 spec:
@@ -212,7 +212,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: {{ $app.name }}
-  namespace: {{ include "mediaStack.namespace" $ctx }}
+  namespace: {{ $ctx.Release.Namespace }}
   labels:
     {{- include "mediaStack.labels" (dict "ctx" $ctx "app" $app.name) | nindent 4 }}
 spec:

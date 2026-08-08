@@ -4,7 +4,7 @@ apiVersion: apps/v1
 kind: {{ $kind }}
 metadata:
   name: bazarr
-  namespace: {{ include "mediaStack.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "mediaStack.labels" (dict "ctx" . "app" "bazarr") | nindent 4 }}
 spec:

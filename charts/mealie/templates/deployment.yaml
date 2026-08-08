@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.service.name }}
-  namespace: {{ include "mealie.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "mealie.labels" . | nindent 4 }}
   {{- with .Values.commonAnnotations }}

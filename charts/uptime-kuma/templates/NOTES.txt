@@ -5,7 +5,7 @@ Access the UI at: https://{{ .Values.gateway.hostname }}
 {{- else }}
 Gateway routing is disabled. Configure your own HTTPRoute or cloudflared tunnel to expose the service.
 
-Internal service: {{ .Values.service.name }}.{{ include "uptime-kuma.namespace" . }}.svc.cluster.local:{{ .Values.service.port }}
+Internal service: {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
 {{- end }}
 
 Data is persisted at /app/data inside the container (PVC: uptime-kuma-data).

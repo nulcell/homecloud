@@ -10,7 +10,7 @@ served by the cloudflared tunnel, which rewrites the Host header to the above.
 {{- else }}
 Gateway routing is disabled. Configure your own HTTPRoute or cloudflared tunnel to expose the service.
 
-Internal service: {{ .Values.service.name }}.{{ include "portfolio.namespace" . }}.svc.cluster.local:{{ .Values.service.port }}
+Internal service: {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
 {{- end }}
 
 The container serves a read-only root filesystem; nginx scratch space is an

@@ -3,7 +3,6 @@
 # =============================================================================
 nameOverride: ""
 fullnameOverride: ""
-namespaceOverride: ""
 
 # =============================================================================
 # Common configuration applied to every app

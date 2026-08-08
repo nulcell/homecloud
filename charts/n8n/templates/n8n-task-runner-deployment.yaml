@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: n8n-task-runner
-  namespace: {{ include "n8n.namespace" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "n8n.labels" . | nindent 4 }}
   {{- with .Values.commonAnnotations }}
@@ -63,7 +63,7 @@ spec:
             - name: N8N_RUNNERS_STDLIB_ALLOW
               value: '*'
             - name: N8N_RUNNERS_TASK_BROKER_URI
-              value: {{ printf "http://%s.%s.svc.cluster.local:%v" (include "n8nBrokerService.name" .) (include "n8n.namespace" .) .Values.service.taskBrokerPort }}
+              value: {{ printf "http://%s.%s.svc.cluster.local:%v" (include "n8nBrokerService.name" .) .Release.Namespace .Values.service.taskBrokerPort }}
             - name: NODE_FUNCTION_ALLOW_BUILTIN
               value: '*'
             - name: NODE_FUNCTION_ALLOW_EXTERNAL
