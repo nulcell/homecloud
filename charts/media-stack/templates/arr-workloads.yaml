@@ -1,0 +1,82 @@
+{{- $ctx := . }}
+{{/*
+sonarr, radarr and bazarr are one workload shape: a single linuxserver.io
+container on the shared config + data PVCs. bazarr is the odd one out — it
+serves no /ping, so it carries no probes.
+*/}}
+{{- range $a := list (dict "name" "sonarr" "probes" true) (dict "name" "radarr" "probes" true) (dict "name" "bazarr" "probes" false) }}
+{{- $app := index $ctx.Values $a.name }}
+{{- if $app.enabled }}
+{{- $kind := $app.workloadKind | default "Deployment" }}
+---
+apiVersion: apps/v1
+kind: {{ $kind }}
+metadata:
+  name: {{ $a.name }}
+  namespace: {{ $ctx.Release.Namespace }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" $ctx "app" $a.name) | nindent 4 }}
+spec:
+  replicas: {{ $app.replicas }}
+  {{- if eq $kind "StatefulSet" }}
+  serviceName: {{ $a.name }}
+  updateStrategy:
+    type: RollingUpdate
+  {{- else }}
+  strategy:
+    type: Recreate
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "mediaStack.selectorLabels" (dict "ctx" $ctx "app" $a.name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "mediaStack.selectorLabels" (dict "ctx" $ctx "app" $a.name) | nindent 8 }}
+    spec:
+      securityContext:
+        {{- include "mediaStack.podSecurityContext" $ctx | nindent 8 }}
+      containers:
+        - name: {{ $a.name }}
+          image: "{{ $app.image.repository }}:{{ $app.image.tag }}"
+          imagePullPolicy: {{ $app.image.pullPolicy }}
+          env:
+            {{- include "mediaStack.commonEnv" $ctx | nindent 12 }}
+          ports:
+            - containerPort: {{ $app.service.ports.web }}
+              name: web
+              protocol: TCP
+          {{- if $a.probes }}
+          # Liveness is a plain TCP check: /ping hits the sqlite DB, which can
+          # stall past any sane timeout during heavy I/O on Longhorn RWX and
+          # turn a slow-but-healthy app into a restart storm. Readiness keeps
+          # the HTTP check so a stalled app is pulled from the Service instead.
+          livenessProbe:
+            tcpSocket:
+              port: web
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: web
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          {{- end }}
+          resources:
+            {{- toYaml $app.resources | nindent 12 }}
+          securityContext:
+            {{- include "mediaStack.containerSecurityContext" $ctx | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              subPath: {{ $a.name }}
+            - mountPath: /data
+              name: data
+      volumes:
+        {{- include "mediaStack.volumes" $ctx | nindent 8 }}
+      restartPolicy: Always
+{{- end }}
+{{- end }}

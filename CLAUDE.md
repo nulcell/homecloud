@@ -45,7 +45,7 @@ Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap steps: [`clu
 | [`charts/`](charts/) | Helm umbrella charts referenced via `chartHome: ../../../charts` from `gitops/apps/*`. |
 | [`manifests/`](manifests/) | Ad-hoc / one-shot manifests applied manually — NOT reconciled by ArgoCD. |
 | [`scripts/`](scripts/) | Standalone operator utilities. |
-| [`network/maas/`](network/maas/) | Legacy MaaS install. Slated for Pi-hole + netboot + Tailscale on a Pi. Don't expand. |
+| [`network/netboot/`](network/netboot/) | Notes for the planned Pi-hole + netboot + Tailscale provisioning host. |
 | [`.mise.toml`](.mise.toml) | Pinned local CLIs (`mise install`). |
 | [`.sops.yaml`](.sops.yaml) | SOPS encryption policy. |
 
@@ -76,5 +76,5 @@ Talos workflow lives in [`cluster/talos/README.md`](cluster/talos/README.md).
 ## Roadmap notes
 
 - **HA**: 1 → 3 control planes directly; two-node etcd is worse than single-node.
-- **MaaS replacement**: in planning — Pi-hole (DNS + DHCP) + netboot + Tailscale on a Raspberry Pi. Don't deepen the investment in `network/maas/`.
+- **Bare-metal provisioning**: in planning — Pi-hole (DNS + DHCP) + netboot + Tailscale on a Raspberry Pi. The old MaaS install script is gone; see [`network/netboot/`](network/netboot/).
 - **Renovate**: planned for chart and tool versions; new charts should pin upstream versions Renovate can track.

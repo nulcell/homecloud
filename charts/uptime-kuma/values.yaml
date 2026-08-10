@@ -103,17 +103,12 @@ database:
     existingSecret: ""
     secretPasswordKey: password
 
-# Network policy for the app pods. The database gets its own policy where it
-# is deployed (e.g. the gitops overlay).
-# flavor "cilium" renders a CiliumNetworkPolicy — required to admit traffic
-# from Cilium's Gateway API, which arrives with the reserved `ingress`
-# identity that plain NetworkPolicies cannot select. flavor "kubernetes"
-# renders a portable NetworkPolicy instead; its gateway rule matches pods in
-# gateway.parentRef.namespace, which only works where the gateway data path
-# runs as pods (nginx, Envoy Gateway, ...).
+# CiliumNetworkPolicy for the app pods. The database gets its own policy where
+# it is deployed (e.g. the gitops overlay). Cilium's Gateway API forwards
+# traffic with the reserved `ingress` identity, which a plain NetworkPolicy
+# cannot select — hence CNP rather than networking.k8s.io.
 networkPolicy:
   enabled: true
-  flavor: cilium
   ingress:
     # Open ingress entirely, ignoring every rule below. Escape hatch for
     # debugging or gradual rollout — leave false for least privilege.
@@ -134,7 +129,7 @@ networkPolicy:
     # In-cluster consumers allowed to hit the web port via the Service
     # (dashboards, uptime monitors, ...), by namespace name.
     allowedNamespaces: []
-    # Extra ingress rules appended verbatim — schema follows the selected flavor.
+    # Extra ingress rules appended verbatim (CiliumNetworkPolicy schema).
     extraRules: []
   egress:
     # Monitors probe arbitrary endpoints (HTTP, TCP, ping), so egress stays
@@ -155,7 +150,7 @@ networkPolicy:
       podSelector: {}
       # Port; empty derives it from database.mariadb.port.
       port: ""
-    # Extra egress rules appended verbatim — schema follows the selected flavor.
+    # Extra egress rules appended verbatim (CiliumNetworkPolicy schema).
     extraRules: []
 
 commonAnnotations: {}

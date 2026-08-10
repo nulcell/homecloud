@@ -75,8 +75,7 @@ jellyfin:
       memory: 8Gi
   gateway:
     hostname: jellyfin.nulcell.com
-  # TEMPORARY open egress until the FQDN allowlist for this app's external
-  # providers is populated (networkPolicy.egress.fqdns in the chart).
+  # Open egress — this app reaches arbitrary external metadata/subtitle providers.
   networkPolicy:
     egress:
       allowAll: true
@@ -88,8 +87,7 @@ seerr:
     tag: v3.4.1
   gateway:
     hostname: seerr.nulcell.com
-  # TEMPORARY open egress until the FQDN allowlist for this app's external
-  # providers is populated (networkPolicy.egress.fqdns in the chart).
+  # Open egress — this app reaches arbitrary external metadata/subtitle providers.
   networkPolicy:
     egress:
       allowAll: true
@@ -101,8 +99,7 @@ sonarr:
     tag: 4.0.19
   gateway:
     hostname: sonarr.nulcell.com
-  # TEMPORARY open egress until the FQDN allowlist for this app's external
-  # providers is populated (networkPolicy.egress.fqdns in the chart).
+  # Open egress — this app reaches arbitrary external metadata/subtitle providers.
   networkPolicy:
     egress:
       allowAll: true
@@ -114,8 +111,7 @@ radarr:
     tag: 6.3.0
   gateway:
     hostname: radarr.nulcell.com
-  # TEMPORARY open egress until the FQDN allowlist for this app's external
-  # providers is populated (networkPolicy.egress.fqdns in the chart).
+  # Open egress — this app reaches arbitrary external metadata/subtitle providers.
   networkPolicy:
     egress:
       allowAll: true
@@ -127,8 +123,7 @@ bazarr:
     tag: 1.6.0
   gateway:
     hostname: bazarr.nulcell.com
-  # TEMPORARY open egress until the FQDN allowlist for this app's external
-  # providers is populated (networkPolicy.egress.fqdns in the chart).
+  # Open egress — this app reaches arbitrary external metadata/subtitle providers.
   networkPolicy:
     egress:
       allowAll: true

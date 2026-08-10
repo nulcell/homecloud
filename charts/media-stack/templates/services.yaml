@@ -1,0 +1,55 @@
+{{- $ctx := . }}
+{{/*
+One Service per enabled app. prowlarr and qbittorrent select the servarr pod —
+they run inside its gluetun network namespace.
+*/}}
+{{- $svcs := list }}
+{{- with .Values.jellyfin }}
+{{- if .enabled }}
+{{- $svcs = append $svcs (dict "name" "jellyfin" "selector" "jellyfin" "type" .service.type "ports" (list
+    (dict "name" "web" "port" .service.ports.web "protocol" "TCP")
+    (dict "name" "discovery" "port" .service.ports.discovery "protocol" "UDP")
+    (dict "name" "dlna" "port" .service.ports.dlna "protocol" "UDP"))) }}
+{{- end }}
+{{- end }}
+{{- range $name := list "seerr" "sonarr" "radarr" "bazarr" }}
+{{- $app := index $ctx.Values $name }}
+{{- if $app.enabled }}
+{{- $svcs = append $svcs (dict "name" $name "selector" $name "type" $app.service.type "ports" (list
+    (dict "name" "web" "port" $app.service.ports.web "protocol" "TCP"))) }}
+{{- end }}
+{{- end }}
+{{- with .Values.prowlarr }}
+{{- if .enabled }}
+{{- $svcs = append $svcs (dict "name" "prowlarr" "selector" "servarr" "type" .service.type "ports" (list
+    (dict "name" "web" "port" .service.ports.web "protocol" "TCP"))) }}
+{{- end }}
+{{- end }}
+{{- with .Values.qbittorrent }}
+{{- if .enabled }}
+{{- $svcs = append $svcs (dict "name" "qbittorrent" "selector" "servarr" "type" .service.type "ports" (list
+    (dict "name" "web" "port" .service.ports.web "protocol" "TCP")
+    (dict "name" "bt" "port" .service.ports.bt "protocol" "TCP"))) }}
+{{- end }}
+{{- end }}
+{{- range $svc := $svcs }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $svc.name }}
+  namespace: {{ $ctx.Release.Namespace }}
+  labels:
+    {{- include "mediaStack.labels" (dict "ctx" $ctx "app" $svc.name) | nindent 4 }}
+spec:
+  type: {{ $svc.type }}
+  selector:
+    {{- include "mediaStack.selectorLabels" (dict "ctx" $ctx "app" $svc.selector) | nindent 4 }}
+  ports:
+    {{- range $p := $svc.ports }}
+    - name: {{ $p.name }}
+      port: {{ $p.port }}
+      targetPort: {{ $p.port }}
+      protocol: {{ $p.protocol }}
+    {{- end }}
+{{- end }}

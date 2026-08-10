@@ -34,8 +34,7 @@ the web port. Egress defaults to open (`egress.allowAll`) because recipe
 scraping fetches arbitrary URLs, with an explicit always-on rule to the
 Postgres pods so tightening egress later can't cut the app off from its
 database. The CNPG cluster itself gets its own policy where it is deployed
-(see the gitops overlay). `flavor: cilium` (default) renders a
-CiliumNetworkPolicy, which is required with Cilium's Gateway API: forwarded
-traffic carries the reserved `ingress` identity that plain NetworkPolicies
-cannot select. `flavor: kubernetes` renders a portable NetworkPolicy for
-clusters whose gateway runs as pods.
+(see the gitops overlay). It renders a CiliumNetworkPolicy rather than a
+networking.k8s.io NetworkPolicy because Cilium's Gateway API forwards traffic
+with the reserved `ingress` identity, which a plain NetworkPolicy cannot
+select.
