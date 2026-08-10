@@ -2,6 +2,15 @@
 
 Keep this file accurate. If a task changes architecture, structure, naming, tooling, or workflow, update AGENTS.md in the same change.
 
+## Commandments
+
+Non-negotiable, for every file in this repo:
+
+1. Minimal code — the smallest change that does the job.
+2. Simplicity over complexity — no speculative abstraction, options, or config.
+3. Comments only when necessary, and concise — state constraints, not mechanics.
+4. Low verbosity everywhere: code, config, docs, and agent output.
+
 ## Stack
 
 Self-hosted private cloud on bare metal. Single-node today, designed to scale to a 3-node HA control plane.
@@ -11,7 +20,7 @@ Self-hosted private cloud on bare metal. Single-node today, designed to scale to
 - **CNI / LB / Gateway**: Cilium (kube-proxy replacement, Gateway API, L2 announcements). No MetalLB.
 - **Storage**: Longhorn (replicated block).
 - **Virtualization**: KubeVirt (VMs as Kubernetes resources).
-- **GitOps**: ArgoCD reads this repo. Three ApplicationSets fan out one Application per directory under [`gitops/infrastructure/*`](gitops/infrastructure/) (wave `0`), [`gitops/security/*`](gitops/security/) (wave `7`), and [`gitops/apps/*`](gitops/apps/) (wave `10`).
+- **GitOps**: ArgoCD reads this repo. Five ApplicationSets fan out one Application per directory under [`gitops/infrastructure/*`](gitops/infrastructure/) (wave `0`), [`gitops/operators/*`](gitops/operators/) (wave `5`), [`gitops/security/*`](gitops/security/) (wave `10`), [`gitops/services/*`](gitops/services/) (wave `15`), and [`gitops/apps/*`](gitops/apps/) (wave `100`).
 - **Certs**: cert-manager + Cloudflare DNS-01.
 - **Secrets in Git**: SOPS + age (`.enc.yaml` files; policy in [`.sops.yaml`](.sops.yaml)). 1Password CLI (`op://homecloud/...`) for runtime injection.
 - **Remote access**: Tailscale.
@@ -26,11 +35,13 @@ Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap steps: [`clu
 | [`cluster/bootstrap/`](cluster/bootstrap/) | `install.sh` + values for Cilium, Cilium L2, ArgoCD. |
 | [`cluster/talos/`](cluster/talos/) | Machine-config patches. `generated/` and `secrets/` are gitignored. |
 | [`cluster/docs/`](cluster/docs/) | `bootstrap.md`, `argocd.md`. |
-| [`gitops/root/`](gitops/root/) | Root Application + three ApplicationSets (`infrastructure`, `security`, `apps`) ordered by sync wave. |
-| [`gitops/infrastructure/`](gitops/infrastructure/) | Base platform — every other layer can assume these are up: cert-manager, cnpg, external-dns, gateway, infra-app-httproutes, kube-prometheus-stack, kubevirt, longhorn, metrics-server, sops-secrets. Operator-only directories install CRDs the upper layers consume. |
-| [`gitops/security/`](gitops/security/) | Security stack — Cilium Tetragon (eBPF runtime observability). OPA will land alongside as a sibling dir. |
-| [`gitops/apps/`](gitops/apps/) | Workloads (`actual-budget`, `authentik`, `cloudflared`, `homarr`, `mealie`, `media-stack`, `n8n`, `outline`, `portfolio`, `speedtest-tracker`, `uptime-kuma`). |
-| [`gitops/deprecated/`](gitops/deprecated/) | Retired manifests — never reference from an active ApplicationSet. |
+| [`gitops/root/`](gitops/root/) | Root Application + five ApplicationSets (`infrastructure`, `operators`, `security`, `services`, `apps`) ordered by sync wave. |
+| [`gitops/infrastructure/`](gitops/infrastructure/) | Base platform — every other layer can assume these are up: cert-manager, external-dns, external-secrets, gateway, headlamp, infra-app-httproutes, kube-prometheus-stack, loki, longhorn, metrics-server, registry-credentials. |
+| [`gitops/operators/`](gitops/operators/) | Operators installing CRDs the upper layers consume: cnpg, falco, kubevirt, mariadb, tailscale. |
+| [`gitops/security/`](gitops/security/) | Security stack — falco (runtime detection via falco-operator CRs + falco-talon response actions). |
+| [`gitops/services/`](gitops/services/) | Platform services on top of operators: kubevirt. |
+| [`gitops/apps/`](gitops/apps/) | Workloads (`actual-budget`, `authentik`, `cloudflared`, `mealie`, `media-stack`, `n8n`, `portfolio`, `uptime-kuma`). |
+| [`gitops/exprimental/`](gitops/exprimental/) | Staging area, not referenced by any ApplicationSet — candidates for promotion or retirement. |
 | [`charts/`](charts/) | Helm umbrella charts referenced via `chartHome: ../../../charts` from `gitops/apps/*`. |
 | [`manifests/`](manifests/) | Ad-hoc / one-shot manifests applied manually — NOT reconciled by ArgoCD. |
 | [`scripts/`](scripts/) | Standalone operator utilities. |
