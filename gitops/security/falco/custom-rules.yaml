@@ -154,6 +154,15 @@ spec:
         and container.name = "homarr"
         and proc.name = "libuv-worker")
 
+    # Every ArgoCD component runs the same binary and talks to the API server by design.
+    - rule: "Contact K8S API Server From Container"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "argocd"
+        and container.name = "argocd-application-controller"
+        and proc.exepath = "/usr/local/bin/argocd")
+
     # ── K8s audit log rules ────────────────────────────────────────────────────
 
     - rule: "Disallowed K8s User"
