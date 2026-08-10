@@ -1,0 +1,39 @@
+# Falco daemonset, reconciled by falco-operator (gitops/operators/falco).
+# Operator defaults: modern_ebpf driver, prometheus metrics on :8765 (service "falco", port "web").
+apiVersion: instance.falcosecurity.dev/v1alpha1
+kind: Falco
+metadata:
+  name: falco
+spec: {}
+---
+# Merged into /etc/falco/config.d on top of the operator's default falco.yaml.
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Config
+metadata:
+  name: falco-config
+spec:
+  config:
+    json_output: true
+    http_output:
+      enabled: true
+      url: http://falcosidekick:2801
+    capture:
+      enabled: true
+      path_prefix: /tmp/falco
+      mode: rules
+      default_duration: 5000
+---
+# fluent-bit posts kube-apiserver audit logs here; the k8saudit plugin listens on 9765 in each falco pod.
+apiVersion: v1
+kind: Service
+metadata:
+  name: falco-k8saudit-webhook
+spec:
+  selector:
+    app.kubernetes.io/name: falco
+    app.kubernetes.io/instance: falco
+  ports:
+    - name: http
+      port: 9765
+      targetPort: 9765
+      protocol: TCP

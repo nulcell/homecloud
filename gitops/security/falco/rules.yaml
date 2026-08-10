@@ -1,0 +1,40 @@
+# Upstream rulesets, pulled and followed from the official OCI registry.
+# Priority sets load order (lower loads first); custom-rules.yaml overrides load last at 90.
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Rulesfile
+metadata:
+  name: falco-rules
+spec:
+  ociArtifact:
+    registry:
+      name: ghcr.io
+    image:
+      repository: falcosecurity/rules/falco-rules
+      tag: latest
+  priority: 10
+---
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Rulesfile
+metadata:
+  name: falco-incubating-rules
+spec:
+  ociArtifact:
+    registry:
+      name: ghcr.io
+    image:
+      repository: falcosecurity/rules/falco-incubating-rules
+      tag: latest
+  priority: 20
+---
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Rulesfile
+metadata:
+  name: k8saudit-rules
+spec:
+  ociArtifact:
+    registry:
+      name: ghcr.io
+    image:
+      repository: falcosecurity/rules/k8saudit-rules
+      tag: latest
+  priority: 30

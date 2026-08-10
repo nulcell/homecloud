@@ -1,0 +1,58 @@
+# Plugins are pulled from OCI and auto-added to load_plugins by the artifact-operator sidecar.
+# Container metadata (replaces the chart's collectors.containerEngine).
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Plugin
+metadata:
+  name: container
+spec:
+  ociArtifact:
+    registry:
+      name: ghcr.io
+    image:
+      repository: falcosecurity/plugins/plugin/container
+      tag: latest
+---
+# Kubernetes metadata via the metacollector component (replaces collectors.kubernetes).
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Plugin
+metadata:
+  name: k8smeta
+spec:
+  ociArtifact:
+    registry:
+      name: ghcr.io
+    image:
+      repository: falcosecurity/plugins/plugin/k8smeta
+      tag: latest
+  config:
+    initConfig:
+      collectorHostname: metacollector.falco.svc
+      collectorPort: 45000
+      nodeName: ${FALCO_K8S_NODE_NAME}
+---
+# Receives kube-apiserver audit events from fluent-bit (see falco-k8saudit-webhook Service).
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Plugin
+metadata:
+  name: k8saudit
+spec:
+  ociArtifact:
+    registry:
+      name: ghcr.io
+    image:
+      repository: falcosecurity/plugins/plugin/k8saudit
+      tag: latest
+  config:
+    openParams: "http://:9765/k8s-audit"
+---
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Plugin
+metadata:
+  name: json
+spec:
+  ociArtifact:
+    registry:
+      name: ghcr.io
+    image:
+      repository: falcosecurity/plugins/plugin/json
+      tag: latest

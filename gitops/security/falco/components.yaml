@@ -1,0 +1,112 @@
+# Sidekick stack, reconciled by falco-operator. Component versions default to the
+# operator's bundled versions. Service name = CR name.
+apiVersion: instance.falcosecurity.dev/v1alpha1
+kind: Component
+metadata:
+  name: falcosidekick
+spec:
+  component:
+    type: falcosidekick
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: falcosidekick
+          env:
+            - name: ALERTMANAGER_HOSTPORT
+              value: http://kps-alertmanager.monitoring:9093
+            - name: ALERTMANAGER_ENDPOINT
+              value: /api/v2/alerts
+            - name: ALERTMANAGER_MINIMUMPRIORITY
+              value: error
+            - name: ALERTMANAGER_EXPIRESAFTER # 48h
+              value: "172800"
+            - name: TALON_ADDRESS
+              value: http://falco-talon:2803
+            - name: TALON_MINIMUMPRIORITY
+              value: error
+            - name: WEBUI_URL
+              value: http://falcosidekick-ui:2802
+---
+apiVersion: instance.falcosecurity.dev/v1alpha1
+kind: Component
+metadata:
+  name: falcosidekick-ui
+spec:
+  component:
+    type: falcosidekick-ui
+  replicas: 1
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: falcosidekick-ui
+          env:
+            - name: FALCOSIDEKICK_UI_TTL
+              value: 1d
+---
+apiVersion: instance.falcosecurity.dev/v1alpha1
+kind: Component
+metadata:
+  name: metacollector
+spec:
+  component:
+    type: metacollector
+---
+# The operator does not deploy Redis for the UI; it expects it at falcosidekick-ui-redis:6379.
+# redis-stack is required (the UI needs RediSearch).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: falcosidekick-ui-redis
+spec:
+  serviceName: falcosidekick-ui-redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: falcosidekick-ui-redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: falcosidekick-ui-redis
+    spec:
+      containers:
+        - name: redis
+          image: docker.io/redis/redis-stack:7.2.0-v11
+          ports:
+            - containerPort: 6379
+              name: redis
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 512Mi
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: falcosidekick-ui-redis
+spec:
+  selector:
+    app.kubernetes.io/name: falcosidekick-ui-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379

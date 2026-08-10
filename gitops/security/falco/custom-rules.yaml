@@ -1,0 +1,231 @@
+# Local overrides for upstream rules. Priority 90 so they load after every upstream ruleset.
+apiVersion: artifact.falcosecurity.dev/v1alpha1
+kind: Rulesfile
+metadata:
+  name: custom-overrides
+spec:
+  priority: 90
+  inlineRules: |
+    # ── Syscall rules ──────────────────────────────────────────────────────────
+
+    - rule: "BPF Program Not Profiled"
+      override:
+        condition: append
+      condition: >-
+        and not (container.id = "runtime"
+        and proc.exepath = "/usr/bin/runc"
+        and proc.pname = "containerd-shim")
+
+    - rule: "Drop and execute new binary in container"
+      override:
+        condition: append
+      condition: and not (container.id = "runtime" and proc.exepath = "/opt/cni/bin/cilium-cni")
+    - rule: "Change thread namespace"
+      override:
+        condition: append
+      condition: and not (container.id = "runtime" and proc.exepath = "/opt/cni/bin/loopback")
+    - rule: "BPF Program Not Profiled"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "kube-system"
+        and container.name = "cilium-agent"
+        and proc.exepath = "/usr/bin/cilium-agent")
+
+    # Disabled globally — triggers on too many normal operations across workloads.
+    - rule: "Unexpected UDP Traffic"
+      override:
+        condition: append
+      condition: and (never_true)
+
+    # Longhorn
+    - rule: "Launch Suspicious Network Tool in Container"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "longhorn-system"
+        and container.name = "instance-manager"
+        and proc.name = "nc")
+    - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "longhorn-system"
+        and container.name = "instance-manager"
+        and proc.name = "longhorn-instan")
+    - rule: "Change thread namespace"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "longhorn-system"
+        and container.name in ("longhorn-manager", "instance-manager")
+        and proc.pname in ("longhorn-manage", "containerd-shim", "longhorn"))
+    - rule: "Launch Package Management Process in Container"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "longhorn-system"
+        and container.name = "longhorn-manager"
+        and proc.name = "dpkg")
+    - rule: "Unexpected UDP Traffic"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "longhorn-system"
+        and container.name = "instance-manager"
+        and proc.name = "nc"
+        and proc.cmdline in ("nc -zv localhost 8503"))
+
+    # Media server
+    - rule: "Redirect STDOUT/STDIN to Network Connection in Container"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "media"
+        and (
+          (container.name = "sshd" and proc.name = "sshd.pam")
+          or
+          (container.name in ("gluetun", "qbittorrent") and proc.name = "ping")
+        ))
+
+    # Kubescape
+    - macro: is_kubescape_node_agent
+      condition: >-
+        k8s.ns.name = "kubescape"
+        and container.name = "node-agent"
+        and proc.exepath = "/usr/bin/node-agent"
+    - rule: "BPF Program Not Profiled"
+      override:
+        condition: append
+      condition: and not is_kubescape_node_agent
+    - rule: "Contact EC2 Instance Metadata Service From Container"
+      override:
+        condition: append
+      condition: and not is_kubescape_node_agent
+    - rule: "Contact cloud metadata service from container"
+      override:
+        condition: append
+      condition: and not is_kubescape_node_agent
+    - rule: "Packet socket created in container"
+      override:
+        condition: append
+      condition: and not is_kubescape_node_agent
+    - rule: "Change thread namespace"
+      override:
+        condition: append
+      condition: and not is_kubescape_node_agent
+    - rule: "Drop and execute new binary in container"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "kubescape"
+        and container.name = "cleanup"
+        and proc.name = "kubectl")
+    - rule: "Launch Package Management Process in Container"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "kubescape"
+        and container.name = "cleanup"
+        and proc.name = "apk")
+
+    - rule: "Non sudo setuid"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "speedtest-tracker"
+        and container.name = "speedtest-tracker"
+        and proc.exepath = "/bin/busybox")
+
+    - rule: "DB program spawned process"
+      override:
+        condition: append
+      condition: >-
+        and not (container.name = "postgres"
+        and proc.exepath = "/bin/dash"
+        and proc.pname = "postgres")
+
+    - rule: "Unexpected UDP Traffic"
+      override:
+        condition: append
+      condition: >-
+        and not (k8s.ns.name = "homarr"
+        and container.name = "homarr"
+        and proc.name = "libuv-worker")
+
+    # ── K8s audit log rules ────────────────────────────────────────────────────
+
+    - rule: "Disallowed K8s User"
+      override:
+        condition: append
+      condition: and not (ka.user.name = "talos:admin" and ka.target.resource = "endpointslices")
+
+    # ArgoCD application controller manages RBAC resources as part of normal GitOps sync.
+    - macro: is_argocd_app_controller
+      condition: ka.user.name = "system:serviceaccount:argocd:argocd-application-controller"
+    - rule: "K8s ClusterRole Created"
+      override:
+        condition: append
+      condition: and not is_argocd_app_controller
+    - rule: "K8s ClusterRole Deleted"
+      override:
+        condition: append
+      condition: and not is_argocd_app_controller
+    - rule: "K8s ClusterRoleBinding Created"
+      override:
+        condition: append
+      condition: and not is_argocd_app_controller
+    - rule: "K8s ClusterRoleBinding Deleted"
+      override:
+        condition: append
+      condition: and not is_argocd_app_controller
+    - rule: "K8s Role Created"
+      override:
+        condition: append
+      condition: and not is_argocd_app_controller
+    - rule: "K8s Role Deleted"
+      override:
+        condition: append
+      condition: and not is_argocd_app_controller
+    - rule: "K8s RoleBinding Created"
+      override:
+        condition: append
+      condition: and not is_argocd_app_controller
+    - rule: "K8s RoleBinding Deleted"
+      override:
+        condition: append
+      condition: and not is_argocd_app_controller
+    - rule: "K8s Serviceaccount Deleted"
+      override:
+        condition: append
+      condition: and not is_argocd_app_controller
+
+    - rule: "K8s Secret Get Successfully"
+      override:
+        condition: append
+      condition: >-
+        and not ka.user.name in (
+          "system:serviceaccount:argocd:argocd-application-controller",
+          "system:serviceaccount:cdi:cdi-operator",
+          "system:serviceaccount:cnpg-system:cnpg-cloudnative-pg",
+          "system:serviceaccount:external-secrets:external-secrets",
+          "system:serviceaccount:external-secrets:external-secrets-cert-controller",
+          "system:serviceaccount:homarr:homarr-postgres",
+          "system:serviceaccount:longhorn-system:longhorn-service-account",
+          "system:serviceaccount:monitoring:kps-admission",
+          "system:serviceaccount:speedtest-tracker:speedtest-tracker-postgres",
+          "system:serviceaccount:authentik:authentik-postgres"
+        )
+
+    - macro: is_system_kube_user
+      condition: >-
+        ka.user.name = "system:kube-controller-manager"
+        or ka.user.name startswith "system:node:"
+    - rule: "K8s Serviceaccount Created"
+      override:
+        condition: append
+      condition: and not is_system_kube_user
+    - rule: "Service Account Created in Kube Namespace"
+      override:
+        condition: append
+      condition: and not is_system_kube_user

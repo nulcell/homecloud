@@ -1,0 +1,27 @@
+# Talon's ServiceMonitor comes from its chart; falco and falcosidekick need hand-written ones
+# since the operator doesn't create them.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: falco
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: falco
+      app.kubernetes.io/instance: falco
+  endpoints:
+    - port: web
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: falcosidekick
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: falcosidekick
+      app.kubernetes.io/instance: falcosidekick
+  endpoints:
+    - port: http
+      path: /metrics
