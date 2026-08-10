@@ -26,6 +26,14 @@ spec:
       destination:
         server: https://kubernetes.default.svc
         namespace: "{{.path.basename}}"
+      # cdi-operator strips v1alpha1 from this CRD; without this ArgoCD puts it
+      # back every reconcile, and each flip leaks etcd connections in the apiserver.
+      ignoreDifferences:
+        - group: apiextensions.k8s.io
+          kind: CustomResourceDefinition
+          name: cdis.cdi.kubevirt.io
+          jsonPointers:
+            - /spec/versions
       syncPolicy:
         automated:
           prune: true
@@ -33,3 +41,5 @@ spec:
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
+          # Without this, ignoreDifferences only affects diffing — sync still applies the field.
+          - RespectIgnoreDifferences=true
