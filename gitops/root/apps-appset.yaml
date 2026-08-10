@@ -17,6 +17,9 @@ spec:
       name: "app-{{.path.basename}}"
       annotations:
         argocd.argoproj.io/sync-wave: "100"
+        # Diff via server-side dry-run apply, so CRD schema defaults the API server
+        # injects (e.g. relabelings `action: replace`) don't read as permanent drift.
+        argocd.argoproj.io/compare-options: ServerSideDiff=true
     spec:
       project: default
       source:
