@@ -1,9 +1,0 @@
-Welcome to n8n!
-
-{{- if .Values.gateway.enabled }}
-Access your n8n instance at:
-  https://{{ .Values.gateway.hostname }}/
-{{- else }}
-n8n is reachable in-cluster at:
-  http://{{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.webPort }}
-{{- end }}
