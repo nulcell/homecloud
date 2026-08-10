@@ -54,30 +54,30 @@ All generated Apps carry `automated: { prune: true, selfHeal: true }`.
 
 **Apps that own Longhorn volumes** (the ones this procedure quiesces):
 
-| Volume / PVC                                | Namespace         | ArgoCD App                    | Controller          | Action                |
-| ------------------------------------------- | ----------------- | ----------------------------- | ------------------- | --------------------- |
-| `authentik-postgres-1`                      | authentik         | `app-authentik`               | CNPG                | hibernate             |
-| `homarr-postgres-1`                         | homarr            | `app-homarr`                  | CNPG                | hibernate             |
-| `n8n-postgres-1`                            | n8n               | `app-n8n`                     | CNPG                | hibernate             |
-| `speedtest-tracker-postgres-1`              | speedtest-tracker | `app-speedtest-tracker`       | CNPG                | hibernate             |
-| `storage-mariadb-cluster-0`                 | uptime-kuma       | `app-uptime-kuma`             | mariadb-operator    | operator→0, scale STS |
-| `prometheus-…-db-…-0`                       | monitoring        | `infra-kube-prometheus-stack` | prometheus-operator | operator→0, scale STS |
-| `alertmanager-…-db-…-0`                     | monitoring        | `infra-kube-prometheus-stack` | prometheus-operator | operator→0, scale STS |
-| `grafana`                                   | monitoring        | `infra-kube-prometheus-stack` | Deployment          | scale to 0            |
-| `storage-loki-0`                            | loki              | `infra-loki`                  | StatefulSet         | scale to 0            |
-| `data-n8n-redis-0`                          | n8n               | `app-n8n`                     | StatefulSet         | scale to 0            |
-| `falco-…-redis-0`                           | falco             | `sec-falco`                   | StatefulSet         | scale to 0            |
-| `media-stack-config`, `media-stack-data`    | media             | `app-media-stack`             | Deploys + STS       | scale to 0            |
-| `actualbudget-data`                         | actual-budget     | `app-actual-budget`           | Deployment          | scale to 0            |
-| `speedtest-tracker-config`                  | speedtest-tracker | `app-speedtest-tracker`       | Deployment          | scale to 0            |
-| `kubescape-storage`                         | kubescape         | `sec-kubescape`               | Deployment          | scale to 0            |
-| `boot-volume`, `persistent-state-for-vps-*` | vps               | manifests/ (not ArgoCD)       | KubeVirt VM         | **you** stop the VM   |
-| `windows-server-2025-*`                     | windows           | manifests/ (not ArgoCD)       | KubeVirt VM         | already Stopped ✓     |
+| Volume / PVC                                | Namespace     | ArgoCD App                    | Controller          | Action                |
+| ------------------------------------------- | ------------- | ----------------------------- | ------------------- | --------------------- |
+| `authentik-postgres-1`                      | authentik     | `app-authentik`               | CNPG                | hibernate             |
+| `mealie-postgres-1`                         | mealie        | `app-mealie`                  | CNPG                | hibernate             |
+| `n8n-postgres-1`                            | n8n           | `app-n8n`                     | CNPG                | hibernate             |
+| `storage-mariadb-cluster-0`                 | uptime-kuma   | `app-uptime-kuma`             | mariadb-operator    | operator→0, scale STS |
+| `prometheus-…-db-…-0`                       | monitoring    | `infra-kube-prometheus-stack` | prometheus-operator | operator→0, scale STS |
+| `alertmanager-…-db-…-0`                     | monitoring    | `infra-kube-prometheus-stack` | prometheus-operator | operator→0, scale STS |
+| `grafana`                                   | monitoring    | `infra-kube-prometheus-stack` | Deployment          | scale to 0            |
+| `storage-loki-0`                            | loki          | `infra-loki`                  | StatefulSet         | scale to 0            |
+| `data-n8n-redis-0`                          | n8n           | `app-n8n`                     | StatefulSet         | scale to 0            |
+| `redis-data-falcosidekick-ui-redis-0`       | falco         | `sec-falco`                   | StatefulSet         | scale to 0            |
+| `media-stack-config`, `media-stack-data`    | media         | `app-media-stack`             | Deploys + STS       | scale to 0            |
+| `mealie-data`                               | mealie        | `app-mealie`                  | Deployment          | scale to 0            |
+| `actualbudget-data`                         | actual-budget | `app-actual-budget`           | Deployment          | scale to 0            |
+| `boot-volume`, `persistent-state-for-vps-*` | vps           | manifests/ (not ArgoCD)       | KubeVirt VM         | **you** stop the VM   |
 
-Cluster facts captured at write time:
+Cluster facts captured 2026-08-10 — re-derive before relying on them:
 
 - Nodes - control-plane `talos-tgu-9aw` = **10.10.17.5**, worker `talos-ztk-5fl` = **10.10.27.254**
-- 20 Longhorn volumes total; 2 (`windows-*`) already detached → expect **all 20 detached** before power-off.
+- 17 Longhorn volumes total; 3 already detached (both `vps` volumes, plus an orphaned
+  `falco-falcosidekick-ui-redis-data-…` PVC left from an earlier StatefulSet name)
+  → expect **all 17 detached** before power-off.
+- `kubectl -n longhorn-system get volumes.longhorn.io -o custom-columns='VOL:.metadata.name,STATE:.status.state,PVC:.status.kubernetesStatus.pvcName,NS:.status.kubernetesStatus.namespace'`
 
 ---
 
@@ -114,7 +114,7 @@ kubectl -n argocd get pods | grep -E 'application-controller|applicationset-cont
 
 ### 2. Stop the KubeVirt VM(s) - you handle this
 
-Stop `vps` (and confirm `windows` stays stopped). When done, the VMI is gone:
+Stop `vps`. When done, the VMI is gone:
 
 ```bash
 kubectl -n vps get vmi          # expect: no resources
@@ -126,12 +126,11 @@ CNPG operator stays **up** to process this; hibernation fences the primary and d
 its PVC cleanly.
 
 ```bash
-for c in authentik/authentik-postgres homarr/homarr-postgres \
-         n8n/n8n-postgres speedtest-tracker/speedtest-tracker-postgres; do
+for c in authentik/authentik-postgres mealie/mealie-postgres n8n/n8n-postgres; do
   kubectl cnpg hibernate on "${c#*/}" -n "${c%/*}"
 done
 # verify: each cluster shows hibernation complete, 0 pods
-for ns in authentik homarr n8n speedtest-tracker; do kubectl -n "$ns" get pods -l cnpg.io/podRole=instance; done
+for ns in authentik mealie n8n; do kubectl -n "$ns" get pods -l cnpg.io/podRole=instance; done
 ```
 
 ### 4. Park the operators that would re-scale their StatefulSets
@@ -145,7 +144,7 @@ kubectl -n mariadb    scale deployment mariadb-operator  --replicas=0
 
 Two gotchas handled here:
 
-- **HPAs** (`actualbudget`, `authentik-server`, `authentik-worker`, `n8n-worker`) pin
+- **HPAs** (`authentik-server`, `authentik-worker`, `n8n-worker`) pin
   `minReplicas: 1` and will re-inflate any Deployment you zero. Delete them first; ArgoCD
   recreates them from git on restore.
 - **Shell word-splitting:** the loop iterates an **explicit literal list**, not a
@@ -156,8 +155,8 @@ Two gotchas handled here:
 Operators are already parked (step 4), so scaling their StatefulSets now sticks.
 
 ```bash
-for ns in actual-budget authentik homarr media n8n speedtest-tracker \
-          uptime-kuma loki monitoring falco kubescape; do
+for ns in actual-budget authentik mealie media n8n \
+          uptime-kuma loki monitoring falco; do
   # drop HPAs first (they force minReplicas >= 1)
   kubectl -n "$ns" delete hpa --all --ignore-not-found
   # scale only the kinds that exist -> no "no objects passed to scale" noise
@@ -170,7 +169,7 @@ done
 
 ### 6. GATE - wait until every volume is detached
 
-Do **not** power off until this shows `detached` for all 20 volumes (`windows-*` already are).
+Do **not** power off until this shows `detached` for every volume (the `vps` pair already is).
 
 ```bash
 # macOS has no `watch` by default; use a shell loop (Ctrl-C to stop):
@@ -224,8 +223,7 @@ kubectl -n longhorn-system get volumes.longhorn.io   # volumes still detached, i
 ### 2. Un-hibernate Postgres and operators (annotations don't auto-revert)
 
 ```bash
-for c in authentik/authentik-postgres homarr/homarr-postgres \
-         n8n/n8n-postgres speedtest-tracker/speedtest-tracker-postgres; do
+for c in authentik/authentik-postgres mealie/mealie-postgres n8n/n8n-postgres; do
   kubectl cnpg hibernate off "${c#*/}" -n "${c%/*}"
 done
 
@@ -257,7 +255,7 @@ kubectl -n longhorn-system get volumes.longhorn.io \
   -o custom-columns='VOL:.metadata.name,STATE:.status.state,ROBUST:.status.robustness'
 ```
 
-Expect Apps `Synced/Healthy` (the pre-existing `operators-kubevirt` OutOfSync is unrelated)
+Expect all 27 Apps `Synced/Healthy`
 and all volumes `attached/healthy`.
 
 ---

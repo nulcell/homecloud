@@ -41,6 +41,7 @@ Record the **schematic ID** somewhere you'll find it again - you need it for `ta
 
 ```bash
 export TALOSCONFIG_PATH=cluster/talos/generated/talosconfig
+# Must match machine.install.image in patches/{controlplane,worker}.yaml.
 export INSTALLER=metal-installer
 export SCHEMATIC_ID=d78c7cda9fda387e6420896d82d50d5cc97d004feeece7812703c5e1582b82f7
 export TALOS_VERSION=v1.13.2
@@ -112,9 +113,10 @@ talosctl reset --nodes ${NODE_IP} --graceful=false --reboot=true
 talosctl patch machineconfig --patch @cluster/talos/patches/controlplane.yaml --nodes 10.10.17.5
 talosctl patch machineconfig --patch @cluster/talos/patches/worker.yaml --nodes 10.10.27.254
 
-# Update the Talos image (requires reinstall)
-talosctl patch machineconfig --patch @cluster/talos/patches/controlplane-image.yaml --nodes 10.10.17.5
-talosctl upgrade --image factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION} --nodes 10.10.17.5
-talosctl patch machineconfig --patch @cluster/talos/patches/worker-image.yaml --nodes 10.10.27.254
-talosctl upgrade --image factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION} --nodes 10.10.27.254
+# Update the Talos image: bump machine.install.image in the patch, re-apply, then upgrade.
+# A new schematic (added/removed system extensions) needs this — it can't be hot-added.
+talosctl patch machineconfig --patch @cluster/talos/patches/controlplane.yaml --nodes ${NODE_IP}
+talosctl upgrade --image ${INSTALL_IMAGE} --nodes ${NODE_IP}
+talosctl patch machineconfig --patch @cluster/talos/patches/worker.yaml --nodes ${WORKER_IP}
+talosctl upgrade --image ${INSTALL_IMAGE} --nodes ${WORKER_IP}
 ```

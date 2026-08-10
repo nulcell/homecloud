@@ -1,4 +1,4 @@
-# Argo CD 9.5.15 values.
+# Argo CD 10.3.0 values (chart version pinned in install.sh).
 global:
   domain: argocd.nulcell.com
 

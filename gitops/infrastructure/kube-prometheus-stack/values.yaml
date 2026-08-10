@@ -49,7 +49,7 @@ grafana:
   # Deterministic Service name so the HTTPRoute can target `grafana` directly.
   fullnameOverride: grafana
 
-  # Admin creds come from the SOPS-encrypted Secret in this folder.
+  # Admin creds come from grafana-external-secret.yaml in this folder.
   admin:
     existingSecret: grafana-admin
     userKey: admin-user

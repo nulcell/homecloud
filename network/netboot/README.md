@@ -1,3 +1,11 @@
+# netboot host
+
+**Not deployed.** Notes for a planned Raspberry Pi provisioning host: netboot.xyz over TFTP
+plus a dnsmasq ProxyDHCP that hands PXE clients a boot file without owning DHCP leases. The
+Pi-hole (DNS + DHCP) and Tailscale halves of that plan are not written up yet.
+
+Replace `10.10.16.136` throughout with the Pi's actual address.
+
 ## Installation
 
 ```sh

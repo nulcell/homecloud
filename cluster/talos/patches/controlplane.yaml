@@ -19,7 +19,7 @@ machine:
       - 1.1.1.1
   install:
     disk: /dev/nvme0n1
-    image: factory.talos.dev/metal-installer-secureboot/d78c7cda9fda387e6420896d82d50d5cc97d004feeece7812703c5e1582b82f7:v1.13.2
+    image: factory.talos.dev/metal-installer/d78c7cda9fda387e6420896d82d50d5cc97d004feeece7812703c5e1582b82f7:v1.13.2
     wipe: true
   time:
     servers:

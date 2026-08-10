@@ -4,10 +4,9 @@ namespace: n8n
 
 # Migrated from the local chart at charts/n8n/ to the community-charts n8n
 # chart so version bumps flow through Renovate's kustomize manager like the
-# other third-party charts, instead of being hand-maintained. charts/n8n/ is
-# kept in the repo (unreferenced) as a rollback fallback - see git history for
-# the previous helmCharts entry (chartHome: ../../../charts, name: n8n) and
-# values.yaml if it's ever needed.
+# other third-party charts, instead of being hand-maintained. charts/n8n/ has
+# since been deleted - git history holds the previous helmCharts entry
+# (chartHome: ../../../charts, name: n8n) and values.yaml if it's ever needed.
 helmCharts:
   - name: n8n
     repo: https://community-charts.github.io/helm-charts
