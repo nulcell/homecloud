@@ -160,7 +160,7 @@ spec:
         condition: append
       condition: >-
         and not (k8s.ns.name = "argocd"
-        and container.name = "argocd-application-controller"
+        and container.name = "application-controller"
         and proc.exepath = "/usr/local/bin/argocd")
 
     # ── K8s audit log rules ────────────────────────────────────────────────────
