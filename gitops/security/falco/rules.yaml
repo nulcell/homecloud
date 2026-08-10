@@ -35,6 +35,6 @@ spec:
     registry:
       name: ghcr.io
     image:
-      repository: falcosecurity/rules/k8saudit-rules
+      repository: falcosecurity/plugins/ruleset/k8saudit
       tag: latest
   priority: 30
