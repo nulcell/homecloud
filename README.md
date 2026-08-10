@@ -7,7 +7,7 @@ Self-hosted private cloud on bare metal. Talos + Cilium + ArgoCD + Longhorn + Ku
 | Path                                   | Purpose                                                                                                           |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | [`cluster/`](cluster/)                 | Talos machine configs + imperative bootstrap (Cilium, ArgoCD). Start at [`cluster/README.md`](cluster/README.md). |
-| [`gitops/`](gitops/)                   | ArgoCD's source of truth — root, infrastructure, security, apps.                                                  |
+| [`gitops/`](gitops/)                   | ArgoCD's source of truth - root, infrastructure, security, apps.                                                  |
 | [`charts/`](charts/)                   | Helm umbrella charts referenced by `gitops/apps/*`.                                                               |
 | [`manifests/`](manifests/)             | Ad-hoc / one-shot manifests, applied manually.                                                                    |
 | [`scripts/`](scripts/)                 | Standalone operator utilities.                                                                                    |
@@ -22,7 +22,7 @@ brew install mise op
 mise install   # everything pinned in .mise.toml
 ```
 
-`op` (1Password CLI) is the only required tool not managed by mise — it backs the `op://homecloud/...` URIs used in `.env` generation.
+`op` (1Password CLI) is the only required tool not managed by mise - it backs the `op://homecloud/...` URIs used in `.env` generation.
 
 ## Roadmap
 

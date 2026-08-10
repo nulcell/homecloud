@@ -27,7 +27,7 @@ customRules:
         and container.name = "cilium-agent"
         and proc.exepath = "/usr/bin/cilium-agent")
 
-  # Disabled globally — triggers on too many normal operations across workloads.
+  # Disabled globally - triggers on too many normal operations across workloads.
   disable-udp-rule.yaml: |
     - rule: "Unexpected UDP Traffic"
       override:

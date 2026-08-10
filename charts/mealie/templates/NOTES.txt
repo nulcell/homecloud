@@ -29,7 +29,7 @@ allow these redirect URIs:
   {{ .Values.mealie.baseUrl }}/login?direct=1
 {{- if not .Values.mealie.allowPasswordLogin }}
 
-Password login is OFF — OIDC is the only way in. If the provider breaks, set
+Password login is OFF - OIDC is the only way in. If the provider breaks, set
 mealie.allowPasswordLogin=true to restore the username/password fields.
 {{- end }}
 {{- end }}

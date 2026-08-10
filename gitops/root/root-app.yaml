@@ -16,7 +16,7 @@ spec:
     targetRevision: main
     path: gitops/root
     # Note: directory.recurse defaults to false, so we only pick up the
-    # ApplicationSets sitting directly in gitops/root/ — not anything they
+    # ApplicationSets sitting directly in gitops/root/ - not anything they
     # generate. Setting recurse: false explicitly causes a phantom OutOfSync
     # because ArgoCD strips the default from the live object on apply.
   destination:

@@ -25,7 +25,7 @@ gateway:
     namespace: gateway
     sectionName: https-internal
 
-# Single-node cluster today, so ScheduleAnyway — DoNotSchedule would leave the
+# Single-node cluster today, so ScheduleAnyway - DoNotSchedule would leave the
 # second replica pending until the control plane grows to 3 nodes.
 topologySpreadConstraints:
   - maxSkew: 1
@@ -40,7 +40,7 @@ topologySpreadConstraints:
 networkPolicy:
   ingress:
     # Unverified whether uptime-kuma monitors / homarr widgets use the
-    # internal Service URL — allowed for now, tighten once confirmed unused.
+    # internal Service URL - allowed for now, tighten once confirmed unused.
     allowedNamespaces:
       - uptime-kuma
       - homarr

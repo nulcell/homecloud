@@ -1,4 +1,4 @@
-# CloudNativePG operator — installs CRDs (Cluster, Pooler, Backup,
+# CloudNativePG operator - installs CRDs (Cluster, Pooler, Backup,
 # ScheduledBackup, ImageCatalog, ClusterImageCatalog) and the controller.
 # Apps then create their own Postgres clusters declaratively, e.g.:
 #

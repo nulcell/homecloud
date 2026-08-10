@@ -2,13 +2,13 @@
 
 One-time, imperative bring-up of a single-node Talos cluster: Talos → Gateway API CRDs → Cilium → ArgoCD → root Application. From the root Application onward, everything lives in [`/gitops/`](../../gitops/) and reconciles automatically. See [argocd.md](argocd.md) for the post-bootstrap layout.
 
-The whole script in step 8 is in [`bootstrap/install.sh`](../bootstrap/install.sh) — you can run it end-to-end after the Talos config is applied.
+The whole script in step 8 is in [`bootstrap/install.sh`](../bootstrap/install.sh) - you can run it end-to-end after the Talos config is applied.
 
 ## 0. Prerequisites
 
 Tools: `talosctl`, `kubectl`, `helm`, `sops`, `age`. All pinned in [`/.mise.toml`](../../.mise.toml); `mise install` from the repo root.
 
-Network plan — pick before you start, write down somewhere:
+Network plan - pick before you start, write down somewhere:
 
 | Variable           | Example                   | Notes                                     |
 | ------------------ | ------------------------- | ----------------------------------------- |
@@ -22,7 +22,7 @@ Hardware: BIOS virtualization on (KubeVirt needs it); Secure Boot off (or use a 
 
 ## 1. Build a custom Talos image
 
-Longhorn needs `iscsi-tools` and `util-linux-tools` baked in at install time — adding extensions later requires an OS upgrade.
+Longhorn needs `iscsi-tools` and `util-linux-tools` baked in at install time - adding extensions later requires an OS upgrade.
 
 At [factory.talos.dev](https://factory.talos.dev/), pick `Bare-metal`, latest stable, and enable:
 
@@ -31,7 +31,7 @@ At [factory.talos.dev](https://factory.talos.dev/), pick `Bare-metal`, latest st
 - `siderolabs/{amd,intel}-ucode` matching your CPU
 - `siderolabs/amdgpu` if you need GPU passthrough
 
-Record the **schematic ID** — required for upgrades. Boot the ISO; Talos waits in maintenance mode for a config.
+Record the **schematic ID** - required for upgrades. Boot the ISO; Talos waits in maintenance mode for a config.
 
 ## 2. Generate cluster config
 
@@ -41,7 +41,7 @@ talosctl gen config homecloud https://10.10.25.25:6443 \
   --output-dir ./generated --with-examples=false --with-docs=false
 ```
 
-Outputs `controlplane.yaml`, `worker.yaml`, `talosconfig`, `secrets.yaml`. Secrets and configs are gitignored (`cluster/talos/.gitignore`) — keep them safe.
+Outputs `controlplane.yaml`, `worker.yaml`, `talosconfig`, `secrets.yaml`. Secrets and configs are gitignored (`cluster/talos/.gitignore`) - keep them safe.
 
 Patch the controlplane with [`patches/controlplane.yaml`](../talos/patches/controlplane.yaml) (CNI=none, kube-proxy=disabled, VIP, etcd advertised subnets, kubelet server cert rotation, aggregator routing).
 
@@ -52,7 +52,7 @@ talosctl machineconfig patch generated/controlplane.yaml \
 
 ## 3. Apply config + bootstrap etcd
 
-Talos API (port 50000) is per-node, **not** behind the VIP — always target the node IP for `talosctl`.
+Talos API (port 50000) is per-node, **not** behind the VIP - always target the node IP for `talosctl`.
 
 ```bash
 talosctl apply-config --insecure --nodes 10.10.25.10 --file controlplane-final.yaml
@@ -141,7 +141,7 @@ Hands the cluster off to GitOps. Either let `install.sh` apply it as its final s
 kubectl apply -f gitops/root/root-app.yaml
 ```
 
-It targets [`gitops/root/`](../../gitops/root/) with `directory.recurse: false`, picking up only the two ApplicationSets there — which then fan out into one Application per directory under [`gitops/infrastructure/`](../../gitops/infrastructure/) and [`gitops/apps/`](../../gitops/apps/). Expect ~1–2 minutes of red Applications on first sync (CRDs racing each other); `selfHeal: true` converges them.
+It targets [`gitops/root/`](../../gitops/root/) with `directory.recurse: false`, picking up only the two ApplicationSets there - which then fan out into one Application per directory under [`gitops/infrastructure/`](../../gitops/infrastructure/) and [`gitops/apps/`](../../gitops/apps/). Expect ~1–2 minutes of red Applications on first sync (CRDs racing each other); `selfHeal: true` converges them.
 
 ## 9. Verify
 

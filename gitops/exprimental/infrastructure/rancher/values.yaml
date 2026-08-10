@@ -3,11 +3,11 @@
 
 hostname: rancher.nulcell.com
 
-# Single replica — Rancher's "local" cluster (this one) is a single point of
+# Single replica - Rancher's "local" cluster (this one) is a single point of
 # failure anyway in a homelab. Bump to 3 when you have a 3-node HA control plane.
 replicas: 1
 
-# Ingress disabled — exposed via Gateway HTTPRoute in
+# Ingress disabled - exposed via Gateway HTTPRoute in
 # gitops/infrastructure/infra-app-httproutes/rancher.yaml.
 ingress:
   enabled: false
@@ -18,7 +18,7 @@ ingress:
 tls: external
 privateCA: false
 
-# Resource budget — Rancher idles around 600Mi–1Gi and spikes on cluster
+# Resource budget - Rancher idles around 600Mi–1Gi and spikes on cluster
 # imports. Generous limit so OOMKills don't blow up the management plane.
 resources:
   requests:
@@ -32,6 +32,6 @@ resources:
 addLocal: "true"
 
 # # Pin a known bootstrap password so the admin login is recoverable in future
-# # re-installs. Only consumed on first install — changing it later is a no-op.
+# # re-installs. Only consumed on first install - changing it later is a no-op.
 # # Encrypt with SOPS once the cluster is stable.
 # bootstrapPassword: "homecloud-bootstrap"

@@ -28,7 +28,7 @@ initContainers:
 
   # --- Optional: uncomment to enable ---
 
-  # # Trivy: vulnerability and compliance reports (tarball install — no container image published)
+  # # Trivy: vulnerability and compliance reports (tarball install - no container image published)
   # - name: trivy-plugin
   #   image: ghcr.io/kubebeam/trivy-headlamp-plugin:v0.3.2
   #   command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/trivy-plugin /build/plugins/"]
@@ -52,7 +52,7 @@ initContainers:
   #     - mountPath: /build/plugins
   #       name: headlamp-plugins
 
-  # Gatekeeper: OPA policy enforcement UI (tarball install — no container image published)
+  # Gatekeeper: OPA policy enforcement UI (tarball install - no container image published)
   # - name: gatekeeper-plugin
   #   image: alpine:3
   #   command:

@@ -1,7 +1,7 @@
 {{- $ctx := . }}
 {{/*
 sonarr, radarr and bazarr are one workload shape: a single linuxserver.io
-container on the shared config + data PVCs. bazarr is the odd one out — it
+container on the shared config + data PVCs. bazarr is the odd one out - it
 serves no /ping, so it carries no probes.
 */}}
 {{- range $a := list (dict "name" "sonarr" "probes" true) (dict "name" "radarr" "probes" true) (dict "name" "bazarr" "probes" false) }}

@@ -8,7 +8,7 @@ configs:
   cm:
     timeout.reconciliation: 60s
     # --load-restrictor=LoadRestrictionsNone lets kustomizations reference files
-    # outside their own directory — needed by helmGlobals.chartHome paths like
+    # outside their own directory - needed by helmGlobals.chartHome paths like
     # ../../../charts (e.g. gitops/apps/n8n -> charts/n8n).
     kustomize.buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
 

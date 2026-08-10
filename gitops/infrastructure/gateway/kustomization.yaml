@@ -1,6 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# No top-level `namespace:` — this folder spans two namespaces:
+# No top-level `namespace:` - this folder spans two namespaces:
 #   * gateway          (Namespace, Gateway, Certificate)
 #   * cert-manager     (ClusterIssuer's referenced api-token Secret)
 # Cluster-scoped resources (GatewayClass, ClusterIssuer) ignore namespace.

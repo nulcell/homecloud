@@ -1,7 +1,7 @@
-# Windows Server 2025 Evaluation — KubeVirt VM
+# Windows Server 2025 Evaluation - KubeVirt VM
 #
 # Two-phase workflow:
-#   Phase 1 — Installation:
+#   Phase 1 - Installation:
 #     1. Apply this manifest (CDI will import the ISO in the background):
 #          kubectl apply -f manifests/windows-server-2025.yaml
 #     2. Wait for DataVolumes to be ready (ISO import takes several minutes):
@@ -14,7 +14,7 @@
 #        to load the VirtIO storage driver so the system disk is visible.
 #     5. Complete the installation and let Windows boot into setup.
 #
-#   Phase 2 — Post-install optimisation (optional):
+#   Phase 2 - Post-install optimisation (optional):
 #     - Install the full VirtIO driver pack inside Windows:
 #         virtio-win CDROM → virtio-win-gt-x64.msi
 #     - To switch the NIC from e1000e to virtio for better performance,
@@ -56,7 +56,7 @@ spec:
   # Switch to Always once installation is complete and Windows is configured.
   runStrategy: Manual
   dataVolumeTemplates:
-    # # Windows Server 2025 Evaluation ISO — imported directly from Microsoft CDN.
+    # # Windows Server 2025 Evaluation ISO - imported directly from Microsoft CDN.
     # # ~5.5 GB download; CDI will store it in a 6 Gi PVC via Longhorn.
     # # Delete this DataVolume after installation to reclaim storage.
     # - metadata:
@@ -70,7 +70,7 @@ spec:
     #         requests:
     #           storage: 10Gi
     #       accessModes: [ReadWriteMany]
-    # Blank system disk — Windows installs here.
+    # Blank system disk - Windows installs here.
     - metadata:
         name: windows-server-2025-disk
       spec:
@@ -125,12 +125,12 @@ spec:
               secureBoot: true
         devices:
           # TPM required for Windows Server 2025 best-practices baseline.
-          # Note: avoid enabling BitLocker — KubeVirt TPM state does not
+          # Note: avoid enabling BitLocker - KubeVirt TPM state does not
           # persist across VM migrations, which will break BitLocker-sealed boots.
           tpm: {}
           rng: {}
           disks:
-            # System disk on VirtIO — requires loading the VirtIO storage
+            # System disk on VirtIO - requires loading the VirtIO storage
             # driver from the virtio-win CDROM during the Windows installer.
             - name: systemdisk
               bootOrder: 2

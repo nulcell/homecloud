@@ -24,7 +24,7 @@
   packageRules: [
     // The ~20 third-party Helm charts pulled inline via `helmCharts:` in
     // kustomization.yaml (repo: + version:) are picked up automatically by
-    // Renovate's built-in `kustomize` manager — no extra config needed for
+    // Renovate's built-in `kustomize` manager - no extra config needed for
     // detection, just grouping/scheduling below.
     {
       matchManagers: ["kustomize"],
@@ -53,7 +53,7 @@
       groupName: "media-stack container images",
     },
     // Some linuxserver.io images carry stale 2021–2022 tags that are *not*
-    // application versions — base-image and OS releases that leaked into the
+    // application versions - base-image and OS releases that leaked into the
     // tag namespace. They sort above the real version, so Renovate reads them
     // as major bumps.
     {
@@ -68,7 +68,7 @@
       groupName: "renovate workflow action versions",
     },
     // .mise.toml pins dev-tool CLI versions (kubectl, helm, argocd, talosctl,
-    // etc.) that are updated manually rather than via Renovate — the built-in
+    // etc.) that are updated manually rather than via Renovate - the built-in
     // `mise` manager would otherwise open PRs for it automatically.
     {
       matchManagers: ["mise"],
@@ -80,7 +80,7 @@
   customManagers: [
     {
       // Some app-level overrides (e.g. gitops/apps/media-stack/values.yaml)
-      // set only `tag:` without a sibling `repository:` in the same file —
+      // set only `tag:` without a sibling `repository:` in the same file -
       // the repository default lives in charts/*/values.yaml instead, so the
       // built-in helm-values manager can't resolve a package name on its
       // own. Annotate those blocks with a hint comment, e.g.:
@@ -99,9 +99,9 @@
     {
       // Locally-authored charts (n8n, uptime-kuma) template their image tag
       // as `.Values.x.image.tag | default .Chart.AppVersion`, and the
-      // gitops/apps/*/values.yaml override never sets that tag — so the real
+      // gitops/apps/*/values.yaml override never sets that tag - so the real
       // running version is Chart.yaml's `appVersion`, which neither the
-      // kustomize manager (no repo:/version: — it's a local chart) nor the
+      // kustomize manager (no repo:/version: - it's a local chart) nor the
       // helm-values manager (values.yaml's own tag is "") can see. Annotate
       // `version:` and/or `appVersion:` directly, e.g.:
       //
@@ -111,7 +111,7 @@
       //   appVersion: "2.29.1"
       //
       // The comment must bind to the *immediate next line only* (\s*\n\s*,
-      // not a lazy any-distance match) — otherwise one hint above `version:`
+      // not a lazy any-distance match) - otherwise one hint above `version:`
       // swallows through to the next `appVersion:` line and produces a single
       // ambiguous match spanning both fields, since they share the same value.
       customType: "regex",

@@ -14,5 +14,5 @@ Internal service: {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluste
 {{- end }}
 
 The container serves a read-only root filesystem; nginx scratch space is an
-emptyDir at /tmp. Probes hit /health — that location must exist in the image's
+emptyDir at /tmp. Probes hit /health - that location must exist in the image's
 nginx config or pods will never become ready.

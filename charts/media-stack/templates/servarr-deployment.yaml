@@ -89,7 +89,7 @@ spec:
               protocol: TCP
             {{- end }}
           # Gates main containers. Killswitch means the ping only succeeds once
-          # the tunnel is up — handshake usually completes in 10-30s, but allow
+          # the tunnel is up - handshake usually completes in 10-30s, but allow
           # up to ~5 min on slow links / provider issues.
           startupProbe:
             exec:

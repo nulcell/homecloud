@@ -1,6 +1,6 @@
 # One-shot HEVC transcode of the media-stack data PVC, in-place, using the
 # Talos node's AMD iGPU via VAAPI. Mounts the same `media-stack-data` PVC
-# Jellyfin uses, so paths line up — files keep their basenames, only the
+# Jellyfin uses, so paths line up - files keep their basenames, only the
 # extension may change (.avi/.mp4 → .mkv). Already-efficient codecs (hevc,
 # av1, vp9, vvc) are skipped.
 #
@@ -19,7 +19,7 @@
 # Dry-run (probe + log only, no encodes):
 #   set DRY_RUN=1 in the Job env, re-apply, re-watch.
 #
-# Re-run (Jobs are immutable — delete then re-apply):
+# Re-run (Jobs are immutable - delete then re-apply):
 #   kubectl -n media delete job transcode-media --ignore-not-found
 #   kubectl apply -f manifests/transcode-media.yaml
 #
@@ -68,7 +68,7 @@ data:
 
     log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$LOGFILE"; }
 
-    # Pure-bash integer math — linuxserver/ffmpeg doesn't ship `bc`.
+    # Pure-bash integer math - linuxserver/ffmpeg doesn't ship `bc`.
     human() {
       local b=$1 whole frac
       if   (( b >= 1073741824 )); then whole=$((b/1073741824)); frac=$(( (b%1073741824)*100/1073741824 )); printf '%d.%02d GB' "$whole" "$frac"
@@ -79,7 +79,7 @@ data:
     }
 
     on_interrupt() {
-      log "INTERRUPTED — waiting for in-flight workers to exit"
+      log "INTERRUPTED - waiting for in-flight workers to exit"
       wait
       local leftover
       leftover=$(find "$ROOT" -type f -name '*.transcoding.mkv' 2>/dev/null)
@@ -198,7 +198,7 @@ data:
 
       # -init_hw_device + -filter_hw_device register a named VAAPI device that
       # the hwupload filter resolves against. Software decode, then upload to
-      # GPU for encode — robust across input codecs (AMD VAAPI decode coverage
+      # GPU for encode - robust across input codecs (AMD VAAPI decode coverage
       # is uneven, especially for older formats). For full GPU pipeline (faster,
       # but can fail on some sources), prepend:
       #   -hwaccel vaapi -hwaccel_device va -hwaccel_output_format vaapi
@@ -227,7 +227,7 @@ data:
           rm -f "$tmp"
           echo "fail" >> "$STATS_FILE"
         elif (( size_after > size_before * 12 / 10 )); then
-          log "FAIL output larger than source by >20% ($(human "$size_after") vs $(human "$size_before")) — keeping original: $tmp"
+          log "FAIL output larger than source by >20% ($(human "$size_after") vs $(human "$size_before")) - keeping original: $tmp"
           rm -f "$tmp"
           echo "fail" >> "$STATS_FILE"
         else
@@ -259,7 +259,7 @@ data:
       else
         process_file "$file"
       fi
-    # Prune $ROOT/downloads — qBittorrent writes there live; transcoding an
+    # Prune $ROOT/downloads - qBittorrent writes there live; transcoding an
     # in-progress download would either corrupt the destination or race the
     # *arr stack's hardlink/move into the library.
     done < <(find "$ROOT" \
@@ -282,7 +282,7 @@ metadata:
     app.kubernetes.io/name: transcode-media
     app.kubernetes.io/component: maintenance
 spec:
-  backoffLimit: 0 # never retry — the script logs FAIL per-file and continues
+  backoffLimit: 0 # never retry - the script logs FAIL per-file and continues
   activeDeadlineSeconds: 86400 # 24h ceiling on a single run
   ttlSecondsAfterFinished: 604800 # auto-delete the Job 7 days after completion
   template:
@@ -320,7 +320,7 @@ spec:
           securityContext:
             # /dev/dri/renderD128 needs the render group (typically GID 44 or 104
             # depending on distro). Talos exposes the device with the host's
-            # render group — supplementing both common values keeps this portable.
+            # render group - supplementing both common values keeps this portable.
             # If access fails, swap for `privileged: true` to confirm it's the
             # group and not something else.
             privileged: true

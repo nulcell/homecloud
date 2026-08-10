@@ -7,7 +7,7 @@ prometheus:
     enabled: true
 
 # Lease defaults to `kube-system`, but the kustomize helmCharts wrapper rewrites
-# every namespaced resource to `cert-manager` — including the leader-election
+# every namespaced resource to `cert-manager` - including the leader-election
 # Role / RoleBinding the chart ships for kube-system. Keeping the lease in the
 # cert-manager namespace means the controller can actually acquire it. Without
 # this override the controller crashloops on `leases ... forbidden in kube-system`.

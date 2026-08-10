@@ -2,8 +2,8 @@
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
 
   // Self-hosted-only global options for the `renovatebot/github-action`
-  // runner (.github/workflows/renovate.yml). Everything else — packageRules,
-  // customManagers, schedule, etc. — lives in the repo-level renovate.json5
+  // runner (.github/workflows/renovate.yml). Everything else - packageRules,
+  // customManagers, schedule, etc. - lives in the repo-level renovate.json5
   // at the repo root, which Renovate loads normally for nulcell/homecloud.
   platform: "github",
   repositories: ["nulcell/homecloud"],

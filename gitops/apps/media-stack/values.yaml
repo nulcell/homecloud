@@ -23,7 +23,7 @@ gateway:
 networkPolicy:
   ingress:
     # Unverified whether homarr widgets / uptime-kuma monitors use the
-    # internal Service URLs — allowed for now, tighten once confirmed unused.
+    # internal Service URLs - allowed for now, tighten once confirmed unused.
     allowedNamespaces:
       - homarr
       - uptime-kuma
@@ -34,7 +34,7 @@ vpn:
   image:
     tag: v3.41.3
   provider: nordvpn
-  # Switch between openvpn / wireguard freely — both sets of credentials live
+  # Switch between openvpn / wireguard freely - both sets of credentials live
   # in the same Secret, so flipping type and resyncing is enough.
   type: wireguard
   serverCountries: Netherlands
@@ -44,7 +44,7 @@ vpn:
     passwordKey: openvpn-password
     wireguardPrivateKeyKey: wireguard-private-key
   # Disable gluetun's bundled DNS server entirely and let the pod resolve via
-  # Kubernetes CoreDNS — reachable because the cluster service CIDR
+  # Kubernetes CoreDNS - reachable because the cluster service CIDR
   # (10.96.0.0/12) is inside the killswitch's allowed 10.0.0.0/8 subnet.
   # Avoids gluetun's DoT-through-the-tunnel issue against NordVPN. Healthcheck
   # also targets an IP, not a hostname, so VPN health no longer depends on DNS.
@@ -62,7 +62,7 @@ jellyfin:
   publishedServerUrl: https://jellyfin.nulcell.com
   hwAccel:
     enabled: true
-    # TEMPORARY — proves VAAPI by bypassing the Kubernetes device cgroup.
+    # TEMPORARY - proves VAAPI by bypassing the Kubernetes device cgroup.
     # Revert to `privileged: false` once we wire up a device plugin (e.g.
     # squat/generic-device-plugin) for proper, non-privileged GPU access.
     privileged: true
@@ -75,7 +75,7 @@ jellyfin:
       memory: 8Gi
   gateway:
     hostname: jellyfin.nulcell.com
-  # Open egress — this app reaches arbitrary external metadata/subtitle providers.
+  # Open egress - this app reaches arbitrary external metadata/subtitle providers.
   networkPolicy:
     egress:
       allowAll: true
@@ -87,7 +87,7 @@ seerr:
     tag: v3.4.1
   gateway:
     hostname: seerr.nulcell.com
-  # Open egress — this app reaches arbitrary external metadata/subtitle providers.
+  # Open egress - this app reaches arbitrary external metadata/subtitle providers.
   networkPolicy:
     egress:
       allowAll: true
@@ -99,7 +99,7 @@ sonarr:
     tag: 4.0.19
   gateway:
     hostname: sonarr.nulcell.com
-  # Open egress — this app reaches arbitrary external metadata/subtitle providers.
+  # Open egress - this app reaches arbitrary external metadata/subtitle providers.
   networkPolicy:
     egress:
       allowAll: true
@@ -111,7 +111,7 @@ radarr:
     tag: 6.3.0
   gateway:
     hostname: radarr.nulcell.com
-  # Open egress — this app reaches arbitrary external metadata/subtitle providers.
+  # Open egress - this app reaches arbitrary external metadata/subtitle providers.
   networkPolicy:
     egress:
       allowAll: true
@@ -123,7 +123,7 @@ bazarr:
     tag: 1.6.0
   gateway:
     hostname: bazarr.nulcell.com
-  # Open egress — this app reaches arbitrary external metadata/subtitle providers.
+  # Open egress - this app reaches arbitrary external metadata/subtitle providers.
   networkPolicy:
     egress:
       allowAll: true

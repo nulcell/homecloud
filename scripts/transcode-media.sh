@@ -35,7 +35,7 @@ FFMPEG_STATS="-stats"
 
 # FAST=1: -hwaccel gives GPU decode (frames are auto-downloaded to CPU after decode;
 # pinning them on GPU with -hwaccel_output_format requires an hwdownload filter chain
-# and didn't pan out — the CPU round-trip is cheap on Apple Silicon). -realtime hints
+# and didn't pan out - the CPU round-trip is cheap on Apple Silicon). -realtime hints
 # the encoder to prioritize throughput, -bf 0 skips B-frame analysis.
 HWACCEL_ARGS=()
 FAST_ENCODER_ARGS=()
@@ -56,7 +56,7 @@ human() {
 }
 
 on_interrupt() {
-  log "INTERRUPTED — waiting for in-flight workers to exit"
+  log "INTERRUPTED - waiting for in-flight workers to exit"
   wait
   # ffmpeg children clean their own temps on the FAIL branch, but if a worker
   # was killed mid-encode, scoop up anything they left behind.
@@ -189,7 +189,7 @@ process_file() {
       rm -f "$tmp"
       echo "fail" >> "$STATS_FILE"
     elif (( size_after > size_before * 12 / 10 )); then
-      log "FAIL output larger than source by >20% ($(human "$size_after") vs $(human "$size_before")) — keeping original: $tmp"
+      log "FAIL output larger than source by >20% ($(human "$size_after") vs $(human "$size_before")) - keeping original: $tmp"
       rm -f "$tmp"
       echo "fail" >> "$STATS_FILE"
     else

@@ -41,5 +41,5 @@ spec:
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
-          # Without this, ignoreDifferences only affects diffing — sync still applies the field.
+          # Without this, ignoreDifferences only affects diffing - sync still applies the field.
           - RespectIgnoreDifferences=true

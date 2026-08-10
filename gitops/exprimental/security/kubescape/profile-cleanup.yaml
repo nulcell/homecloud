@@ -66,9 +66,9 @@ spec:
 
                   COLS="NS:.metadata.namespace,NAME:.metadata.name"
 
-                  # Pre-fetch all owning resource lists upfront — avoids one kubectl call per profile.
+                  # Pre-fetch all owning resource lists upfront - avoids one kubectl call per profile.
                   # RS names include the pod-template hash (e.g. headlamp-5db4d88db6) so the profile
-                  # name maps directly to the RS. DS/SS names do not — Kubescape appends the hash
+                  # name maps directly to the RS. DS/SS names do not - Kubescape appends the hash
                   # itself, so it must be stripped before the lookup (see case statement below).
                   replicasets=$(kubectl get replicasets.apps    -A --no-headers -o custom-columns="$COLS")
                   daemonsets=$(kubectl  get daemonsets.apps     -A --no-headers -o custom-columns="$COLS")

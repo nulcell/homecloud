@@ -3,7 +3,7 @@ clusterName: homecloud
 excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,kubeconfig,trivy,longhorn-system,cdi,falco"
 includeNamespaces: ""
 
-# DockerHub pull-through credentials — the secret is created by the
+# DockerHub pull-through credentials - the secret is created by the
 # infra-registry-credentials ArgoCD app in this namespace.
 # Chart expects a single string (secret name), not a list.
 imagePullSecrets: "dockerhub-credentials"
@@ -26,7 +26,7 @@ capabilities:
   nodeScan: enable
 
   # ====== Image vulnerabilities ======
-  # Scan all workload images for CVEs — core feature for kubescape vs trivy comparison.
+  # Scan all workload images for CVEs - core feature for kubescape vs trivy comparison.
   vulnerabilityScan: enable
   # Syft-based SBOM extraction from node-level image layers. Requires vulnerabilityScan.
   nodeSbomGeneration: enable
@@ -136,7 +136,7 @@ kubevuln:
     size: 50Gi
     annotations: {}
 
-  # SBOM scanner sidecar — isolates Syft memory usage in a separate container
+  # SBOM scanner sidecar - isolates Syft memory usage in a separate container
   sbomScanner:
     enabled: false
 

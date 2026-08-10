@@ -1,4 +1,4 @@
-# .mise.toml — Tool version management for homecloud
+# .mise.toml - Tool version management for homecloud
 # Run `mise install` to install all pinned tools.
 # Run `mise use <tool>@<version>` to update a pinned version.
 # See https://mise.jdx.dev

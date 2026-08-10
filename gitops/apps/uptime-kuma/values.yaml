@@ -31,7 +31,7 @@ database:
 # The MariaDB pods get their own policy in mariadb-netpol.yaml.
 networkPolicy:
   ingress:
-    # Unverified whether homarr widgets use the internal Service URL —
+    # Unverified whether homarr widgets use the internal Service URL -
     # allowed for now, tighten once confirmed unused.
     allowedNamespaces:
       - homarr

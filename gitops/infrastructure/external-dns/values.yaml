@@ -7,7 +7,7 @@ sources:
 provider:
   name: cloudflare
 
-# Only touch records inside nulcell.com — protects unrelated zones if the
+# Only touch records inside nulcell.com - protects unrelated zones if the
 # Cloudflare token is ever broadened by accident.
 domainFilters:
   - nulcell.com
@@ -40,7 +40,6 @@ resources:
 
 serviceMonitor:
   enabled: true
-
 
 # Default chart RBAC + ServiceAccount; the chart adds Gateway API perms
 # automatically because of the `sources` entries above.

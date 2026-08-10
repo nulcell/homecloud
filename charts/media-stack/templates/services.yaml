@@ -1,6 +1,6 @@
 {{- $ctx := . }}
 {{/*
-One Service per enabled app. prowlarr and qbittorrent select the servarr pod —
+One Service per enabled app. prowlarr and qbittorrent select the servarr pod -
 they run inside its gluetun network namespace.
 */}}
 {{- $svcs := list }}

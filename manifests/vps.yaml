@@ -1,13 +1,13 @@
-# Ubuntu 26.04 LTS "VPS" — KubeVirt VM
+# Ubuntu 26.04 LTS "VPS" - KubeVirt VM
 #
 # Apply order (templates first):
 #   kubectl apply -f manifests/vps.yaml
 #
-# Connect — SSH over the LoadBalancer (everyday entrypoint):
+# Connect - SSH over the LoadBalancer (everyday entrypoint):
 #   VPS_IP=$(kubectl -n vps get svc vps-ssh -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 #   ssh ubuntu@$VPS_IP
 #
-# Connect — SSH via virtctl (no LoadBalancer needed; uses the API server proxy):
+# Connect - SSH via virtctl (no LoadBalancer needed; uses the API server proxy):
 #   kubectl virt -n vps ssh ubuntu@vm/vps
 #
 # Serial console (Ctrl+] to exit):
@@ -23,7 +23,7 @@
 # Adding more VMs: copy this file, change the metadata.name (vm + dataVolume
 # + service), tweak the cloud-init userData, and `kubectl apply -f`. Pick a
 # different instancetype (u1.small = 1/2, cx1.large = 2/4, cx1.2xlarge =
-# 8/16, etc.) if the VPS shape doesn't fit — the `ubuntu` preference works
+# 8/16, etc.) if the VPS shape doesn't fit - the `ubuntu` preference works
 # with any of them.
 #
 # Clean up (delete the VM AND its rootfs PVC, since dataVolumeTemplates owns it):

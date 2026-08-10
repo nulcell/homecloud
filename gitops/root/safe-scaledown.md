@@ -1,12 +1,12 @@
 # Safe cluster scale-down for physical move
 
 Gracefully quiesce every Longhorn-backed workload so volumes **detach cleanly**, then
-power the Talos nodes off. **No PVs/PVCs are deleted** — only replica counts change, so
+power the Talos nodes off. **No PVs/PVCs are deleted** - only replica counts change, so
 data survives. On the way back, un-freezing ArgoCD restores everything from git
 automatically.
 
 > ⚠️ **Longhorn `reclaimPolicy: Delete`** (see [gitops/infrastructure/longhorn/values.yaml](gitops/infrastructure/longhorn/values.yaml#L19)).
-> Deleting a **PVC** destroys its volume. This procedure never deletes PVCs — it only
+> Deleting a **PVC** destroys its volume. This procedure never deletes PVCs - it only
 > scales workloads to zero and (for Postgres) hibernates. Do **not** `kubectl delete pvc`.
 
 ---
@@ -32,7 +32,7 @@ will read OutOfSync/Unknown and **nothing acts on it** until you scale the contr
 back up.
 
 > Stateless infra (cert-manager, external-dns, cloudflared, gateway, headlamp,
-> tailscale, external-secrets, etc.) is intentionally **left running** — it owns no
+> tailscale, external-secrets, etc.) is intentionally **left running** - it owns no
 > Longhorn volume, so it just dies with the node and is restored on boot. Do **not**
 > scale down `longhorn-system`, `kube-system`, or `cnpg-system`: Longhorn/CSI must stay
 > up to perform the detach, and the CNPG operator must stay up to process hibernation.
@@ -41,7 +41,7 @@ back up.
 
 ## ArgoCD apps & appsets in scope
 
-**App-of-apps** (bootstrapped via Helm — *not* self-managed, so freezing it sticks):
+**App-of-apps** (bootstrapped via Helm - *not* self-managed, so freezing it sticks):
 
 - `root` (Application) → manages the ApplicationSets in [gitops/root/](gitops/root/)
   - [infrastructure-appset.yaml](gitops/root/infrastructure-appset.yaml) → `infra-*` Apps
@@ -76,14 +76,14 @@ All generated Apps carry `automated: { prune: true, selfHeal: true }`.
 
 Cluster facts captured at write time:
 
-- Nodes — control-plane `talos-tgu-9aw` = **10.10.17.5**, worker `talos-ztk-5fl` = **10.10.27.254**
+- Nodes - control-plane `talos-tgu-9aw` = **10.10.17.5**, worker `talos-ztk-5fl` = **10.10.27.254**
 - 20 Longhorn volumes total; 2 (`windows-*`) already detached → expect **all 20 detached** before power-off.
 
 ---
 
 ## SHUTDOWN
 
-Run from your workstation (context `admin@homecloud`). Do the steps **in order** — each
+Run from your workstation (context `admin@homecloud`). Do the steps **in order** - each
 phase depends on the previous one having quiesced.
 
 ### 0. Pre-flight snapshot
@@ -103,16 +103,16 @@ kubectl get applications.argoproj.io -n argocd \
 kubectl -n argocd scale statefulset argocd-application-controller   --replicas=0
 kubectl -n argocd scale deployment  argocd-applicationset-controller --replicas=0
 
-# CRITICAL: wait until the controller POD is actually gone — not just replicas=0.
+# CRITICAL: wait until the controller POD is actually gone - not just replicas=0.
 # While that pod is still alive it self-heals your scale-downs straight back
 # (replicas bounce 0->1 before pods even terminate), so the scale "does nothing".
 kubectl -n argocd wait --for=delete pod \
   -l app.kubernetes.io/name=argocd-application-controller --timeout=120s
 kubectl -n argocd get pods | grep -E 'application-controller|applicationset-controller' \
-  || echo "✓ both controllers down — safe to scale workloads"
+  || echo "✓ both controllers down - safe to scale workloads"
 ```
 
-### 2. Stop the KubeVirt VM(s) — you handle this
+### 2. Stop the KubeVirt VM(s) - you handle this
 
 Stop `vps` (and confirm `windows` stays stopped). When done, the VMI is gone:
 
@@ -149,7 +149,7 @@ Two gotchas handled here:
   `minReplicas: 1` and will re-inflate any Deployment you zero. Delete them first; ArgoCD
   recreates them from git on restore.
 - **Shell word-splitting:** the loop iterates an **explicit literal list**, not a
-  `$VAR`. In `zsh` (the default here) `for ns in $DATA_NS` does *not* split on spaces —
+  `$VAR`. In `zsh` (the default here) `for ns in $DATA_NS` does *not* split on spaces -
   it runs **one** iteration with `ns` set to the whole string, so every `kubectl -n` hits
   a non-existent namespace and you get `no objects passed to scale`.
 
@@ -168,7 +168,7 @@ for ns in actual-budget authentik homarr media n8n speedtest-tracker \
 done
 ```
 
-### 6. GATE — wait until every volume is detached
+### 6. GATE - wait until every volume is detached
 
 Do **not** power off until this shows `detached` for all 20 volumes (`windows-*` already are).
 
@@ -187,14 +187,14 @@ kubectl get pods -A -o json | jq -r '.items[]
   | "\(.metadata.namespace)/\(.metadata.name)"'
 ```
 
-### 7. Power off — worker first, control-plane last (use `--force`)
+### 7. Power off - worker first, control-plane last (use `--force`)
 
 Use `--force`, which **skips the cordon/drain**. We already quiesced everything in steps
 3–5 and confirmed every volume `detached` in step 6, so there is nothing left to drain.
 A default (non-force) shutdown *would* drain, and with Longhorn's
 `nodeDrainPolicy: block-for-eviction` + `defaultReplicaCount: 1`
 ([values.yaml](gitops/infrastructure/longhorn/values.yaml#L10-L11)) that drain blocks
-while Longhorn tries to evict/rebuild the lone replica off the node — exactly the churn
+while Longhorn tries to evict/rebuild the lone replica off the node - exactly the churn
 you want to avoid. etcd survives the hard stop (WAL is fsync'd; `shutdown` doesn't remove
 the member, so it rejoins on boot).
 
@@ -204,7 +204,7 @@ talosctl -n 10.10.17.5  shutdown --force     # control-plane talos-tgu-9aw
 ```
 
 > Only safe **because** step 6 showed all volumes detached. Don't `--force` past a
-> still-`attached` volume — go back and stop whatever still mounts it.
+> still-`attached` volume - go back and stop whatever still mounts it.
 
 Both nodes power off. Move them.
 
@@ -212,7 +212,7 @@ Both nodes power off. Move them.
 
 ## RESTORE (next day)
 
-### 1. Power on — control-plane first, then worker
+### 1. Power on - control-plane first, then worker
 
 Power `talos-tgu-9aw` (10.10.17.5) first; once the API answers, power `talos-ztk-5fl`.
 
@@ -233,7 +233,7 @@ kubectl -n monitoring scale deployment kps-operator      --replicas=1   # promet
 kubectl -n mariadb    scale deployment mariadb-operator  --replicas=1
 ```
 
-### 3. Unfreeze ArgoCD — it restores everything else
+### 3. Unfreeze ArgoCD - it restores everything else
 
 ```bash
 kubectl -n argocd scale statefulset argocd-application-controller   --replicas=1
@@ -246,7 +246,7 @@ restores git's replica counts, and **recreates the deleted HPAs**. `kps-operator
 the Prometheus/Alertmanager and MariaDB StatefulSets. (If you'd rather not wait on a
 reconcile, scale those two operators to 1 by hand.)
 
-### 4. Start the KubeVirt VM(s) — you handle this
+### 4. Start the KubeVirt VM(s) - you handle this
 
 ### 5. Verify
 
@@ -269,7 +269,7 @@ and all volumes `attached/healthy`.
 - **A volume won't detach:** never force-delete the PVC. Instead find the mounting pod
   (step 6 snippet) and scale its owner; if a CNPG cluster is stubborn, confirm hibernate
   finished with `kubectl cnpg status <cluster> -n <ns>`.
-- **App stuck OutOfSync after restore:** it's just waiting on the controller — confirm
+- **App stuck OutOfSync after restore:** it's just waiting on the controller - confirm
   `argocd-application-controller` is at 1 replica and `Running`.
 - **Scale-down won't stick (pods reappear / stay at 7d age):** something is re-inflating
   them. Check, in order: (1) the `argocd-application-controller` pod is actually gone

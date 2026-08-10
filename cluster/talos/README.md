@@ -7,18 +7,18 @@ Machine-config patches and operator state for the Talos cluster. See [../docs/bo
 ```
 talos/
 ├── patches/        # machine-config patches applied on top of `talosctl gen config` output
-├── generated/      # output of `talosctl gen config` — gitignored
-└── secrets/        # `secrets.yaml` and `talosconfig` — gitignored, back up out of band
+├── generated/      # output of `talosctl gen config` - gitignored
+└── secrets/        # `secrets.yaml` and `talosconfig` - gitignored, back up out of band
 ```
 
 ## Image schematic
 
 The custom Talos image is built at [factory.talos.dev](https://factory.talos.dev/) with these extensions baked in:
 
-- `siderolabs/iscsi-tools` — required by Longhorn
-- `siderolabs/util-linux-tools` — required by Longhorn
-- `siderolabs/amd-ucode` — AMD CPU microcode updates
-- `siderolabs/amdgpu` — AMD GPU firmware (drop if not on AMD GPU hardware)
+- `siderolabs/iscsi-tools` - required by Longhorn
+- `siderolabs/util-linux-tools` - required by Longhorn
+- `siderolabs/amd-ucode` - AMD CPU microcode updates
+- `siderolabs/amdgpu` - AMD GPU firmware (drop if not on AMD GPU hardware)
 
 Kernel customizations:
 
@@ -35,7 +35,7 @@ customization:
             - siderolabs/util-linux-tools
 ```
 
-Record the **schematic ID** somewhere you'll find it again — you need it for `talosctl upgrade`.
+Record the **schematic ID** somewhere you'll find it again - you need it for `talosctl upgrade`.
 
 ## Common commands
 

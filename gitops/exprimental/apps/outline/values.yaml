@@ -28,7 +28,7 @@ utilsSecretExternalSecret:
   name: outline-secrets
   key: utils-secret
 
-# External PostgreSQL — CNPG cluster `outline-postgres` (postgres-cluster.yaml).
+# External PostgreSQL - CNPG cluster `outline-postgres` (postgres-cluster.yaml).
 # CNPG auto-creates a secret named <cluster>-app with keys: username, password.
 postgresql:
   enabled: false
@@ -40,7 +40,7 @@ externalPostgresql:
   existingSecret: outline-postgres-app
   passwordSecretKey: password
 
-# External Redis (unauthenticated, cluster-internal only) — see redis.yaml.
+# External Redis (unauthenticated, cluster-internal only) - see redis.yaml.
 # externalRedis.password is a fixed non-secret placeholder purely to satisfy
 # the chart's `required` guard on its own auto-generated redis secret; the
 # server has no --requirepass set, so this value is never actually checked.
@@ -51,7 +51,7 @@ externalRedis:
   port: 6379
   password: "unused-outline-redis-has-no-auth"
 
-# Outline requires an SSO provider — there is no built-in username/password
+# Outline requires an SSO provider - there is no built-in username/password
 # login. Using Authentik (already deployed at auth.nulcell.com) as a generic
 # OIDC provider. authUri/tokenUri/userInfoUri are Authentik's global OAuth2
 # endpoints (not per-application), per https://docs.goauthentik.io/docs/add-secure-apps/providers/oauth2/

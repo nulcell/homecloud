@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: media
 
-# Chart at charts/media-stack/ — referenced via chartHome.
+# Chart at charts/media-stack/ - referenced via chartHome.
 # Requires the CMP plugin to use --load-restrictor=LoadRestrictionsNone (set in
 # cluster/bootstrap/argocd-values.yaml) so kustomize can read files above this dir.
 helmGlobals:

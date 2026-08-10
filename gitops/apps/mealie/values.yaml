@@ -29,7 +29,7 @@ persistence:
   size: 1Gi
 
 mealie:
-  # Must match gateway.hostname above — Mealie builds notification links and the
+  # Must match gateway.hostname above - Mealie builds notification links and the
   # OIDC callback from this.
   baseUrl: https://recipes.nulcell.com
   timezone: Europe/Amsterdam
@@ -39,7 +39,7 @@ mealie:
   allowSignup: false
   # Still true so there is a way in while the Authentik provider is being set
   # up, and a way back in if it ever breaks. Flip to false once OIDC logins are
-  # confirmed working — see step 5 below.
+  # confirmed working - see step 5 below.
   allowPasswordLogin: false
 
   # Postgres backs the database, so uvicorn can run more than one worker.
@@ -81,8 +81,8 @@ mealie:
 #      "authentik default OAuth Mapping: Application Entitlements".
 #   2. Create an Application using that provider with slug "mealie" (the slug
 #      is what configurationUrl above resolves against).
-#   3. On that Application, create two entitlements — "mealie-users" and
-#      "mealie-admins" — and bind the groups/users that should get access and
+#   3. On that Application, create two entitlements - "mealie-users" and
+#      "mealie-admins" - and bind the groups/users that should get access and
 #      admin rights respectively.
 #   4. Put the provider's Client Secret into the "mealie-secrets" 1Password
 #      item (see mealie-external-secrets.yaml) and its Client ID in clientId
@@ -91,7 +91,7 @@ mealie:
 #      Mealie as an admin, delete the seeded changeme@example.com account and
 #      set mealie.allowPasswordLogin: false.
 
-# External PostgreSQL — CNPG cluster `mealie-postgres` (postgres-cluster.yaml).
+# External PostgreSQL - CNPG cluster `mealie-postgres` (postgres-cluster.yaml).
 # CNPG auto-creates a secret named <cluster>-app with keys: username, password.
 database:
   type: postgres
@@ -106,13 +106,13 @@ database:
 # The postgres pods get their own policy in postgres-netpol.yaml.
 networkPolicy:
   ingress:
-    # No HTTPRoute today (gateway.enabled=false above) — cloudflared forwards
+    # No HTTPRoute today (gateway.enabled=false above) - cloudflared forwards
     # straight to the pod. Flip gateway back on together with gateway.enabled.
     gateway: false
     cloudflared:
       enabled: true
     # Unverified whether uptime-kuma monitors / homarr widgets use the
-    # internal Service URL — allowed for now, tighten once confirmed unused.
+    # internal Service URL - allowed for now, tighten once confirmed unused.
     allowedNamespaces:
       - uptime-kuma
       - homarr

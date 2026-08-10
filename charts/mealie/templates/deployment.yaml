@@ -199,7 +199,7 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       # /app/data always needs a mount, persistent or not. The image ships it
       # root-owned and only fixes that by chowning as root at startup, which
-      # the entrypoint skips when it is already non-root — so unmounted it is
+      # the entrypoint skips when it is already non-root - so unmounted it is
       # unwritable and Mealie dies writing .secret. A mounted volume picks up
       # fsGroup and stays writable either way.
       volumes:

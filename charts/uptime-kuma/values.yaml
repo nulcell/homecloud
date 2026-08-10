@@ -82,7 +82,7 @@ gateway:
     httpSectionName: http # only used when httpRedirect is true
   # Off by default: the cluster's gateway app owns a catch-all HTTP→HTTPS
   # redirect covering every host. Set true only against a Gateway that has no
-  # such route — a hostname-scoped redirect still wins over the catch-all.
+  # such route - a hostname-scoped redirect still wins over the catch-all.
   httpRedirect: false
 
 persistence:
@@ -106,12 +106,12 @@ database:
 # CiliumNetworkPolicy for the app pods. The database gets its own policy where
 # it is deployed (e.g. the gitops overlay). Cilium's Gateway API forwards
 # traffic with the reserved `ingress` identity, which a plain NetworkPolicy
-# cannot select — hence CNP rather than networking.k8s.io.
+# cannot select - hence CNP rather than networking.k8s.io.
 networkPolicy:
   enabled: true
   ingress:
     # Open ingress entirely, ignoring every rule below. Escape hatch for
-    # debugging or gradual rollout — leave false for least privilege.
+    # debugging or gradual rollout - leave false for least privilege.
     allowAll: false
     # Let any pod in this namespace reach the app on any port.
     intraNamespace: false

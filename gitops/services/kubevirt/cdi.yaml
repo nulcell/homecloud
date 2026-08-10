@@ -12,7 +12,7 @@ spec:
   imagePullPolicy: IfNotPresent
   config:
     # Scratch space PVCs that CDI uses while importing/cloning land on Longhorn
-    # rather than the default ephemeral local path — survives node reboots
+    # rather than the default ephemeral local path - survives node reboots
     # mid-import and avoids "no available storage" on slow networks.
     scratchSpaceStorageClass: longhorn
     featureGates: []

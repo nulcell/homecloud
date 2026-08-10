@@ -1,6 +1,6 @@
 apiVersion: v2
 name: portfolio
-description: nulcell.com — personal portfolio site (static Astro build served by nginx)
+description: nulcell.com - personal portfolio site (static Astro build served by nginx)
 type: application
 # renovate: datasource=docker depName=nullcell/portfolio
 version: "1.0.7"

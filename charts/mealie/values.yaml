@@ -94,12 +94,12 @@ gateway:
     httpSectionName: http # only used when httpRedirect is true
   # Off by default: the cluster's gateway app owns a catch-all HTTP→HTTPS
   # redirect covering every host. Set true only against a Gateway that has no
-  # such route — a hostname-scoped redirect still wins over the catch-all.
+  # such route - a hostname-scoped redirect still wins over the catch-all.
   httpRedirect: false
 
 # Recipe images, backups, the .secret token-signing key, and (when
 # database.type=sqlite) the database itself.
-# Disabling this does not remove the /app/data mount — it downgrades it to an
+# Disabling this does not remove the /app/data mount - it downgrades it to an
 # emptyDir, since the container cannot start without one. Postgres holds recipe
 # text, but uploaded images are lost on restart and a regenerated .secret logs
 # every user out, so leave this on outside of throwaway testing.
@@ -114,12 +114,12 @@ persistence:
 mealie:
   # Public URL Mealie builds notification and OIDC callback links from. Set this
   # to the hostname users actually type, which behind cloudflared is the public
-  # name — not the gateway origin hostname.
+  # name - not the gateway origin hostname.
   baseUrl: http://localhost:8080
   timezone: UTC
   logLevel: info
   # Names of the group/household created on first boot. Changing them later has
-  # no effect — Mealie only reads these when seeding an empty database.
+  # no effect - Mealie only reads these when seeding an empty database.
   defaultGroup: Home
   defaultHousehold: Family
   # Local time of day (HH:MM) for daily server tasks: meal-plan rollover,
@@ -136,7 +136,7 @@ mealie:
   allowPasswordLogin: true
   # Hours a login token stays valid.
   tokenTime: 48
-  # Number of uvicorn workers. Above 1 needs database.type=postgres — the
+  # Number of uvicorn workers. Above 1 needs database.type=postgres - the
   # workers would otherwise contend for the same SQLite file.
   uvicornWorkers: 1
 
@@ -205,12 +205,12 @@ database:
 # CiliumNetworkPolicy for the app pods. The database gets its own policy where
 # it is deployed (e.g. the gitops overlay). Cilium's Gateway API forwards
 # traffic with the reserved `ingress` identity, which a plain NetworkPolicy
-# cannot select — hence CNP rather than networking.k8s.io.
+# cannot select - hence CNP rather than networking.k8s.io.
 networkPolicy:
   enabled: true
   ingress:
     # Open ingress entirely, ignoring every rule below. Escape hatch for
-    # debugging or gradual rollout — leave false for least privilege.
+    # debugging or gradual rollout - leave false for least privilege.
     allowAll: false
     # Let any pod in this namespace reach the app on any port.
     intraNamespace: false

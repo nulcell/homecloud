@@ -31,7 +31,7 @@ image:
 
 trivy:
   # ClientServer mode deploys a single Trivy server pod that maintains the vulnerability DB.
-  # Scan job containers connect to it as clients — no local DB init, eliminating the
+  # Scan job containers connect to it as clients - no local DB init, eliminating the
   # "cache may be in use by another process" lock contention when multiple containers
   # within the same scan job pod race to initialize the DB simultaneously.
   mode: ClientServer
@@ -43,7 +43,7 @@ trivy:
   valuesFromSecret: "trivy-dockerhub-auth"
 
 trivyOperator:
-  # Per-CVE-ID metrics cause high Prometheus cardinality — intentionally off.
+  # Per-CVE-ID metrics cause high Prometheus cardinality - intentionally off.
   metricsVulnIdEnabled: false
   scanJobsInSameNamespace: false
   skipInitContainers: true
@@ -67,7 +67,7 @@ compliance:
     - k8s-pss-baseline-0.1
     - k8s-pss-restricted-0.1
 
-# Talos Linux has an immutable root filesystem — containerd cannot mkdir /etc/systemd
+# Talos Linux has an immutable root filesystem - containerd cannot mkdir /etc/systemd
 # on the host to set up the bind mount. Replace with emptyDir so the pod starts;
 # the scanner will simply find no systemd units (accurate for Talos).
 nodeCollector:

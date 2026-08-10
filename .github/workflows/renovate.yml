@@ -29,7 +29,7 @@ jobs:
           # Docker Hub credentials for the private nullcell/portfolio image,
           # whose tag Renovate reads from charts/portfolio/Chart.yaml appVersion.
           # DOCKERHUB_TOKEN must be a Personal Access Token (read-only is enough)
-          # — Docker rejects account passwords for API logins, and Renovate
+          # - Docker rejects account passwords for API logins, and Renovate
           # surfaces that only as "Failed to look up docker package".
           # matchHost has no scheme, so it suffix-matches index.docker.io too.
           # RENOVATE_-prefixed vars reach the container via the action's default

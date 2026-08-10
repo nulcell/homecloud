@@ -14,7 +14,7 @@ common:
   # Timezone for all media apps.
   timezone: UTC
   # Container-level security context defaults. linuxserver.io images start
-  # as root to chown volumes via s6, then drop to PUID:PGID — so we keep a
+  # as root to chown volumes via s6, then drop to PUID:PGID - so we keep a
   # small allowlist of capabilities for that hand-off.
   securityContext:
     allowPrivilegeEscalation: false
@@ -28,7 +28,7 @@ common:
       - KILL
 
 # =============================================================================
-# Persistence — shared `config` and `data` PVCs mounted into every pod.
+# Persistence - shared `config` and `data` PVCs mounted into every pod.
 # Longhorn supports RWX via its share-manager (NFS under the hood); pick a
 # different storageClassName if you have something else (e.g. nfs-subdir,
 # rook-ceph-rbd, etc.).
@@ -44,7 +44,7 @@ persistence:
   annotations: {}
 
 # =============================================================================
-# Gateway API — global parentRef shared by every app's HTTPRoute. Per-app
+# Gateway API - global parentRef shared by every app's HTTPRoute. Per-app
 # hostnames are configured in the per-app blocks below; omit the hostname to
 # keep an app internal-only.
 # =============================================================================
@@ -57,11 +57,11 @@ gateway:
     httpSectionName: http # only used when httpRedirect is true
   # Off by default: the cluster's gateway owns a catch-all HTTP→HTTPS
   # redirect covering every host. Set true only against a Gateway that has no
-  # such route — a hostname-scoped redirect still wins over the catch-all.
+  # such route - a hostname-scoped redirect still wins over the catch-all.
   httpRedirect: false
 
 # =============================================================================
-# Network policy — one CiliumNetworkPolicy per app; prowlarr + qbittorrent are
+# Network policy - one CiliumNetworkPolicy per app; prowlarr + qbittorrent are
 # covered by the servarr pod's policy. Each app's own `networkPolicy` block
 # below is a partial override deep-merged onto this one, so both use the same
 # schema. CNP rather than networking.k8s.io because Cilium's Gateway API
@@ -72,7 +72,7 @@ networkPolicy:
   enabled: true
   ingress:
     # Open ingress entirely, ignoring every rule below. Escape hatch for
-    # debugging or gradual rollout — leave false for least privilege.
+    # debugging or gradual rollout - leave false for least privilege.
     allowAll: false
     # Let any pod in this namespace reach the app on any port. On by default:
     # the apps talk to each other constantly (sonarr → prowlarr/qbittorrent,
@@ -96,7 +96,7 @@ networkPolicy:
     extraRules: []
   egress:
     # Open egress: any destination, any port. Every app here overrides this to
-    # true — jellyfin and the *arr apps reach arbitrary external metadata and
+    # true - jellyfin and the *arr apps reach arbitrary external metadata and
     # subtitle providers, and servarr's egress is policed by the gluetun
     # killswitch inside its pod. false is a full deny, not even DNS.
     allowAll: false
@@ -104,7 +104,7 @@ networkPolicy:
     extraRules: []
 
 # =============================================================================
-# VPN — Gluetun sidecar in the same pod as Prowlarr + qBittorrent.
+# VPN - Gluetun sidecar in the same pod as Prowlarr + qBittorrent.
 # Credentials MUST come from a Secret (never set them in values).
 # Create the Secret externally (SOPS-encrypted manifest is the recommended
 # pattern); see the example in the gitops overlay.
@@ -121,7 +121,7 @@ vpn:
   provider: nordvpn
   type: openvpn # openvpn | wireguard
   serverCountries: Netherlands
-  # Subnets allowed to bypass the killswitch — must include your cluster's
+  # Subnets allowed to bypass the killswitch - must include your cluster's
   # pod + service CIDRs so other containers in the pod can still hit the WebUI.
   firewallOutboundSubnets: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" #,10.244.0.0/16,10.96.0.0/12"
   # Ports inside the pod that should accept inbound traffic through the firewall.
@@ -132,7 +132,7 @@ vpn:
   #   openvpn   → userKey + passwordKey
   #   wireguard → wireguardPrivateKeyKey (plus wireguardAddressesKey if your
   #               provider requires per-account client addresses; nordvpn does
-  #               not — Gluetun infers them.)
+  #               not - Gluetun infers them.)
   credentialsSecret:
     name: media-stack-vpn
     userKey: openvpn-user
@@ -140,7 +140,7 @@ vpn:
     wireguardPrivateKeyKey: wireguard-private-key
     wireguardAddressesKey: "" # optional; set if your provider needs it
   # Gluetun needs /dev/net/tun. By default we mount it from the host as a
-  # CharDevice — Talos (and most distros) load the tun kernel module out of
+  # CharDevice - Talos (and most distros) load the tun kernel module out of
   # the box, so the device exists on the node. Set `useHostPath: false` if you
   # use a device plugin (e.g. squat/generic-device-plugin) or run gluetun
   # privileged so it can mknod the device itself.
@@ -169,7 +169,7 @@ jellyfin:
     tag: latest
     pullPolicy: IfNotPresent
   publishedServerUrl: "" # set to your https URL for proper auto-discovery
-  # Pin to a specific node — required when hwAccel below is enabled because
+  # Pin to a specific node - required when hwAccel below is enabled because
   # the iGPU is a hostPath device that only exists on that node. Leave empty
   # to let the scheduler pick.
   nodeName: ""
@@ -177,14 +177,14 @@ jellyfin:
   # the pod mounts the render node from the host. /dev/dri/renderD* is
   # world-accessible on most Linux hosts (mode 0666 by kernel/udev convention,
   # including Talos) so no group membership is needed by default. If your host
-  # restricts the render node to a specific group, list those GIDs here —
+  # restricts the render node to a specific group, list those GIDs here -
   # common values are 44 (older Debian/Ubuntu), 104 (newer Ubuntu), 989 (RHEL).
   hwAccel:
     enabled: false
     devicePath: /dev/dri
     supplementalGroups: []
     # privileged: true grants the container access to host devices that the
-    # Kubernetes device cgroup would otherwise block — needed when /dev/dri/*
+    # Kubernetes device cgroup would otherwise block - needed when /dev/dri/*
     # is exposed via hostPath but no device plugin is wired up. Heavy hammer;
     # prefer a device plugin (e.g. squat/generic-device-plugin) for production.
     privileged: false
@@ -302,7 +302,7 @@ bazarr:
     hostname: ""
 
 # ---------- Servarr pod (Gluetun + Prowlarr + qBittorrent share a network namespace) ----------
-# Prowlarr and qBittorrent route ALL egress through the gluetun sidecar — if
+# Prowlarr and qBittorrent route ALL egress through the gluetun sidecar - if
 # the VPN drops, the killswitch blocks traffic. Their Services target the
 # servarr pod, and traffic enters via the firewallInputPorts above.
 servarr:

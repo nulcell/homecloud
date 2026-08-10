@@ -1,6 +1,6 @@
 # mealie
 
-Mealie — a self-hosted recipe manager, meal planner and shopping list.
+Mealie - a self-hosted recipe manager, meal planner and shopping list.
 
 Follows the upstream PostgreSQL deployment guide
 (<https://docs.mealie.io/documentation/getting-started/installation/postgres/>),
@@ -10,13 +10,13 @@ replaced by a CNPG `Cluster` owned by the app directory, and the compose
 
 `values.yaml` models the settings from
 <https://docs.mealie.io/documentation/getting-started/installation/backend-config/>
-that are worth having as first-class knobs — general, security, database, OIDC
+that are worth having as first-class knobs - general, security, database, OIDC
 and SMTP. Everything else (`LDAP_*`, `THEME_*`, `SCRAPER_*`, `OPENAI_*`) goes
 through `mealie.extraEnv`.
 
 ## OIDC
 
-`mealie.baseUrl` must be the public hostname before OIDC works — Mealie builds
+`mealie.baseUrl` must be the public hostname before OIDC works - Mealie builds
 its callback URL from it. The provider needs both
 `<baseUrl>/login` and `<baseUrl>/login?direct=1` as strict redirect URIs.
 

@@ -1,7 +1,7 @@
 # Trimmed for a single-node homelab. Adjust storage sizes and retention to taste.
 fullnameOverride: kps
 
-# Talos exposes kube-controller-manager / scheduler / proxy differently —
+# Talos exposes kube-controller-manager / scheduler / proxy differently -
 # we disable proxy entirely (Cilium replaces it) and let the others stay on host.
 kubeProxy:
   enabled: false
@@ -27,7 +27,7 @@ prometheus:
             requests:
               storage: 50Gi
     # Pick up ServiceMonitors / PodMonitors / Rules from any namespace, regardless
-    # of their helm-release labels — needed for app teams to ship their own.
+    # of their helm-release labels - needed for app teams to ship their own.
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
@@ -65,7 +65,7 @@ grafana:
   service:
     type: ClusterIP # exposed via HTTPRoute, not LoadBalancer
 
-  # Disable the chart's Ingress — Gateway API HTTPRoute handles ingress for us.
+  # Disable the chart's Ingress - Gateway API HTTPRoute handles ingress for us.
   ingress:
     enabled: false
 
