@@ -1,11 +1,12 @@
 # Local overrides for upstream rules. Priority 90 so they load after every upstream ruleset.
+# inlineRules must be structured YAML (a list), not a string — the operator re-serializes it.
 apiVersion: artifact.falcosecurity.dev/v1alpha1
 kind: Rulesfile
 metadata:
   name: custom-overrides
 spec:
   priority: 90
-  inlineRules: |
+  inlineRules:
     # ── Syscall rules ──────────────────────────────────────────────────────────
 
     - rule: "BPF Program Not Profiled"
