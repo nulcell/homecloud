@@ -18,6 +18,21 @@ initContainers:
       - mountPath: /build/plugins
         name: headlamp-plugins
 
+  # ArgoCD (tarball install - no container image published)
+  - name: argocd-plugin
+    image: alpine:3
+    command:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /build/plugins &&
+        wget -qO /tmp/argocd-plugin.tar.gz \
+          https://github.com/headlamp-k8s/plugins/releases/download/argocd-0.1.0-alpha/headlamp-k8s-argocd-0.1.0-alpha.tar.gz &&
+        tar -xzf /tmp/argocd-plugin.tar.gz -C /build/plugins/
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+
   # # KubeVirt: virtual machine management
   # - name: headlamp-kubevirt
   #   image: ghcr.io/naval-group/headlamp-kubevirt:0.2.2
