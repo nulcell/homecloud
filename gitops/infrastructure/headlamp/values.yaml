@@ -4,16 +4,8 @@ config:
 initContainers:
   # cert-manager: certificate and issuer management
   - name: cert-manager-plugin
-    image: ghcr.io/headlamp-k8s/headlamp-plugin-cert-manager:v0.1.0
+    image: ghcr.io/headlamp-k8s/headlamp-plugin-cert-manager:v0.1.1
     command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
-    volumeMounts:
-      - mountPath: /build/plugins
-        name: headlamp-plugins
-
-  # Kubescape: security posture assessment
-  - name: kubescape-plugin
-    image: quay.io/kubescape/headlamp-plugin:v0.11.2
-    command: ["/bin/sh", "-c", "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
     volumeMounts:
       - mountPath: /build/plugins
         name: headlamp-plugins
@@ -33,15 +25,53 @@ initContainers:
       - mountPath: /build/plugins
         name: headlamp-plugins
 
-  # # KubeVirt: virtual machine management
-  # - name: headlamp-kubevirt
-  #   image: ghcr.io/naval-group/headlamp-kubevirt:0.2.2
-  #   command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/kubevirt /build/plugins/"]
+  # KubeVirt: virtual machine management
+  - name: headlamp-kubevirt
+    image: ghcr.io/naval-group/headlamp-kubevirt:0.2.2
+    command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/kubevirt /build/plugins/"]
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+
+  # Plugin Catalog (tarball install - no container image published)
+  - name: plugin-catalog-plugin
+    image: alpine:3
+    command:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /build/plugins &&
+        wget -qO /tmp/plugin-catalog-plugin.tar.gz \
+          https://github.com/headlamp-k8s/plugins/releases/download/plugin-catalog-0.4.4/headlamp-k8s-plugin-catalog-0.4.4.tar.gz &&
+        tar -xzf /tmp/plugin-catalog-plugin.tar.gz -C /build/plugins/
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+
+  # App Catalog (tarball install - no container image published)
+  - name: app-catalog-plugin
+    image: alpine:3
+    command:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /build/plugins &&
+        wget -qO /tmp/app-catalog-plugin.tar.gz \
+          https://github.com/headlamp-k8s/plugins/releases/download/app-catalog-0.9.1/app-catalog-0.9.1.tar.gz &&
+        tar -xzf /tmp/app-catalog-plugin.tar.gz -C /build/plugins/
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+
+  # --- Optional: uncomment to enable ---
+
+  # # Kubescape: security posture assessment
+  # - name: kubescape-plugin
+  #   image: quay.io/kubescape/headlamp-plugin:v0.11.2
+  #   command: ["/bin/sh", "-c", "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
   #   volumeMounts:
   #     - mountPath: /build/plugins
   #       name: headlamp-plugins
-
-  # --- Optional: uncomment to enable ---
 
   # # Trivy: vulnerability and compliance reports (tarball install - no container image published)
   # - name: trivy-plugin
