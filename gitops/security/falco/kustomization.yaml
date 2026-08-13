@@ -13,7 +13,7 @@ helmCharts:
   # Not managed by falco-operator: ships Talos kube-apiserver audit logs to the k8saudit plugin.
   - name: fluent-bit
     repo: https://fluent.github.io/helm-charts
-    version: 0.57.9
+    version: 0.58.0
     releaseName: fluent-bit
     namespace: falco
     valuesFile: fluentbit-values.yaml
