@@ -5,7 +5,7 @@ namespace: cloudflared
 helmCharts:
   - name: cloudflared
     repo: https://community-charts.github.io/helm-charts
-    version: 2.2.14
+    version: 2.2.15
     releaseName: cloudflared
     namespace: cloudflared
     valuesFile: values.yaml
