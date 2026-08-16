@@ -39,6 +39,51 @@ main:
     N8N_PROTOCOL: https
     NODE_OPTIONS: "--max-old-space-size=768"
     NODE_PATH: /home/node/.n8n/node_modules
+    N8N_RUNNERS_INSECURE_MODE: true
+  # The chart's npm-install init container hardcodes `--ignore-scripts` (no
+  # value overrides it), so better-sqlite3 - @actual-app/api's only native
+  # dep - never gets its binding and Code-node require() dies with "Could not
+  # locate the bindings file". Rebuild it afterwards; chart init containers
+  # render before this list, so ordering holds.
+  # node:24-alpine is not arbitrary: the binding is ABI- and libc-specific and
+  # must match the n8n runtime (n8nio/n8n:2.34.6 = Node 24 / Alpine musl).
+  # Bump this alongside any n8n major that changes Node. No compiler here -
+  # prebuild-install pulls the published node-v137-linuxmusl-x64 prebuild.
+  initContainers:
+    - name: rebuild-native
+      image: node:24-alpine
+      imagePullPolicy: IfNotPresent
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      env:
+        - name: NPM_CONFIG_CACHE
+          value: /npmdata/.npm-cache
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          [ -f /npmdata/node_modules/better-sqlite3/build/Release/better_sqlite3.node ] ||
+            npm rebuild better-sqlite3 --prefix /npmdata --foreground-scripts
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: npm-home
+          mountPath: /home/node/.npm
+        - name: node-modules
+          mountPath: /npmdata
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
 
 webhook:
   url: "https://workflow.nulcell.com/"
@@ -56,8 +101,13 @@ nodes:
     modules: []
   # -- External npm packages to install and allow in the Code node
   external:
-    # -- Allow all external npm packages
-    allowAll: true
+    # -- Allow all external npm packages.
+    # Must stay false. The task runner pre-requires each allowlisted package
+    # *before* freezing Error/Object prototypes, but only when the allowlist is
+    # an explicit list - `*` skips that step, so any package that subclasses
+    # Error at load time (@actual-app/api) dies with "Cannot assign to read
+    # only property 'constructor' of object 'Error'".
+    allowAll: false
     # -- Whether to reinstall missing packages. For more information, see https://docs.n8n.io/integrations/community-nodes/troubleshooting/#error-missing-packages
     reinstallMissingPackages: true
     # -- List of npm package names and versions (e.g., "package-name@1.0.0")
