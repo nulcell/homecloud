@@ -129,7 +129,7 @@ worker:
 # one standalone deployment; now one sidecar comes and goes with every worker
 # replica (1-10, per autoscaling above) instead of a fixed single instance.
 taskRunners:
-  mode: internal # internal or external
+  mode: external # internal or external
   external:
     # Shared token between n8n and its own task-runner sidecar - purely
     # internal, same-pod/localhost auth, never exposed externally, so it
