@@ -40,11 +40,6 @@ main:
     NODE_OPTIONS: "--max-old-space-size=768"
     NODE_PATH: /home/node/.n8n/node_modules
     N8N_RUNNERS_INSECURE_MODE: true
-    NODE_FUNCTION_ALLOW_BUILTIN: "*"
-    NODE_FUNCTION_ALLOW_EXTERNAL: "*"
-    N8N_REINSTALL_MISSING_PACKAGES: true
-    N8N_RUNNERS_JS_ENV_NODE_FUNCTION_ALLOW_EXTERNAL: "*"
-    N8N_RUNNERS_JS_EXTERNAL_ALLOW: "*"
 
 webhook:
   url: "https://workflow.nulcell.com/"
@@ -139,32 +134,6 @@ worker:
     NODE_OPTIONS: "--max-old-space-size=768"
     NODE_PATH: /home/node/.n8n/node_modules
     N8N_RUNNERS_INSECURE_MODE: true
-    NODE_FUNCTION_ALLOW_BUILTIN: "*"
-    NODE_FUNCTION_ALLOW_EXTERNAL: "*"
-    N8N_REINSTALL_MISSING_PACKAGES: true
-    N8N_RUNNERS_JS_ENV_NODE_FUNCTION_ALLOW_EXTERNAL: "*"
-    N8N_RUNNERS_JS_EXTERNAL_ALLOW: "*"
-  # │     Environment:                                                                                                                                                                                            │
-  # │       N8N_HIRING_BANNER_ENABLED:              false                                                                                                                                                         │
-  # │       NODE_ENV:                               production                                                                                                                                                    │
-  # │       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS:  true                                                                                                                                                          │
-  # │       N8N_PORT:                               5678                                                                                                                                                          │
-  # │       N8N_DEFAULT_LOCALE:                     en                                                                                                                                                            │
-  # │       GENERIC_TIMEZONE:                       Europe/Amsterdam                                                                                                                                              │
-  # │       N8N_GRACEFUL_SHUTDOWN_TIMEOUT:          30                                                                                                                                                            │
-  # │       NPM_CONFIG_CACHE:                       /home/node/.cache/npm                                                                                                                                         │
-  # │       N8N_EDITOR_BASE_URL:                    https://workflow.nulcell.com/                                                                                                                                 │
-  # │       DB_POSTGRESDB_USER:                     n8n                                                                                                                                                           │
-  # │       DB_POSTGRESDB_PASSWORD:                 <set to the key 'password' in secret 'n8n-postgres-app'>  Optional: true                                                                                      │
-  # │       WEBHOOK_URL:                            https://workflow.nulcell.com/                                                                                                                                 │
-  # │       NODE_FUNCTION_ALLOW_BUILTIN:            *                                                                                                                                                             │
-  # │       NODE_FUNCTION_ALLOW_EXTERNAL:           @actual-app/api                                                                                                                                               │
-  # │       N8N_REINSTALL_MISSING_PACKAGES:         true                                                                                                                                                          │
-  # │       N8N_HOST:                               workflow.nulcell.com                                                                                                                                          │
-  # │       N8N_PROTOCOL:                           https                                                                                                                                                         │
-  # │       N8N_RUNNERS_INSECURE_MODE:              true                                                                                                                                                          │
-  # │       NODE_OPTIONS:                           --max-old-space-size=768                                                                                                                                      │
-  # │       NODE_PATH:                              /home/node/.n8n/node_modules
 
   # The chart's npm-install init container hardcodes `--ignore-scripts` (no
   # value overrides it), so better-sqlite3 - @actual-app/api's only native
