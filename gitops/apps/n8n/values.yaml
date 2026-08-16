@@ -29,10 +29,16 @@ main:
   # custom chart's behavior instead of falling back to localhost/http.
   # NODE_OPTIONS caps the V8 heap at 768Mi, leaving ~256Mi of the 1Gi limit
   # for non-heap/native memory instead of trusting cgroup auto-detection.
+  # NODE_PATH: the npm-install init container installs `nodes.external.packages`
+  # with `--prefix /npmdata`, and that volume mounts at /home/node/.n8n - which
+  # is not on Node's resolution path from the /home/node workdir. Without this,
+  # Code-node `require()` fails with "module not available" even though the
+  # package is present and allowlisted.
   extraEnvVars:
     N8N_HOST: workflow.nulcell.com
     N8N_PROTOCOL: https
     NODE_OPTIONS: "--max-old-space-size=768"
+    NODE_PATH: /home/node/.n8n/node_modules
 
 webhook:
   url: "https://workflow.nulcell.com/"
