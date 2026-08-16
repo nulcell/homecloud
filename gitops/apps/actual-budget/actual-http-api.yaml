@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: actual-http-api
+  namespace: actual-budget
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: actual-http-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: actual-http-api
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-credentials
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+        fsGroup: 1000
+      containers:
+        # Tag comes from the `images:` transformer in kustomization.yaml.
+        - name: actual-http-api
+          image: jhonderson/actual-http-api
+          env:
+            - name: ACTUAL_SERVER_URL
+              value: http://actualbudget:5006/
+            # Anything but "production" makes the image try to load a .env file.
+            - name: NODE_ENV
+              value: production
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: actual-http-api
+                  key: api-key
+            - name: ACTUAL_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: actual-http-api
+                  key: actual-server-password
+          ports:
+            - name: http
+              containerPort: 5007
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              # cpu: 500m
+              memory: 512Mi
+          # No readOnlyRootFilesystem: Node writes to /tmp.
+          # uid 1000 is the `node` user in the node:22-alpine base image; the
+          # image itself ships no USER directive.
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data # ACTUAL_DATA_DIR default
+      volumes:
+        # ponytail: /data is a re-downloadable budget cache - actualbudget is the
+        # source of truth. Swap to a longhorn PVC if cold-start sync gets slow.
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: actual-http-api
+  namespace: actual-budget
+spec:
+  selector:
+    app.kubernetes.io/name: actual-http-api
+  ports:
+    - name: http
+      port: 5007
+      targetPort: http
+      protocol: TCP

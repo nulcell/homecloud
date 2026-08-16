@@ -14,3 +14,9 @@ helmCharts:
 resources:
   - namespace.yaml
   - httproute.yaml
+  - actual-http-api-external-secret.yaml
+  - actual-http-api.yaml
+
+images:
+  - name: jhonderson/actual-http-api
+    newTag: 26.8.1
