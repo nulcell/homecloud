@@ -50,11 +50,12 @@ nodes:
   # -- External npm packages to install and allow in the Code node
   external:
     # -- Allow all external npm packages
-    allowAll: false
+    allowAll: true
     # -- Whether to reinstall missing packages. For more information, see https://docs.n8n.io/integrations/community-nodes/troubleshooting/#error-missing-packages
     reinstallMissingPackages: false
     # -- List of npm package names and versions (e.g., "package-name@1.0.0")
     packages: []
+      # - "@actual-app/api@26.8.1"
       # - "moment@2.29.4"
       # - "lodash@4.17.21"
   # -- Python Code node configuration. Requires n8n 1.111.0+ and taskRunners.mode: external.
