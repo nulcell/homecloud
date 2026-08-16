@@ -52,7 +52,7 @@ nodes:
     # -- Allow all external npm packages
     allowAll: true
     # -- Whether to reinstall missing packages. For more information, see https://docs.n8n.io/integrations/community-nodes/troubleshooting/#error-missing-packages
-    reinstallMissingPackages: false
+    reinstallMissingPackages: true
     # -- List of npm package names and versions (e.g., "package-name@1.0.0")
     packages: []
       # - "@actual-app/api@26.8.1"
