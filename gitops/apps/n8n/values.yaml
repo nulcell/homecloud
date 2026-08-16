@@ -43,11 +43,11 @@ nodes:
   builtin:
     # -- Enable built-in modules for the Code node
     enabled: true
-    # -- List of built-in Node.js modules to allow in the Code node (e.g., crypto, fs). Use '*' to allow all.
-    modules: #[]
-      - "*"
-      # - crypto
-      # - fs
+    # -- List of built-in Node.js modules to allow in the Code node (e.g., crypto, fs).
+    # Empty means allow all: the chart renders a quoted "*" for the empty case.
+    # Listing "*" here instead breaks the render - the chart joins this list
+    # unquoted, so a bare `value: *` is parsed as a YAML alias.
+    modules: []
   # -- External npm packages to install and allow in the Code node
   external:
     # -- Allow all external npm packages
