@@ -41,7 +41,7 @@ main:
     NODE_PATH: /home/node/.n8n/node_modules
     N8N_RUNNERS_INSECURE_MODE: true
     NODE_FUNCTION_ALLOW_BUILTIN: "*"
-    NODE_FUNCTION_ALLOW_EXTERNAL: "@actual-app/api"
+    NODE_FUNCTION_ALLOW_EXTERNAL: "*"
     N8N_REINSTALL_MISSING_PACKAGES: true
 
 webhook:
@@ -140,6 +140,7 @@ worker:
     NODE_FUNCTION_ALLOW_BUILTIN: "*"
     NODE_FUNCTION_ALLOW_EXTERNAL: "*"
     N8N_REINSTALL_MISSING_PACKAGES: true
+    N8N_RUNNERS_JS_ENV_NODE_FUNCTION_ALLOW_EXTERNAL: "*"
   # │     Environment:                                                                                                                                                                                            │
   # │       N8N_HIRING_BANNER_ENABLED:              false                                                                                                                                                         │
   # │       NODE_ENV:                               production                                                                                                                                                    │
