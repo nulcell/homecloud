@@ -100,8 +100,8 @@ externalRedis:
 existingEncryptionKeySecret: n8n-encryption-key
 
 worker:
-  # options: main, queue
-  mode: main
+  # options: regular (main node executes), queue (separate worker pods)
+  mode: regular
   concurrency: 10
   resources:
     requests:
