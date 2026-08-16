@@ -30,6 +30,11 @@ spec:
             # Anything but "production" makes the image try to load a .env file.
             - name: NODE_ENV
               value: production
+            # Swagger UI defaults to localhost:443; point it at the route so
+            # "Try it out" hits the real host. Protocol/port defaults already
+            # match (https/443).
+            - name: SWAGGER_HOST
+              value: budget-api.nulcell.com
             - name: API_KEY
               valueFrom:
                 secretKeyRef:
