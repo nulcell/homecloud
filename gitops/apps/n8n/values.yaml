@@ -66,7 +66,7 @@ nodes:
     # an explicit list - `*` skips that step, so any package that subclasses
     # Error at load time (@actual-app/api) dies with "Cannot assign to read
     # only property 'constructor' of object 'Error'".
-    allowAll: false
+    allowAll: true
     # -- Whether to reinstall missing packages. For more information, see https://docs.n8n.io/integrations/community-nodes/troubleshooting/#error-missing-packages
     reinstallMissingPackages: true
     # -- List of npm package names and versions (e.g., "package-name@1.0.0")
@@ -138,7 +138,7 @@ worker:
     NODE_PATH: /home/node/.n8n/node_modules
     N8N_RUNNERS_INSECURE_MODE: true
     NODE_FUNCTION_ALLOW_BUILTIN: "*"
-    NODE_FUNCTION_ALLOW_EXTERNAL: "@actual-app/api"
+    NODE_FUNCTION_ALLOW_EXTERNAL: "*"
     N8N_REINSTALL_MISSING_PACKAGES: true
   # │     Environment:                                                                                                                                                                                            │
   # │       N8N_HIRING_BANNER_ENABLED:              false                                                                                                                                                         │
