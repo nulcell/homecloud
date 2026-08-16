@@ -40,50 +40,6 @@ main:
     NODE_OPTIONS: "--max-old-space-size=768"
     NODE_PATH: /home/node/.n8n/node_modules
     N8N_RUNNERS_INSECURE_MODE: true
-  # The chart's npm-install init container hardcodes `--ignore-scripts` (no
-  # value overrides it), so better-sqlite3 - @actual-app/api's only native
-  # dep - never gets its binding and Code-node require() dies with "Could not
-  # locate the bindings file". Rebuild it afterwards; chart init containers
-  # render before this list, so ordering holds.
-  # node:24-alpine is not arbitrary: the binding is ABI- and libc-specific and
-  # must match the n8n runtime (n8nio/n8n:2.34.6 = Node 24 / Alpine musl).
-  # Bump this alongside any n8n major that changes Node. No compiler here -
-  # prebuild-install pulls the published node-v137-linuxmusl-x64 prebuild.
-  initContainers:
-    - name: rebuild-native
-      image: node:24-alpine
-      imagePullPolicy: IfNotPresent
-      securityContext:
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop:
-            - ALL
-        privileged: false
-        readOnlyRootFilesystem: true
-        runAsGroup: 1000
-        runAsNonRoot: true
-        runAsUser: 1000
-      env:
-        - name: NPM_CONFIG_CACHE
-          value: /npmdata/.npm-cache
-      command: ["/bin/sh", "-c"]
-      args:
-        - |
-          [ -f /npmdata/node_modules/better-sqlite3/build/Release/better_sqlite3.node ] ||
-            npm rebuild better-sqlite3 --prefix /npmdata --foreground-scripts
-      volumeMounts:
-        - name: tmp
-          mountPath: /tmp
-        - name: npm-home
-          mountPath: /home/node/.npm
-        - name: node-modules
-          mountPath: /npmdata
-      resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
-        limits:
-          memory: 512Mi
 
 webhook:
   url: "https://workflow.nulcell.com/"
@@ -157,7 +113,7 @@ existingEncryptionKeySecret: n8n-encryption-key
 
 worker:
   # options: regular (main node executes), queue (separate worker pods)
-  mode: regular
+  mode: queue
   concurrency: 10
   resources:
     requests:
@@ -176,6 +132,52 @@ worker:
     N8N_HOST: workflow.nulcell.com
     N8N_PROTOCOL: https
     NODE_OPTIONS: "--max-old-space-size=768"
+    NODE_PATH: /home/node/.n8n/node_modules
+    N8N_RUNNERS_INSECURE_MODE: true
+  # The chart's npm-install init container hardcodes `--ignore-scripts` (no
+  # value overrides it), so better-sqlite3 - @actual-app/api's only native
+  # dep - never gets its binding and Code-node require() dies with "Could not
+  # locate the bindings file". Rebuild it afterwards; chart init containers
+  # render before this list, so ordering holds.
+  # node:24-alpine is not arbitrary: the binding is ABI- and libc-specific and
+  # must match the n8n runtime (n8nio/n8n:2.34.6 = Node 24 / Alpine musl).
+  # Bump this alongside any n8n major that changes Node. No compiler here -
+  # prebuild-install pulls the published node-v137-linuxmusl-x64 prebuild.
+  initContainers:
+    - name: rebuild-native
+      image: node:24-alpine
+      imagePullPolicy: IfNotPresent
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      env:
+        - name: NPM_CONFIG_CACHE
+          value: /npmdata/.npm-cache
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          [ -f /npmdata/node_modules/better-sqlite3/build/Release/better_sqlite3.node ] ||
+            npm rebuild better-sqlite3 --prefix /npmdata --foreground-scripts
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: npm-home
+          mountPath: /home/node/.npm
+        - name: node-modules
+          mountPath: /npmdata
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
 
 # Isolate Code-node execution in a task-runner sidecar, matching the previous
 # custom chart's architecture. In worker.mode=queue this sidecar attaches only
@@ -185,7 +187,7 @@ worker:
 # one standalone deployment; now one sidecar comes and goes with every worker
 # replica (1-10, per autoscaling above) instead of a fixed single instance.
 taskRunners:
-  mode: internal # internal or external
+  mode: external # internal or external
   external:
     # Shared token between n8n and its own task-runner sidecar - purely
     # internal, same-pod/localhost auth, never exposed externally, so it
