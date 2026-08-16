@@ -44,7 +44,8 @@ nodes:
     # -- Enable built-in modules for the Code node
     enabled: true
     # -- List of built-in Node.js modules to allow in the Code node (e.g., crypto, fs). Use '*' to allow all.
-    modules: []
+    modules: #[]
+      - "*"
       # - crypto
       # - fs
   # -- External npm packages to install and allow in the Code node
