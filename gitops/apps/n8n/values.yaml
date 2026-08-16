@@ -66,8 +66,8 @@ nodes:
     # -- Built-in Python module access for the Code node.
     builtin:
       # -- Python standard library modules allowed in Code nodes. Use ['*'] to allow all.
-      modules: []
-        # - "*"
+      modules: #[]
+        - "*"
     # -- External Python package access for the Code node.
     external:
       # -- Allow all external Python packages in Code nodes. When true, sets N8N_RUNNERS_EXTERNAL_ALLOW=* regardless of packages list.
