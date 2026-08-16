@@ -43,6 +43,8 @@ main:
     NODE_FUNCTION_ALLOW_BUILTIN: "*"
     NODE_FUNCTION_ALLOW_EXTERNAL: "*"
     N8N_REINSTALL_MISSING_PACKAGES: true
+    N8N_RUNNERS_JS_ENV_NODE_FUNCTION_ALLOW_EXTERNAL: "*"
+    N8N_RUNNERS_JS_EXTERNAL_ALLOW: "*"
 
 webhook:
   url: "https://workflow.nulcell.com/"
@@ -141,6 +143,7 @@ worker:
     NODE_FUNCTION_ALLOW_EXTERNAL: "*"
     N8N_REINSTALL_MISSING_PACKAGES: true
     N8N_RUNNERS_JS_ENV_NODE_FUNCTION_ALLOW_EXTERNAL: "*"
+    N8N_RUNNERS_JS_EXTERNAL_ALLOW: "*"
   # │     Environment:                                                                                                                                                                                            │
   # │       N8N_HIRING_BANNER_ENABLED:              false                                                                                                                                                         │
   # │       NODE_ENV:                               production                                                                                                                                                    │
