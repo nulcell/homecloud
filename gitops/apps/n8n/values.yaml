@@ -8,6 +8,9 @@ imagePullSecrets:
 
 timezone: Europe/Amsterdam
 
+securityContext:
+  readOnlyRootFilesystem: false
+
 main:
   count: 1
   editorBaseUrl: "https://workflow.nulcell.com/"
