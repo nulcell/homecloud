@@ -55,9 +55,13 @@ grafana:
     userKey: admin-user
     passwordKey: admin-password
 
+  deploymentStrategy:
+    type: Recreate
+
   persistence:
     enabled: true
     storageClassName: longhorn
+    accessModes: [ReadWriteOnce] # [ReadWriteMany]
     size: 5Gi
 
   defaultDashboardsTimezone: browser
