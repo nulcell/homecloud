@@ -5,7 +5,7 @@ namespace: loki
 helmCharts:
   - name: loki
     repo: https://grafana-community.github.io/helm-charts
-    version: 18.9.0
+    version: 18.10.1
     releaseName: loki
     namespace: loki
     valuesFile: loki-values.yaml
