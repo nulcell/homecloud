@@ -4,9 +4,9 @@ description: Uptime Kuma - A fancy self-hosted monitoring tool
 icon: https://uptime.kuma.pet/img/icon.svg
 type: application
 # renovate: datasource=docker depName=ghcr.io/louislam/uptime-kuma
-version: "2.5.0"
+version: "2.5.3"
 # renovate: datasource=docker depName=ghcr.io/louislam/uptime-kuma
-appVersion: "2.5.0"
+appVersion: "2.5.3"
 sources:
   - https://github.com/nulcell/homecloud
   - https://github.com/louislam/uptime-kuma
