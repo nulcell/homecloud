@@ -2,10 +2,7 @@ name: Renovate
 
 on:
   schedule:
-    # Every 6 hours. Renovate's own `schedule` setting in renovate.json5
-    # still decides when PRs are actually created; this just controls how
-    # often the bot wakes up to check.
-    - cron: "0 */3 * * *"
+    - cron: "0 9 * * 0"
   workflow_dispatch: {}
 
 concurrency:
