@@ -54,9 +54,18 @@ spec:
             - containerPort: {{ .Values.jellyfin.service.ports.dlna }}
               name: dlna
               protocol: UDP
+          # /health blocks on the config volume, so it cannot gate liveness -
+          # a slow-but-healthy Jellyfin was being SIGKILLed mid-stream.
+          # Readiness keeps the HTTP check but with a ~6 min grace window, so a
+          # transient stall no longer pulls the pod from the Service and drops
+          # every active stream.
+          startupProbe:
+            tcpSocket:
+              port: web
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
-            httpGet:
-              path: /health
+            tcpSocket:
               port: web
             periodSeconds: 30
             timeoutSeconds: 10
@@ -66,8 +75,8 @@ spec:
               path: /health
               port: web
             periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 3
+            timeoutSeconds: 15
+            failureThreshold: 12
           resources:
             {{- toYaml .Values.jellyfin.resources | nindent 12 }}
           securityContext:
@@ -82,9 +91,22 @@ spec:
               subPath: jellyfin
             - mountPath: /data
               name: data
+            {{- if .Values.jellyfin.scratch.enabled }}
+            - mountPath: /config/data/transcodes
+              name: scratch
+              subPath: transcodes
+            - mountPath: /config/cache
+              name: scratch
+              subPath: cache
+            {{- end }}
             {{- include "mediaStack.hwAccelMount" .Values.jellyfin.hwAccel | nindent 12 }}
       volumes:
         {{- include "mediaStack.volumes" . | nindent 8 }}
         {{- include "mediaStack.hwAccelVolume" .Values.jellyfin.hwAccel | nindent 8 }}
+        {{- if .Values.jellyfin.scratch.enabled }}
+        - name: scratch
+          emptyDir:
+            sizeLimit: {{ .Values.jellyfin.scratch.sizeLimit }}
+        {{- end }}
       restartPolicy: Always
 {{- end }}

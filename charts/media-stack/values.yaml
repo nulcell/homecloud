@@ -188,6 +188,12 @@ jellyfin:
     # is exposed via hostPath but no device plugin is wired up. Heavy hammer;
     # prefer a device plugin (e.g. squat/generic-device-plugin) for production.
     privileged: false
+  # Transcode segments and cache are ephemeral. Keeping them on the shared
+  # Longhorn RWX config PVC stalls /health past the probe timeout under
+  # concurrent playback and gets the pod SIGKILLed.
+  scratch:
+    enabled: false
+    sizeLimit: 50Gi
   service:
     type: ClusterIP
     ports:

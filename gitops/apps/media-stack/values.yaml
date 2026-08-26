@@ -66,6 +66,9 @@ jellyfin:
     # Revert to `privileged: false` once we wire up a device plugin (e.g.
     # squat/generic-device-plugin) for proper, non-privileged GPU access.
     privileged: true
+  scratch:
+    enabled: true
+    sizeLimit: 50Gi
   resources:
     requests:
       cpu: 2000m
