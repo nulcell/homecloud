@@ -5,7 +5,7 @@ namespace: homarr
 helmCharts:
   - name: homarr
     repo: https://homarr-labs.github.io/charts
-    version: 8.28.0
+    version: 8.28.1
     releaseName: homarr
     namespace: homarr
     valuesFile: values.yaml
