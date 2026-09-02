@@ -36,7 +36,7 @@ initContainers:
 
   # KubeVirt: virtual machine management
   - name: kubevirt-plugin
-    image: ghcr.io/naval-group/headlamp-kubevirt:0.2.2
+    image: ghcr.io/naval-group/headlamp-kubevirt:0.3.0
     command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/kubevirt /build/plugins/"]
     volumeMounts:
       - mountPath: /build/plugins
