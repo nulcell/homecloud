@@ -6,7 +6,7 @@ helmCharts:
   - name: outline
     repo: https://community-charts.github.io/helm-charts
     releaseName: outline
-    version: 0.9.3
+    version: 0.9.4
     namespace: outline
     valuesFile: values.yaml
     includeCRDs: false
