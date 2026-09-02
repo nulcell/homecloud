@@ -109,7 +109,7 @@ webhook:
   # -- Configuration for webhook certificate jobs
   initContainer:
     # -- Image for webhook readiness check init container
-    image: curlimages/curl:8.21.0
+    image: curlimages/curl:8.22.0
   # -- Pod security context for webhook jobs
   # ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
   podSecurityContext:
