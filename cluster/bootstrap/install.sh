@@ -15,7 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # gitops/infrastructure/{cert-manager,longhorn,metrics-server}/ for their versions.
 GATEWAY_API_VERSION="v1.6.1" # https://docs.cilium.io/en/v1.20/network/servicemesh/gateway-api/gateway-api/#cilium-gateway-api-support
 CILIUM_VERSION="1.20.1"
-ARGOCD_VERSION="10.6.4"
+ARGOCD_VERSION="10.7.1"
 
 # --- Helm repos -----------------------------------------------------------------
 helm repo add cilium https://helm.cilium.io 2>/dev/null || true
