@@ -8,7 +8,7 @@ type: application
 # version. Bump by hand when the templates change.
 version: "1.0.0"
 # renovate: datasource=docker depName=ghcr.io/mealie-recipes/mealie
-appVersion: "v3.25.0"
+appVersion: "v3.25.1"
 sources:
   - https://github.com/nulcell/homecloud
   - https://github.com/mealie-recipes/mealie
