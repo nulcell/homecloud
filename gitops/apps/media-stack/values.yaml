@@ -58,7 +58,7 @@ jellyfin:
   replicas: 1
   # renovate: datasource=docker depName=lscr.io/linuxserver/jellyfin
   image:
-    tag: 10.11.11
+    tag: 12.0ubu2604-ls48
   publishedServerUrl: https://jellyfin.nulcell.com
   hwAccel:
     enabled: true
