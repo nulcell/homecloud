@@ -6,14 +6,14 @@ helmCharts:
   # Not managed by falco-operator: response actions engine.
   - name: falco-talon
     repo: https://falcosecurity.github.io/charts
-    version: 0.4.1
+    version: 0.4.2
     releaseName: falco-talon
     namespace: falco
     valuesFile: talon-values.yaml
   # Not managed by falco-operator: ships Talos kube-apiserver audit logs to the k8saudit plugin.
   - name: fluent-bit
     repo: https://fluent.github.io/helm-charts
-    version: 0.58.1
+    version: 0.58.2
     releaseName: fluent-bit
     namespace: falco
     valuesFile: fluentbit-values.yaml
