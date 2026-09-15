@@ -123,7 +123,7 @@ bazarr:
   replicas: 1
   # renovate: datasource=docker depName=lscr.io/linuxserver/bazarr
   image:
-    tag: 1.6.0
+    tag: 1.6.1
   gateway:
     hostname: bazarr.nulcell.com
   # Open egress - this app reaches arbitrary external metadata/subtitle providers.
