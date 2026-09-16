@@ -99,7 +99,7 @@ sonarr:
   replicas: 1
   # renovate: datasource=docker depName=lscr.io/linuxserver/sonarr
   image:
-    tag: 4.0.19
+    tag: 4.0.20
   gateway:
     hostname: sonarr.nulcell.com
   # Open egress - this app reaches arbitrary external metadata/subtitle providers.
@@ -111,7 +111,7 @@ radarr:
   replicas: 1
   # renovate: datasource=docker depName=lscr.io/linuxserver/radarr
   image:
-    tag: 6.3.0
+    tag: 6.4.4
   gateway:
     hostname: radarr.nulcell.com
   # Open egress - this app reaches arbitrary external metadata/subtitle providers.
@@ -137,7 +137,7 @@ servarr:
 prowlarr:
   # renovate: datasource=docker depName=lscr.io/linuxserver/prowlarr
   image:
-    tag: 2.5.2
+    tag: 2.6.5
   gateway:
     hostname: prowlarr.nulcell.com
 
