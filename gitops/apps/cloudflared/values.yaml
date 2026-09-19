@@ -62,6 +62,11 @@ ingress:
       noTLSVerify: true
   - hostname: recipes.nulcell.com
     service: http://mealie.mealie.svc.cluster.local:9000
+  - hostname: meridian-demo.nulcell.com
+    service: https://cilium-gateway-internal.gateway.svc.cluster.local
+    originRequest:
+      httpHostHeader: meridian.internal.nulcell.com
+      noTLSVerify: true
   - service: http_status:404
 
 imagePullSecrets:
