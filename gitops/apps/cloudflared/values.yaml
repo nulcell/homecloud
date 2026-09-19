@@ -10,6 +10,7 @@ tunnelConfig:
   name: homecloud-k8s
   logLevel: info
   protocol: auto
+  edge-ip-version: "4" 
 
 tunnelSecrets:
   existingPemFileSecret:
