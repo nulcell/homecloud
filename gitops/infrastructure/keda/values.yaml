@@ -1,0 +1,20 @@
+prometheus:
+  operator:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  metricServer:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+resources:
+  operator: &resources
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  metricServer: *resources
+  webhooks: *resources
