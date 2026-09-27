@@ -39,6 +39,8 @@ TALOS_VERSION = "v1.13.2"
 KUBERNETES_VERSION = "v1.36.1"
 CONTROLPLANE_IP = "10.10.17.5"
 WORKER_IP = "10.10.27.254"
+# sops looks in ~/Library/Application Support on macOS; the key lives here.
+SOPS_AGE_KEY_FILE = "{{env.HOME}}/.config/sops/age/keys.txt"
 
 [tasks.render]
 description = "Render a gitops dir (kustomize + helm)"
@@ -52,7 +54,7 @@ run = "scripts/validate.sh $usage_dirs"
 
 [tasks.bootstrap]
 description = "Install Cilium + ArgoCD and hand off to GitOps"
-run = "helmfile -f cluster/bootstrap/helmfile.yaml apply"
+run = "helmfile -f cluster/bootstrap/helmfile.yaml sync" # sync: no helm-diff plugin needed
 
 [tasks."talos:upgrade"]
 description = "Upgrade Talos on a node to $TALOS_VERSION"
