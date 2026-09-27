@@ -5,7 +5,7 @@ namespace: uptime-kuma
 helmCharts:
   - name: mariadb-cluster
     repo: oci://ghcr.io/mariadb-operator/charts
-    version: 26.10.0
+    version: 26.10.1
     releaseName: mariadb-cluster
     namespace: uptime-kuma
     valuesFile: mariadb-values.yaml
