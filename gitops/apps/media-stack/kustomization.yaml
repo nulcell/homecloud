@@ -5,7 +5,7 @@ namespace: media
 helmCharts:
   - name: app-template
     repo: oci://ghcr.io/nulcell/charts
-    version: 0.2.1
+    version: 0.3.2
     releaseName: media-stack
     namespace: media
     valuesFile: values.yaml

@@ -14,17 +14,17 @@ workloads:
           GATUS_CONFIG_PATH: /config/config.yaml
           POSTGRES_URI:
             valueFrom:
-              secretKeyRef: {name: gatus-postgres-app, key: uri}
+              secretKeyRef: { name: gatus-postgres-app, key: uri }
         probes:
           liveness:
-            httpGet: {path: /health, port: http}
+            httpGet: { path: /health, port: http }
             periodSeconds: 15
           readiness:
-            httpGet: {path: /health, port: http}
+            httpGet: { path: /health, port: http }
             periodSeconds: 10
         resources:
-          requests: {cpu: 20m, memory: 64Mi}
-          limits: {memory: 256Mi}
+          requests: { cpu: 20m, memory: 64Mi }
+          limits: { memory: 256Mi }
     services:
       gatus:
         ports:
@@ -33,7 +33,7 @@ workloads:
       ingress:
         - gateway
       egress:
-        - {datastore: postgres}
+        - { datastore: postgres }
         # Checks hit public hostnames (Cloudflare or gateway LB IPs).
         - world
 
@@ -41,11 +41,11 @@ datastores:
   postgres:
     engine: postgres
     type: cnpg
-    image: {repository: ghcr.io/cloudnative-pg/postgresql, tag: "18.4"}
-    storage: {size: 2Gi}
+    image: { repository: ghcr.io/cloudnative-pg/postgresql, tag: "18.4" }
+    storage: { size: 2Gi }
     resources:
-      requests: {cpu: 50m, memory: 128Mi}
-      limits: {cpu: 500m, memory: 512Mi}
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 500m, memory: 512Mi }
     monitoring: true
 
 persistence:
@@ -74,7 +74,7 @@ configMaps:
           - {group: Internal, name: Headlamp, url: https://headlamp.nulcell.com/c/main/, conditions: ["[STATUS] < 300"]}
           - {group: Internal, name: Longhorn, url: https://longhorn.nulcell.com/, conditions: ["[STATUS] < 300"]}
           - {group: Apps, name: Portfolio Site, url: https://nulcell.com/health, conditions: ["[STATUS] < 300"]}
-          - {group: Apps, name: Meridian Demo, url: https://meridian-demo.nulcell.com/api/v1/info, interval: 3m, conditions: ["[STATUS] < 300"]}
+          - {group: Apps, name: Meridian Demo, url: https://meridian-demo.nulcell.com/api/v1/info, interval: 60s, conditions: ["[STATUS] < 300"]}
           - {group: Apps, name: Authentik, url: https://auth.nulcell.com/, conditions: ["[STATUS] < 300"]}
           - {group: Apps, name: Actual Budget, url: https://budget.nulcell.com, conditions: ["[STATUS] < 300"]}
           - {group: Apps, name: n8n, url: https://workflow.nulcell.com/healthz/readiness, conditions: ["[STATUS] < 300"]}
@@ -97,5 +97,5 @@ routes:
         sectionName: https-internal
     hostnames: [status.internal.nulcell.com]
     rules:
-      - matches: [{path: {type: PathPrefix, value: /}}]
-        backends: [{workload: gatus, service: gatus, port: http}]
+      - matches: [{ path: { type: PathPrefix, value: / } }]
+        backends: [{ workload: gatus, service: gatus, port: http }]
