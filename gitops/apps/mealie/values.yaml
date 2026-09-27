@@ -13,7 +13,7 @@ workloads:
       mealie:
         image:
           repository: ghcr.io/mealie-recipes/mealie
-          tag: v3.27.0
+          tag: v3.28.0
         # The image drops root itself; started non-root it keeps the uid it got,
         # and /app/data (below) is writable through fsGroup.
         securityContext:
@@ -121,7 +121,7 @@ datastores:
   postgres:
     engine: postgres
     type: cnpg
-    image: {repository: ghcr.io/cloudnative-pg/postgresql, tag: "18.4"}
+    image: {repository: ghcr.io/cloudnative-pg/postgresql, tag: "18.6"}
     storage: {size: 10Gi}
     resources:
       requests: {cpu: 100m, memory: 256Mi}
