@@ -69,7 +69,7 @@ configMaps:
           title: Hosted Services
           header: Hosted Services
         endpoints:
-          - {group: Internal, name: ArgoCD, url: https://argocd.nulcell.com/server/healthz, conditions: ["[STATUS] < 300"]}
+          - {group: Internal, name: ArgoCD, url: https://argocd.nulcell.com/healthz, conditions: ["[STATUS] < 300"]}
           - {group: Internal, name: Grafana, url: https://grafana.nulcell.com/api/health, conditions: ["[STATUS] < 300"]}
           - {group: Internal, name: Headlamp, url: https://headlamp.nulcell.com/c/main/, conditions: ["[STATUS] < 300"]}
           - {group: Internal, name: Longhorn, url: https://longhorn.nulcell.com/, conditions: ["[STATUS] < 300"]}
