@@ -6,15 +6,15 @@
 [tools]
 
 # ── Kubernetes ───────────────────────────────────────────────────────────────
-kubectl  = "1.36.1"
-helm     = "4.2.0"
-argocd   = "3.4.5"
+kubectl     = "1.36.1"
+helm        = "4.2.0"
+helmfile    = "1.8.0"
+kustomize   = "5.8.1"
+kubeconform = "0.8.0"
+argocd      = "3.4.5"
 
 # ── Talos Linux ──────────────────────────────────────────────────────────────
-# talosctl manages Talos Linux nodes and clusters.
-# talhelper generates Talos machine configs from a single source of truth.
-talosctl  = "1.13.2"
-talhelper = "3.1.10"
+talosctl = "1.13.2"
 
 # ── Networking ───────────────────────────────────────────────────────────────
 # cilium-cli: debug Cilium / Gateway API / L2 announcements.
@@ -27,10 +27,46 @@ yq   = "4.53.2"
 jq   = "1.8.1"
 
 # ── Secrets ──────────────────────────────────────────────────────────────────
-# SOPS encrypts manifests in-repo; age provides the key material.
+# SOPS + age encrypt the bootstrap 1Password credential (cluster/bootstrap/).
 # 1Password CLI is installed system-wide via Homebrew (not managed by mise).
 sops = "3.13.0"
 age  = "1.3.1"
+
+[env]
+# Talos image + node addresses; bump with each upgrade.
+SCHEMATIC_ID = "d78c7cda9fda387e6420896d82d50d5cc97d004feeece7812703c5e1582b82f7"
+TALOS_VERSION = "v1.13.2"
+KUBERNETES_VERSION = "v1.36.1"
+CONTROLPLANE_IP = "10.10.17.5"
+WORKER_IP = "10.10.27.254"
+
+[tasks.render]
+description = "Render a gitops dir (kustomize + helm)"
+usage = 'arg "<dir>"'
+run = 'kustomize build --enable-helm "$usage_dir"; git clean -fdXq -- "$usage_dir/charts"'
+
+[tasks.validate]
+description = "Render + schema-check gitops dirs (all, or the ones given)"
+usage = 'arg "[dirs]" var=#true'
+run = "scripts/validate.sh $usage_dirs"
+
+[tasks.bootstrap]
+description = "Install Cilium + ArgoCD and hand off to GitOps"
+run = "helmfile -f cluster/bootstrap/helmfile.yaml apply"
+
+[tasks."talos:upgrade"]
+description = "Upgrade Talos on a node to $TALOS_VERSION"
+usage = 'arg "<node>"'
+run = 'talosctl upgrade --nodes "$usage_node" --image "factory.talos.dev/metal-installer/$SCHEMATIC_ID:$TALOS_VERSION"'
+
+[tasks."talos:upgrade-k8s"]
+description = "Upgrade Kubernetes to $KUBERNETES_VERSION"
+run = 'talosctl upgrade-k8s --nodes "$CONTROLPLANE_IP" --to "$KUBERNETES_VERSION"'
+
+[tasks."argo:sync"]
+description = "Sync an ArgoCD Application"
+usage = 'arg "<app>"'
+run = 'argocd app sync "$usage_app"'
 
 [settings]
 # Automatically activate tool versions when entering directories.

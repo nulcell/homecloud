@@ -79,7 +79,7 @@ routes:
         name: internal
         namespace: gateway
         sectionName: https-internal
-    hostnames: [status.internal.nulcell.com]
+    hostnames: [uptime.internal.nulcell.com]
     rules:
       - matches: [{path: {type: PathPrefix, value: /}}]
         backends: [{workload: uptime-kuma, service: uptime-kuma, port: http}]

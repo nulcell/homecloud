@@ -1,0 +1,52 @@
+# Core components for a freshly-bootstrapped Talos cluster, then hand-off to ArgoCD.
+# Pre-reqs: KUBECONFIG set, `talosctl bootstrap` done, nodes Ready=False (no CNI),
+# age key at ~/.config/sops/age/keys.txt. Run: `mise run bootstrap`.
+# Hooks run from this directory. cert-manager, Longhorn, ESO etc. come via gitops/.
+
+repositories:
+  - name: cilium
+    url: https://helm.cilium.io
+  - name: argo
+    url: https://argoproj.github.io/argo-helm
+
+releases:
+  - name: cilium
+    namespace: kube-system
+    chart: cilium/cilium
+    version: 1.20.2
+    values: [cilium-values.yaml]
+    wait: true
+    hooks:
+      # Gateway API CRDs must precede Cilium.
+      - events: [presync]
+        showlogs: true
+        command: kubectl
+        args:
+          - apply
+          - --server-side
+          - -f
+          - https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
+      - events: [postsync]
+        showlogs: true
+        command: kubectl
+        args: [apply, -f, cilium-l2.yaml]
+
+  - name: argocd
+    namespace: argocd
+    chart: argo/argo-cd
+    version: 10.9.2
+    values: [argocd-values.yaml]
+    wait: true
+    needs: [kube-system/cilium]
+    hooks:
+      # ESO's 1Password credential must exist before ArgoCD deploys ESO.
+      - events: [presync]
+        showlogs: true
+        command: bash
+        args:
+          - -c
+          - kubectl apply -f namespaces.yaml && sops -d onepassword-credentials.sops.yaml | kubectl apply -f -
+      - events: [postsync]
+        showlogs: true
+        command: kubectl
+        args: [apply, -f, ../../gitops/root/root-app.yaml]

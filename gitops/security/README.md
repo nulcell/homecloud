@@ -43,4 +43,4 @@ When it lands it becomes a second directory here, `gitops/security/kyverno/`, pi
 
 ## Parked
 
-[`gitops/exprimental/security/`](../exprimental/security/) holds Kubescape and Trivy Operator manifests plus an older Falco layout. No ApplicationSet reads that tree, so none of it runs.
+[`gitops/experimental/security/`](../experimental/security/) holds Kubescape and Trivy Operator manifests. No ApplicationSet reads that tree, so none of it runs.

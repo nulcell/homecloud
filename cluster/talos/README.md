@@ -35,7 +35,7 @@ customization:
             - siderolabs/util-linux-tools
 ```
 
-Record the **schematic ID** somewhere you'll find it again - you need it for `talosctl upgrade`.
+The **schematic ID** lives in `.mise.toml` `[env]` as `SCHEMATIC_ID` - `mise run talos:upgrade` uses it.
 
 ## Common commands
 
@@ -43,9 +43,7 @@ Record the **schematic ID** somewhere you'll find it again - you need it for `ta
 export TALOSCONFIG_PATH=cluster/talos/generated/talosconfig
 # Must match machine.install.image in patches/{controlplane,worker}.yaml.
 export INSTALLER=metal-installer
-export SCHEMATIC_ID=d78c7cda9fda387e6420896d82d50d5cc97d004feeece7812703c5e1582b82f7
-export TALOS_VERSION=v1.13.2
-export KUBERNETES_VERSION=v1.36.1
+# SCHEMATIC_ID, TALOS_VERSION, KUBERNETES_VERSION come from .mise.toml [env] (loaded by mise in this repo).
 export INSTALL_IMAGE=factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION}
 
 export NODE_IP=10.10.17.5
@@ -96,15 +94,16 @@ talosctl apply-config --insecure --nodes ${WORKER_IP} --file cluster/talos/worke
 kubectl get csr -o json | jq -r '.items[] | select(.status == {}) | .metadata.name' | xargs -r kubectl certificate approve
 
 # Go ahead and install the CNI and other addons
-cluster/bootstrap/install.sh
+mise run bootstrap
 
 # Day-2
 talosctl get links
 talosctl health --nodes ${NODE_IP}
 talosctl dashboard
-talosctl upgrade --image factory.talos.dev/${INSTALLER}/${SCHEMATIC_ID}:${TALOS_VERSION}
-export KUBERNETES_VERSION_UPGRADE=v1.36.1
-talosctl upgrade-k8s --from ${KUBERNETES_VERSION} --to ${KUBERNETES_VERSION_UPGRADE} --nodes ${NODE_IP} --dry-run
+# Upgrades: bump SCHEMATIC_ID / TALOS_VERSION / KUBERNETES_VERSION in .mise.toml [env] first
+mise run talos:upgrade 10.10.17.5
+mise run talos:upgrade 10.10.27.254
+mise run talos:upgrade-k8s
 
 # Day never
 talosctl reset --nodes ${NODE_IP} --graceful=false --reboot=true

@@ -7,6 +7,11 @@ namespace: n8n
 # other third-party charts, instead of being hand-maintained. charts/n8n/ has
 # since been deleted - git history holds the previous helmCharts entry
 # (chartHome: ../../../charts, name: n8n) and values.yaml if it's ever needed.
+
+# Roll workloads when their ExternalSecret-backed Secrets change.
+commonAnnotations:
+  reloader.stakater.com/auto: "true"
+
 helmCharts:
   - name: n8n
     repo: https://community-charts.github.io/helm-charts

@@ -8,6 +8,11 @@
 # encrypted_regex limits encryption to the data/stringData fields of Secrets,
 # so the rest of the manifest stays human-readable in git diffs.
 creation_rules:
+  # Bootstrap secrets, decrypted by helmfile hooks (cluster/bootstrap/helmfile.yaml).
+  - path_regex: ^cluster/bootstrap/.*\.sops\.ya?ml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1zghrycrgnan0c7nfp5ke5csdeh9rdgtzwsd6yj4pl9rzlzjp24cspycpul
+  # Not decrypted by ArgoCD today (no ksops sidecar) - see cluster/docs/argocd.md.
   - path_regex: ^(gitops|charts|manifests)/.*\.enc\.ya?ml$
     encrypted_regex: ^(data|stringData)$
     age: age1zghrycrgnan0c7nfp5ke5csdeh9rdgtzwsd6yj4pl9rzlzjp24cspycpul

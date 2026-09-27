@@ -13,7 +13,7 @@ Two nodes today (1 control plane with scheduling on, 1 worker), designed to scal
 | [`manifests/`](manifests/)             | Ad-hoc / one-shot manifests, applied manually. Not reconciled by ArgoCD.                                          |
 | [`scripts/`](scripts/)                 | Standalone operator utilities.                                                                                    |
 | [`network/netboot/`](network/netboot/) | netboot.xyz + ProxyDHCP install notes for the planned provisioning host. Not deployed.                            |
-| [`renovate.json5`](renovate.json5)     | Renovate config; the weekly run lives in [`.github/workflows/renovate.yml`](.github/workflows/renovate.yml).      |
+| [`renovate.json5`](renovate.json5)     | Renovate config; runs every 4h via [`.github/workflows/renovate.yml`](.github/workflows/renovate.yml).            |
 
 Conventions for agents and humans: [CLAUDE.md](CLAUDE.md).
 
@@ -24,21 +24,23 @@ brew install mise op
 mise install   # everything pinned in .mise.toml
 ```
 
-`op` (1Password CLI) is the only required tool not managed by mise. It seeds the External Secrets service-account token during bootstrap and backs the `op://homecloud/...` URIs used in `.env` generation.
+`op` (1Password CLI) is the only required tool not managed by mise. It backs the `op://homecloud/...` URIs used in `.env` generation and in re-encrypting the bootstrap credential.
+
+Common tasks live in `.mise.toml` - `mise tasks` lists them (`render`, `validate`, `bootstrap`, `talos:upgrade`, `talos:upgrade-k8s`, `argo:sync`). PRs touching `gitops/` run `mise run validate` in [`.github/workflows/validate.yml`](.github/workflows/validate.yml).
 
 ## What's running
 
-Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart versions, [`cluster/bootstrap/install.sh`](cluster/bootstrap/install.sh) for Cilium / Gateway API / ArgoCD.
+Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart versions, [`cluster/bootstrap/helmfile.yaml`](cluster/bootstrap/helmfile.yaml) for Cilium / Gateway API / ArgoCD.
 
 | Layer                                              | Deployed                                                                                                                                                           |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`infrastructure/`](gitops/infrastructure/) wave 0 | cert-manager, external-dns, external-secrets, gateway, headlamp, infra-app-httproutes, kube-prometheus-stack, loki, longhorn, metrics-server, registry-credentials |
+| [`infrastructure/`](gitops/infrastructure/) wave 0 | cert-manager, external-dns, external-secrets, gateway, headlamp, infra-app-httproutes, keda, kube-prometheus-stack, loki, longhorn, metrics-server, registry-credentials, reloader |
 | [`operators/`](gitops/operators/) wave 5           | cnpg, falco, kubevirt, mariadb, tailscale                                                                                                                          |
 | [`security/`](gitops/security/) wave 10            | falco                                                                                                                                                              |
 | [`services/`](gitops/services/) wave 15            | kubevirt (KubeVirt + CDI CRs)                                                                                                                                      |
-| [`apps/`](gitops/apps/) wave 100                   | actual-budget, authentik, cloudflared, mealie, media-stack, n8n, portfolio, uptime-kuma                                                                            |
+| [`apps/`](gitops/apps/) wave 100                   | actual-budget, authentik, cloudflared, gatus, mealie, media-stack, n8n, portfolio, uptime-kuma                                                                     |
 
-[`gitops/exprimental/`](gitops/exprimental/) is a staging area - no ApplicationSet reads it, so nothing in it runs. It currently holds homarr, homepage, outline, speedtest-tracker, rancher, seaweedfs, kubescape, trivy, an alternate falco layout, and a SOPS example secret.
+[`gitops/experimental/`](gitops/experimental/) is a staging area - no ApplicationSet reads it, so nothing in it runs. It currently holds homarr, outline, speedtest-tracker, rancher, seaweedfs, kubescape and trivy.
 
 ## Roadmap
 
@@ -58,12 +60,12 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
   - [x] [CNPG](https://cloudnativepg.io/) for Postgres, [mariadb-operator](https://github.com/mariadb-operator/mariadb-operator) for MariaDB.
   - [x] [Tailscale operator](https://tailscale.com/kb/1236/kubernetes-operator) for remote access.
   - [x] [Renovate](https://docs.renovatebot.com/) for chart and image versions.
-  - [ ] [SOPS](https://github.com/getsops/sops) re-wired into ArgoCD - the config is in-repo but the ksops CMP is not installed. See [cluster/docs/argocd.md](cluster/docs/argocd.md#secrets).
+  - [x] [SOPS](https://github.com/getsops/sops) + age for the bootstrap 1Password credential (not wired into ArgoCD). See [cluster/docs/argocd.md](cluster/docs/argocd.md#secrets).
 - [x] Applications:
   - [x] Media stack - Jellyfin, Seerr, Radarr, Sonarr, Bazarr, Prowlarr, qBittorrent behind Gluetun.
   - [x] [n8n](https://n8n.io/) for workflow automation.
   - [x] [Authentik](https://goauthentik.io/) for SSO.
-  - [x] [Mealie](https://mealie.io/) recipes, [Actual Budget](https://actualbudget.org/), [Uptime Kuma](https://uptime.kuma.pet/).
+  - [x] [Mealie](https://mealie.io/) recipes, [Actual Budget](https://actualbudget.org/), [Uptime Kuma](https://uptime.kuma.pet/), [Gatus](https://gatus.io/) status page on `status.nulcell.com`.
   - [x] [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/) publishing internal apps to the internet.
   - [x] Portfolio website - Astro + nginx on `nulcell.com`.
 - [ ] Serverless and Messaging:
@@ -77,7 +79,8 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
   - [ ] [Kyverno](https://kyverno.io/) for policy enforcement and configuration validation. See [gitops/security/README.md](gitops/security/README.md).
   - [ ] [Policy Reporter](https://kyverno.github.io/policy-reporter/) for aggregating `PolicyReport` CRDs.
 - [ ] Provisioning:
-  - [ ] Terraform + Terragrunt for cluster bootstrap, replacing [`cluster/bootstrap/install.sh`](cluster/bootstrap/install.sh).
+  - [x] [helmfile](https://helmfile.readthedocs.io/) bootstrap ([`cluster/bootstrap/helmfile.yaml`](cluster/bootstrap/helmfile.yaml)).
+  - [ ] Terraform + Terragrunt for Talos + bootstrap - plan in [cluster/docs/terraform.md](cluster/docs/terraform.md).
   - [ ] Pi-hole (DNS + DHCP) + netboot + Tailscale on a Raspberry Pi for bare-metal provisioning.
 - [ ] Testing:
   - [ ] [Kube-monkey](https://github.com/asobti/kube-monkey) for chaos testing.

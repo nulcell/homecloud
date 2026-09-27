@@ -1,4 +1,4 @@
-# Argo CD 10.3.0 values (chart version pinned in install.sh).
+# Argo CD values (chart version pinned in helmfile.yaml).
 global:
   domain: argocd.nulcell.com
 

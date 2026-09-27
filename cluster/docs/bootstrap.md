@@ -2,11 +2,11 @@
 
 One-time, imperative bring-up of a Talos cluster: Talos → Gateway API CRDs → Cilium → 1Password credential → ArgoCD → root Application. From the root Application onward, everything lives in [`/gitops/`](../../gitops/) and reconciles automatically. See [argocd.md](argocd.md) for the post-bootstrap layout.
 
-Steps 4-8 are all in [`bootstrap/install.sh`](../bootstrap/install.sh) - you can run it end-to-end after the Talos config is applied. Versions live in that script; the ones quoted below match it at the time of writing.
+Steps 4-8 are one command, `mise run bootstrap`, which applies [`bootstrap/helmfile.yaml`](../bootstrap/helmfile.yaml). Versions live in that file. Re-running it is safe.
 
 ## 0. Prerequisites
 
-Tools: `talosctl`, `kubectl`, `helm`, `sops`, `age` - all pinned in [`/.mise.toml`](../../.mise.toml), `mise install` from the repo root. Plus the 1Password CLI (`op`, `brew install op`), which `install.sh` calls to seed the External Secrets credential.
+Tools: `talosctl`, `kubectl`, `helm`, `helmfile`, `sops`, `age` - all pinned in [`/.mise.toml`](../../.mise.toml), `mise install` from the repo root. The age private key must be at `~/.config/sops/age/keys.txt` (backed up in 1Password) to decrypt the bootstrap credential.
 
 Network plan - pick before you start, write down somewhere:
 
@@ -76,31 +76,30 @@ kubectl get nodes           # Ready=False (no CNI yet) is expected
 
 Repeat `apply-config` with `worker-final.yaml` for each worker, then approve any pending CSRs.
 
-## 4. Gateway API CRDs
-
-Apply before Cilium so its gateway controller can register.
+## 4-8. Core components + hand-off
 
 ```bash
-kubectl apply --server-side \
-  -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
+mise run bootstrap
 ```
 
-Cilium 1.20.x targets Gateway API v1.6.x; bump them together.
+[`helmfile.yaml`](../bootstrap/helmfile.yaml) runs, in order:
 
-## 5. Cilium
+1. **Gateway API CRDs** (cilium presync) - before Cilium so its gateway controller registers. Cilium 1.20.x targets Gateway API v1.6.x; Renovate bumps them together in the `bootstrap` PR.
+2. **Cilium** ([`cilium-values.yaml`](../bootstrap/cilium-values.yaml)): `kubeProxyReplacement: true`, native routing, WireGuard pod-to-pod encryption, `bpf.hostLegacyRouting: true` (apiserver→pod aggregator routes on Talos), L2 announcements, Gateway API. Postsync applies [`cilium-l2.yaml`](../bootstrap/cilium-l2.yaml) (LB pool + announcement policy). Nodes go Ready.
+3. **Namespaces + 1Password credential** (argocd presync): [`namespaces.yaml`](../bootstrap/namespaces.yaml) (`argocd` with privileged PSS labels, `external-secrets`), then `sops -d onepassword-credentials.sops.yaml | kubectl apply -f -`. ESO's `onepassword` `ClusterSecretStore` needs this *before* ArgoCD deploys ESO, or every `ExternalSecret` stalls.
+4. **ArgoCD** ([`argocd-values.yaml`](../bootstrap/argocd-values.yaml)): TLS terminates at the Gateway (`server.insecure: true`); repo-server runs stock kustomize with `--enable-helm --load-restrictor=LoadRestrictionsNone`, no CMP sidecar - see [argocd.md §Rendering](argocd.md#rendering).
+5. **Root Application** (argocd postsync).
 
-Values in [`bootstrap/cilium-values.yaml`](../bootstrap/cilium-values.yaml). Key choices: `kubeProxyReplacement: true`, native routing on pod CIDR, WireGuard pod-to-pod encryption (`nodeEncryption: false`), `bpf.hostLegacyRouting: true` (needed for apiserver→pod aggregator routes on Talos), L2 announcements, Gateway API controller on.
+The encrypted credential is created once (and again on rotation):
 
 ```bash
-helm install cilium cilium/cilium \
-  --namespace kube-system --version 1.20.0 \
-  --values cluster/bootstrap/cilium-values.yaml
-kubectl -n kube-system rollout status ds/cilium
-kubectl get nodes           # now Ready
-kubectl apply -f cluster/bootstrap/cilium-l2.yaml   # LB IP pool + announcement policy
+kubectl create secret generic onepassword-credentials -n external-secrets \
+  --from-literal=credential="$(op read 'op://homecloud/5xsyk5yefnbhsfr2rfuu62e6aq/credential')" \
+  --dry-run=client -o yaml > cluster/bootstrap/onepassword-credentials.sops.yaml
+sops -e -i cluster/bootstrap/onepassword-credentials.sops.yaml
 ```
 
-Smoke test:
+LoadBalancer smoke test:
 
 ```bash
 kubectl create deploy nginx --image=nginx
@@ -109,44 +108,15 @@ kubectl get svc nginx -w    # wait for EXTERNAL-IP, then curl it
 kubectl delete deploy,svc nginx
 ```
 
-## 6. External Secrets credential
-
-The `onepassword` `ClusterSecretStore` needs its service-account token to exist *before* ArgoCD deploys ESO, otherwise the store fails its first reconcile and every dependent `ExternalSecret` stalls.
+Initial ArgoCD admin password:
 
 ```bash
-kubectl create namespace external-secrets
-kubectl -n external-secrets create secret generic onepassword-credentials \
-  --from-literal=credential="$(op read 'op://homecloud/5xsyk5yefnbhsfr2rfuu62e6aq/credential')"
-```
-
-`install.sh` does this idempotently - it skips the secret if it already exists.
-
-## 7. ArgoCD
-
-Values in [`bootstrap/argocd-values.yaml`](../bootstrap/argocd-values.yaml). TLS terminates at the Gateway (`server.insecure: true`); the repo-server runs stock kustomize with `--enable-helm --load-restrictor=LoadRestrictionsNone`. No CMP sidecar - see [argocd.md §Rendering](argocd.md#rendering).
-
-The `argocd` namespace needs `pod-security.kubernetes.io/enforce: privileged` labels, which `install.sh` applies before the Helm install.
-
-```bash
-helm install argocd argo/argo-cd \
-  --namespace argocd --create-namespace --version 10.3.0 \
-  --values cluster/bootstrap/argocd-values.yaml
-kubectl -n argocd rollout status deploy/argocd-server
-
-# initial admin password
-kubectl -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath='{.data.password}' | base64 -d
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
 # log in, change it, then:
 kubectl -n argocd delete secret argocd-initial-admin-secret
 ```
 
-## 8. Root Application
-
-Hands the cluster off to GitOps. Either let `install.sh` apply it as its final step, or:
-
-```bash
-kubectl apply -f gitops/root/root-app.yaml
-```
+### Root Application
 
 It targets [`gitops/root/`](../../gitops/root/) with `directory.recurse: false`, picking up only the five ApplicationSets there - which then fan out into one Application per directory under `infrastructure/`, `operators/`, `security/`, `services/` and `apps/`. Expect ~1-2 minutes of red Applications on first sync (CRDs racing each other); `selfHeal: true` converges them.
 
@@ -164,7 +134,7 @@ argocd app list
 
 | Symptom                                    | Likely cause                            | Check                                                |
 | ------------------------------------------ | --------------------------------------- | ---------------------------------------------------- |
-| Node `NotReady` after Cilium install       | `k8sServiceHost/Port` not set           | `cilium-values.yaml`, then `helm upgrade`            |
+| Node `NotReady` after Cilium install       | `k8sServiceHost/Port` not set           | `cilium-values.yaml`, then `mise run bootstrap`      |
 | Longhorn manager CrashLoopBackOff          | Missing iscsi-tools / util-linux-tools  | Rebuild Talos image, `talosctl upgrade`              |
 | LoadBalancer stuck `<pending>`             | L2 announcement policy wrong            | `kubectl describe ciliuml2announcementpolicy`        |
 | metrics-server `unable to fetch metrics`   | Kubelet server cert not rotating        | `talosctl logs kubelet`                              |

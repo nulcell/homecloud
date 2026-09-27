@@ -18,14 +18,14 @@ ArgoCD ──watches──► gitops/root/   (root Application, directory.recurs
                                 • gitops/apps/*            → app-*        (wave 100)
 ```
 
-Source of truth = this repo. Cluster state ArgoCD does *not* own: the `onepassword-credentials` Secret seeded by `install.sh`, and the rotated admin password.
+Source of truth = this repo. Cluster state ArgoCD does *not* own: the `onepassword-credentials` Secret applied by the bootstrap helmfile, and the rotated admin password.
 
 ## Layout
 
 ```
 gitops/
 ├── root/
-│   ├── root-app.yaml               # applied once by bootstrap/install.sh
+│   ├── root-app.yaml               # applied once by bootstrap/helmfile.yaml
 │   ├── infrastructure-appset.yaml
 │   ├── operators-appset.yaml
 │   ├── security-appset.yaml
@@ -39,7 +39,7 @@ gitops/
 ├── services/         # kubevirt (KubeVirt + CDI CRs)
 ├── apps/             # actual-budget, authentik, cloudflared, mealie, media-stack,
 │                     # n8n, portfolio, uptime-kuma
-└── exprimental/      # staging area — no ApplicationSet reads this, nothing here runs
+└── experimental/      # staging area — no ApplicationSet reads this, nothing here runs
 ```
 
 Every directory under the five generated paths must contain a `kustomization.yaml` - the ApplicationSets pick them up automatically. The generated Application's destination namespace is the directory basename.
@@ -73,21 +73,19 @@ kustomize.buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
 
 ## Secrets
 
-Runtime secrets come from 1Password via [External Secrets](https://external-secrets.io/). Manifests hold `ExternalSecret` CRs; no ciphertext is committed.
+Runtime secrets come from 1Password via [External Secrets](https://external-secrets.io/). Manifests hold `ExternalSecret` CRs; the only committed ciphertext is the SOPS-encrypted bootstrap credential below.
 
 - [`gitops/infrastructure/external-secrets/cluster-secret-store.yaml`](../../gitops/infrastructure/external-secrets/cluster-secret-store.yaml) defines the `onepassword` `ClusterSecretStore` (provider `onepasswordSDK`, 1-hour refresh, 5m cache).
-- It authenticates with the `onepassword-credentials` Secret in the `external-secrets` namespace, which [`bootstrap/install.sh`](../bootstrap/install.sh) creates from `op read` before ArgoCD is installed. ESO cannot reconcile without it.
+- It authenticates with the `onepassword-credentials` Secret in the `external-secrets` namespace, which [`bootstrap/helmfile.yaml`](../bootstrap/helmfile.yaml) decrypts with SOPS and applies before ArgoCD is installed. ESO cannot reconcile without it.
 - Add a secret by writing an `ExternalSecret` next to the workload that consumes it, e.g. [`gitops/apps/n8n/n8n-external-secrets.yaml`](../../gitops/apps/n8n/n8n-external-secrets.yaml).
 
-### SOPS (fallback, not wired)
+### SOPS (bootstrap only)
 
-[`/.sops.yaml`](../../.sops.yaml) and the `argocd-sops-age` Secret still exist, but **nothing decrypts `.enc.yaml` today** - the `kustomize-sops` CMP sidecar was removed from the repo-server. The only remaining `.enc.yaml` is an example under `gitops/exprimental/`. Don't add new ones without re-adding the sidecar first.
+[`/.sops.yaml`](../../.sops.yaml) + age encrypt one file: [`bootstrap/onepassword-credentials.sops.yaml`](../bootstrap/), decrypted by the helmfile hook on your machine. ArgoCD decrypts nothing - the ksops CMP sidecar is gone - so don't put SOPS files under `gitops/`.
 
-To re-enable: add the `viaductoss/ksops` CMP sidecar to `repoServer.extraContainers` in `argocd-values.yaml`, mount the `argocd-sops-age` Secret at `SOPS_AGE_KEY_FILE`, and set `plugin.name: kustomize-sops` on the ApplicationSet templates. Repo config that is already in place:
-
-- `path_regex: ^(gitops|charts|manifests)/.*\.enc\.ya?ml$` - only `.enc.yaml` files match; a stray `.yaml` won't be silently encrypted.
 - `encrypted_regex: ^(data|stringData)$` - only Secret payloads are encrypted; metadata stays diff-friendly.
-- `age:` public key. Private half lives at `~/.config/sops/age/keys.txt` and as the in-cluster `argocd-sops-age` Secret.
+- `age:` public key. Private half lives at `~/.config/sops/age/keys.txt`; back it up in 1Password.
+- To re-wire ArgoCD: add the `viaductoss/ksops` CMP sidecar to `repoServer.extraContainers`, mount an age-key Secret at `SOPS_AGE_KEY_FILE`, and set `plugin.name: kustomize-sops` on the ApplicationSet templates.
 
 ## Gateway + cert-manager
 
@@ -109,7 +107,7 @@ external-dns watches `gateway-httproute` + `ingress` sources and syncs every HTT
 
 - **Add an app**: drop `gitops/apps/<name>/kustomization.yaml` (+ resources), commit, push. AppSet picks it up.
 - **Remove an app**: delete the directory. `prune: true` + the resources finalizer clean up the cluster.
-- **Park something without deleting it**: move it under `gitops/exprimental/` - no ApplicationSet reads that tree.
+- **Park something without deleting it**: move it under `gitops/experimental/` - no ApplicationSet reads that tree.
 - **Pause reconcile while debugging**: set `selfHeal: false` on the Application. For a full cluster freeze (e.g. a physical move), see [`gitops/root/safe-scaledown.md`](../../gitops/root/safe-scaledown.md).
 - **Stuck Terminating**: `kubectl patch <kind> <name> -p '{"metadata":{"finalizers":[]}}' --type=merge`.
 
