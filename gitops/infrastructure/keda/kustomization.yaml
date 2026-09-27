@@ -5,7 +5,7 @@ namespace: keda
 helmCharts:
   - name: keda
     repo: https://kedacore.github.io/charts
-    version: 2.20.2
+    version: 2.21.0
     releaseName: keda
     namespace: keda
     valuesFile: values.yaml
