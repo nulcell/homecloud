@@ -24,7 +24,7 @@ jobs:
         env:
           LOG_LEVEL: debug
           # Docker Hub credentials for the private nullcell/portfolio image,
-          # whose tag Renovate reads from charts/portfolio/Chart.yaml appVersion.
+          # whose tag Renovate reads from gitops/apps/portfolio/values.yaml.
           # DOCKERHUB_TOKEN must be a Personal Access Token (read-only is enough)
           # - Docker rejects account passwords for API logins, and Renovate
           # surfaces that only as "Failed to look up docker package".

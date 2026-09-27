@@ -1,46 +1,72 @@
-replicaCount: 2
+workloads:
+  portfolio:
+    replicas: 2
+    # One-off for the cutover from charts/portfolio: the selector gained
+    # app.kubernetes.io/component, which is immutable. Remove after the first sync.
+    annotations:
+      argocd.argoproj.io/sync-options: Replace=true
+    imagePullSecrets: [dockerhub-credentials]
+    podSecurityContext:
+      runAsUser: 101
+      runAsGroup: 101
+      fsGroup: 101
+    # Single-node cluster today, so ScheduleAnyway - DoNotSchedule would leave the
+    # second replica pending until the control plane grows to 3 nodes.
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+    containers:
+      portfolio:
+        image:
+          repository: nullcell/portfolio
+          tag: "1.0.12"
+        ports:
+          http: 8080
+        probes:
+          liveness:
+            httpGet: {path: /health, port: http}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readiness:
+            httpGet: {path: /health, port: http}
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+        resources:
+          requests: {cpu: 100m, memory: 128Mi}
+          limits: {memory: 256Mi}
+    services:
+      portfolio:
+        ports:
+          http: 80
+    networkPolicy:
+      ingress:
+        - gateway
+        # Unverified whether uptime-kuma monitors / homarr widgets use the
+        # internal Service URL - allowed for now, tighten once confirmed unused.
+        - {namespace: uptime-kuma, port: http}
+        - {namespace: homarr, port: http}
 
-image:
-  repository: nullcell/portfolio
-
-imagePullSecrets:
-  - name: dockerhub-credentials
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
-    # cpu: 200m
-    memory: 256Mi
+persistence:
+  tmp:
+    type: emptyDir
+    globalMounts:
+      - path: /tmp
 
 # Origin route only. nulcell.com and www.nulcell.com are published by the
 # cloudflared tunnel (gitops/apps/cloudflared/values.yaml), which rewrites the
 # Host header to this hostname before forwarding to the internal gateway.
-gateway:
-  enabled: true
-  hostname: portfolio.internal.nulcell.com
-  parentRef:
-    name: internal
-    namespace: gateway
-    sectionName: https-internal
-
-# Single-node cluster today, so ScheduleAnyway - DoNotSchedule would leave the
-# second replica pending until the control plane grows to 3 nodes.
-topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: kubernetes.io/hostname
-    whenUnsatisfiable: ScheduleAnyway
-    labelSelector:
-      matchLabels:
-        app.kubernetes.io/name: portfolio
-        app.kubernetes.io/instance: portfolio
-
-# Ingress only from the gateway; egress fully denied (chart defaults).
-networkPolicy:
-  ingress:
-    # Unverified whether uptime-kuma monitors / homarr widgets use the
-    # internal Service URL - allowed for now, tighten once confirmed unused.
-    allowedNamespaces:
-      - uptime-kuma
-      - homarr
+routes:
+  portfolio:
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: internal
+        namespace: gateway
+        sectionName: https-internal
+    hostnames: [portfolio.internal.nulcell.com]
+    rules:
+      - matches: [{path: {type: PathPrefix, value: /}}]
+        backends: [{workload: portfolio, service: portfolio, port: http}]
