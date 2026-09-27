@@ -2,9 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: uptime-kuma
 
-helmGlobals:
-  chartHome: ../../../charts
-
 helmCharts:
   - name: mariadb-cluster
     repo: oci://ghcr.io/mariadb-operator/charts
@@ -13,7 +10,9 @@ helmCharts:
     namespace: uptime-kuma
     valuesFile: mariadb-values.yaml
     includeCRDs: false
-  - name: uptime-kuma
+  - name: app-template
+    repo: oci://ghcr.io/nulcell/charts
+    version: 0.1.1
     releaseName: uptime-kuma
     namespace: uptime-kuma
     valuesFile: values.yaml

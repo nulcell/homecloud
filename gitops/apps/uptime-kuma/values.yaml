@@ -1,43 +1,85 @@
-replicaCount: 1
+workloads:
+  uptime-kuma:
+    replicas: 1
+    imagePullSecrets: [dockerhub-credentials, dhi-credentials]
+    podSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+    containers:
+      uptime-kuma:
+        image:
+          # repository: dhi.io/uptime-kuma
+          repository: ghcr.io/louislam/uptime-kuma
+          tag: "2.5.5"
+        securityContext:
+          readOnlyRootFilesystem: false
+          # ICMP monitors need raw sockets:
+          # capabilities: {drop: [ALL], add: [NET_RAW]}
+        ports:
+          http: 3001
+        env:
+          UPTIME_KUMA_DB_TYPE: mariadb
+          UPTIME_KUMA_DB_HOSTNAME: mariadb-cluster
+          UPTIME_KUMA_DB_PORT: "3306"
+          UPTIME_KUMA_DB_NAME: uptime-kuma
+          UPTIME_KUMA_DB_USERNAME: uptime-kuma
+          UPTIME_KUMA_DB_PASSWORD:
+            valueFrom:
+              secretKeyRef: {name: mariadb-uptime-kuma-password, key: password}
+        probes:
+          liveness:
+            httpGet: {path: /, port: http}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readiness:
+            httpGet: {path: /, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+        resources:
+          requests: {cpu: 50m, memory: 128Mi}
+          limits: {cpu: 500m, memory: 256Mi}
+    services:
+      uptime-kuma:
+        ports:
+          http: 3001
+    networkPolicy:
+      ingress:
+        - gateway
+        # Unverified whether homarr widgets use the internal Service URL -
+        # allowed for now, tighten once confirmed unused.
+        - {namespace: homarr, port: http}
+      egress:
+        - {datastore: mariadb}
+        # Monitors probe arbitrary targets.
+        - world
 
-# image:
-#   repository: dhi.io/uptime-kuma
-
-imagePullSecrets:
-  - name: dockerhub-credentials
-  - name: dhi-credentials
-
-gateway:
-  enabled: true
-  hostname: status.internal.nulcell.com
-  parentRef:
-    name: internal
-    namespace: gateway
-    sectionName: https-internal
-
-persistence:
-  enabled: false
-
-database:
-  type: mariadb
+# MariaDB comes from the mariadb-cluster chart (mariadb-values.yaml) and has its
+# own policy in mariadb-netpol.yaml; declared here only for the egress rule.
+datastores:
   mariadb:
-    hostname: mariadb-cluster
-    port: 3306
-    name: uptime-kuma
-    username: uptime-kuma
-    existingSecret: mariadb-uptime-kuma-password
-    secretPasswordKey: password
+    engine: mariadb
+    type: external
+    host: mariadb-cluster
+    peers:
+      - namespace: uptime-kuma
+        podLabels:
+          app.kubernetes.io/name: mariadb
+          app.kubernetes.io/instance: mariadb-cluster
 
-# The MariaDB pods get their own policy in mariadb-netpol.yaml.
-networkPolicy:
-  ingress:
-    # Unverified whether homarr widgets use the internal Service URL -
-    # allowed for now, tighten once confirmed unused.
-    allowedNamespaces:
-      - homarr
-  egress:
-    database:
-      # Pods created by mariadb-operator for the mariadb-cluster resource.
-      podSelector:
-        app.kubernetes.io/name: mariadb
-        app.kubernetes.io/instance: mariadb-cluster
+routes:
+  uptime-kuma:
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: internal
+        namespace: gateway
+        sectionName: https-internal
+    hostnames: [status.internal.nulcell.com]
+    rules:
+      - matches: [{path: {type: PathPrefix, value: /}}]
+        backends: [{workload: uptime-kuma, service: uptime-kuma, port: http}]
