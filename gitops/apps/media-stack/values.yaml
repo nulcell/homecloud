@@ -84,15 +84,14 @@ workloads:
           discovery: {port: 7359, protocol: UDP}
           dlna: {port: 1900, protocol: UDP}
     # Shared by every web app below: any peer in the namespace, the gateway on the
-    # web port(s), and homarr / uptime-kuma - unverified whether their widgets and
-    # monitors use the internal Service URLs; tighten once confirmed unused.
+    # web port(s), and homarr - unverified whether its widgets use the internal
+    # Service URLs; tighten once confirmed unused.
     # Egress is open: these apps reach arbitrary metadata/subtitle providers.
     networkPolicy: &webPolicy
       ingress:
         - {namespace: media}
         - gateway
         - {namespace: homarr, port: web}
-        - {namespace: uptime-kuma, port: web}
       egress: [world]
 
   seerr:
@@ -259,8 +258,6 @@ workloads:
         - gateway
         - {namespace: homarr, port: 9696}
         - {namespace: homarr, port: 8080}
-        - {namespace: uptime-kuma, port: 9696}
-        - {namespace: uptime-kuma, port: 8080}
       egress: [world]
 
 # RWX, shared by every app; each app's config lives in its own subPath.

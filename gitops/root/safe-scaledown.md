@@ -59,7 +59,7 @@ All generated Apps carry `automated: { prune: true, selfHeal: true }`.
 | `authentik-postgres-1`                      | authentik     | `app-authentik`               | CNPG                | hibernate             |
 | `mealie-postgres-1`                         | mealie        | `app-mealie`                  | CNPG                | hibernate             |
 | `n8n-postgres-1`                            | n8n           | `app-n8n`                     | CNPG                | hibernate             |
-| `storage-mariadb-cluster-0`                 | uptime-kuma   | `app-uptime-kuma`             | mariadb-operator    | operator→0, scale STS |
+| `gatus-postgres-1`                          | gatus         | `app-gatus`                   | CNPG                | hibernate             |
 | `prometheus-…-db-…-0`                       | monitoring    | `infra-kube-prometheus-stack` | prometheus-operator | operator→0, scale STS |
 | `alertmanager-…-db-…-0`                     | monitoring    | `infra-kube-prometheus-stack` | prometheus-operator | operator→0, scale STS |
 | `grafana`                                   | monitoring    | `infra-kube-prometheus-stack` | Deployment          | scale to 0            |
@@ -156,7 +156,7 @@ Operators are already parked (step 4), so scaling their StatefulSets now sticks.
 
 ```bash
 for ns in actual-budget authentik mealie media n8n \
-          uptime-kuma loki monitoring falco; do
+          gatus loki monitoring falco; do
   # drop HPAs first (they force minReplicas >= 1)
   kubectl -n "$ns" delete hpa --all --ignore-not-found
   # scale only the kinds that exist -> no "no objects passed to scale" noise

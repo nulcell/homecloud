@@ -1,0 +1,273 @@
+# Gatus config - https://github.com/TwiN/gatus#configuration
+# Mounted at /config/config.yaml via the configMapGenerator in kustomization.yaml;
+# a change rolls the pod. ${VARS} are expanded from the container env.
+
+web:
+  address: 0.0.0.0
+  port: 8080
+
+storage:
+  type: postgres
+  path: ${POSTGRES_URI}
+  caching: true
+  # Latest checks shown as the bar on the dashboard. 30-day uptime is kept
+  # separately (hourly/daily rollups) - see an endpoint's detail page.
+  maximum-number-of-results: 100
+  maximum-number-of-events: 50
+
+# Scraped via the Service's ServiceMonitor.
+metrics: true
+
+concurrency: 3
+
+# Skip all checks while the cluster itself has no internet, instead of
+# marking every endpoint down.
+connectivity:
+  checker:
+    target: 1.1.1.1:53
+    interval: 60s
+
+ui:
+  title: Hosted Services
+  header: Hosted Services
+  dashboard-heading: Hosted Services
+  dashboard-subheading: Status of services running on nulcell.com
+  default-sort-by: group
+  default-filter-by: none
+  dark-mode: true
+  # Header links to the services (Internal ones and Jellyfin only resolve on LAN/Tailscale).
+  buttons:
+    - name: ArgoCD
+      link: https://argocd.nulcell.com
+    - name: Grafana
+      link: https://grafana.nulcell.com
+    - name: Headlamp
+      link: https://headlamp.nulcell.com
+    - name: Longhorn
+      link: https://longhorn.nulcell.com
+    - name: Portfolio
+      link: https://nulcell.com
+    - name: Meridian Demo
+      link: https://meridian-demo.nulcell.com
+    - name: Authentik
+      link: https://auth.nulcell.com
+    - name: Actual Budget
+      link: https://budget.nulcell.com
+    - name: n8n
+      link: https://workflow.nulcell.com
+    - name: Mealie
+      link: https://recipes.nulcell.com
+    - name: Jellyfin
+      link: https://jellyfin.nulcell.com
+
+# Global maintenance window: alerts are suppressed while it's active.
+# Recurring, not dated: `every` lists weekdays (empty = every day), `start` is a
+# wall-clock time in `timezone`. Below = every Sunday 03:00-04:00 Amsterdam time.
+# For a one-off window, flip `enabled` on, then off again afterwards.
+# Per-endpoint windows go under endpoints[].maintenance-windows (example on ArgoCD).
+maintenance:
+  enabled: false
+  start: "03:00"
+  duration: 1h
+  timezone: Europe/Amsterdam
+  every:
+    - Sunday
+
+# Incident communication, shown at the top of the public page (markdown allowed).
+# type: outage | warning | information | operational | none
+# archived: true moves an entry to "Past Announcements".
+announcements: []
+# announcements:
+#   - timestamp: 2026-10-01T20:00:00Z
+#     type: warning
+#     message: "Planned maintenance: cluster upgrade 22:00-23:00 CEST. Brief outages expected."
+#   - timestamp: 2026-10-01T21:05:00Z
+#     type: operational
+#     message: "Maintenance complete. All services operational."
+#     archived: true
+
+# No alerting provider wired yet. Example (then add `alerts: [{type: ntfy}]` to endpoints):
+# alerting:
+#   ntfy:
+#     url: https://ntfy.sh
+#     topic: homecloud-status
+#     priority: 3
+#     default-alert:
+#       failure-threshold: 3
+#       success-threshold: 2
+#       send-on-resolved: true
+
+# Mirrors the Uptime Kuma monitors (paused ones omitted).
+endpoints:
+  # ── Internal ────────────────────────────────────────────────────────────────
+  - name: ArgoCD
+    group: Internal
+    url: https://argocd.nulcell.com/healthz
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+    # Example per-endpoint window, disabled by being empty.
+    maintenance-windows: []
+    # maintenance-windows:
+    #   - start: "02:00"
+    #     duration: 30m
+    #     timezone: Europe/Amsterdam
+    #     every:
+    #       - Saturday
+
+  - name: Grafana
+    group: Internal
+    url: https://grafana.nulcell.com/api/health
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: Headlamp
+    group: Internal
+    url: https://headlamp.nulcell.com/c/main/
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: Longhorn
+    group: Internal
+    url: https://longhorn.nulcell.com/
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  # ── Apps ────────────────────────────────────────────────────────────────────
+  - name: Portfolio Site
+    group: Apps
+    url: https://nulcell.com/health
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+      # Public site: also watch the cert.
+      - "[CERTIFICATE_EXPIRATION] > 168h"
+
+  - name: Meridian Demo
+    group: Apps
+    url: https://meridian-demo.nulcell.com/api/v1/info
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: Authentik
+    group: Apps
+    url: https://auth.nulcell.com/
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: Actual Budget
+    group: Apps
+    url: https://budget.nulcell.com
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: n8n
+    group: Apps
+    url: https://workflow.nulcell.com/healthz/readiness
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: Mealie
+    group: Apps
+    url: https://recipes.nulcell.com/api/app/about
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  # ── Media ───────────────────────────────────────────────────────────────────
+  - name: Jellyfin
+    group: Media
+    url: https://jellyfin.nulcell.com/health
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: Seerr
+    group: Media
+    url: https://seerr.nulcell.com/
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: Radarr
+    group: Media
+    url: https://radarr.nulcell.com/ping
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: Sonarr
+    group: Media
+    url: https://sonarr.nulcell.com/ping
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: Prowlarr
+    group: Media
+    url: https://prowlarr.nulcell.com/ping
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+
+  - name: qBittorrent
+    group: Media
+    url: https://qbittorrent.nulcell.com/
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"

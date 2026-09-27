@@ -40,9 +40,8 @@ workloads:
     networkPolicy:
       ingress:
         - gateway
-        # Unverified whether uptime-kuma monitors / homarr widgets use the
-        # internal Service URL - allowed for now, tighten once confirmed unused.
-        - {namespace: uptime-kuma, port: http}
+        # Unverified whether homarr widgets use the internal Service URL -
+        # allowed for now, tighten once confirmed unused.
         - {namespace: homarr, port: http}
 
 persistence:

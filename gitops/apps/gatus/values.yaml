@@ -29,9 +29,12 @@ workloads:
       gatus:
         ports:
           http: 80
+        serviceMonitor:
+          enabled: true
     networkPolicy:
       ingress:
         - gateway
+        - prometheus
       egress:
         - { datastore: postgres }
         # Checks hit public hostnames (Cloudflare or gateway LB IPs).
@@ -48,43 +51,14 @@ datastores:
       limits: { cpu: 500m, memory: 512Mi }
     monitoring: true
 
+# Generated from config.yaml by kustomization.yaml; the name gets a content hash.
 persistence:
   config:
     type: configMap
-    name: config
+    name: gatus-config
     globalMounts:
       - path: /config
         readOnly: true
-
-# Mirrors the Uptime Kuma monitors (paused ones omitted); interval defaults to 1m.
-# Pods roll on change.
-configMaps:
-  config:
-    data:
-      config.yaml: |
-        storage:
-          type: postgres
-          path: ${POSTGRES_URI}
-        ui:
-          title: Hosted Services
-          header: Hosted Services
-        endpoints:
-          - {group: Internal, name: ArgoCD, url: https://argocd.nulcell.com/healthz, conditions: ["[STATUS] < 300"]}
-          - {group: Internal, name: Grafana, url: https://grafana.nulcell.com/api/health, conditions: ["[STATUS] < 300"]}
-          - {group: Internal, name: Headlamp, url: https://headlamp.nulcell.com/c/main/, conditions: ["[STATUS] < 300"]}
-          - {group: Internal, name: Longhorn, url: https://longhorn.nulcell.com/, conditions: ["[STATUS] < 300"]}
-          - {group: Apps, name: Portfolio Site, url: https://nulcell.com/health, conditions: ["[STATUS] < 300"]}
-          - {group: Apps, name: Meridian Demo, url: https://meridian-demo.nulcell.com/api/v1/info, interval: 60s, conditions: ["[STATUS] < 300"]}
-          - {group: Apps, name: Authentik, url: https://auth.nulcell.com/, conditions: ["[STATUS] < 300"]}
-          - {group: Apps, name: Actual Budget, url: https://budget.nulcell.com, conditions: ["[STATUS] < 300"]}
-          - {group: Apps, name: n8n, url: https://workflow.nulcell.com/healthz/readiness, conditions: ["[STATUS] < 300"]}
-          - {group: Apps, name: Mealie, url: https://recipes.nulcell.com/api/app/about, conditions: ["[STATUS] < 300"]}
-          - {group: Media, name: Jellyfin, url: https://jellyfin.nulcell.com/health, conditions: ["[STATUS] < 300"]}
-          - {group: Media, name: Seerr, url: https://seerr.nulcell.com/, conditions: ["[STATUS] < 300"]}
-          - {group: Media, name: Radarr, url: https://radarr.nulcell.com/ping, conditions: ["[STATUS] < 300"]}
-          - {group: Media, name: Sonarr, url: https://sonarr.nulcell.com/ping, conditions: ["[STATUS] < 300"]}
-          - {group: Media, name: Prowlarr, url: https://prowlarr.nulcell.com/ping, conditions: ["[STATUS] < 300"]}
-          - {group: Media, name: qBittorrent, url: https://qbittorrent.nulcell.com/, conditions: ["[STATUS] < 300"]}
 
 # Origin route; status.nulcell.com is published by cloudflared with this Host header.
 routes:

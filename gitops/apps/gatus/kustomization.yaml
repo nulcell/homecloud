@@ -13,3 +13,16 @@ helmCharts:
 
 resources:
   - namespace.yaml
+
+configMapGenerator:
+  - name: gatus-config
+    files:
+      - config.yaml
+  # Upstream dashboard (TwiN/gatus .examples/docker-compose-grafana-prometheus),
+  # picked up by Grafana's sidecar via the label.
+  - name: gatus-grafana-dashboard
+    files:
+      - gatus.json=grafana-dashboard.json
+    options:
+      labels:
+        grafana_dashboard: "1"

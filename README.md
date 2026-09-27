@@ -38,9 +38,9 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
 | [`operators/`](gitops/operators/) wave 5           | cnpg, falco, kubevirt, mariadb, tailscale                                                                                                                          |
 | [`security/`](gitops/security/) wave 10            | falco                                                                                                                                                              |
 | [`services/`](gitops/services/) wave 15            | kubevirt (KubeVirt + CDI CRs)                                                                                                                                      |
-| [`apps/`](gitops/apps/) wave 100                   | actual-budget, authentik, cloudflared, gatus, mealie, media-stack, n8n, portfolio, uptime-kuma                                                                     |
+| [`apps/`](gitops/apps/) wave 100                   | actual-budget, authentik, cloudflared, gatus, mealie, media-stack, n8n, portfolio                                                                                  |
 
-[`gitops/experimental/`](gitops/experimental/) is a staging area - no ApplicationSet reads it, so nothing in it runs. It currently holds homarr, outline, speedtest-tracker, rancher, seaweedfs, kubescape and trivy.
+[`gitops/experimental/`](gitops/experimental/) is a staging area - no ApplicationSet reads it, so nothing in it runs. It currently holds homarr, outline, speedtest-tracker, uptime-kuma, rancher, seaweedfs, kubescape and trivy.
 
 ## Roadmap
 
@@ -65,7 +65,7 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
   - [x] Media stack - Jellyfin, Seerr, Radarr, Sonarr, Bazarr, Prowlarr, qBittorrent behind Gluetun.
   - [x] [n8n](https://n8n.io/) for workflow automation.
   - [x] [Authentik](https://goauthentik.io/) for SSO.
-  - [x] [Mealie](https://mealie.io/) recipes, [Actual Budget](https://actualbudget.org/), [Uptime Kuma](https://uptime.kuma.pet/), [Gatus](https://gatus.io/) status page on `status.nulcell.com`.
+  - [x] [Mealie](https://mealie.io/) recipes, [Actual Budget](https://actualbudget.org/), [Gatus](https://gatus.io/) status page on `status.nulcell.com` (replaced Uptime Kuma, parked in `gitops/experimental/`).
   - [x] [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/) publishing internal apps to the internet.
   - [x] Portfolio website - Astro + nginx on `nulcell.com`.
 - [ ] Serverless and Messaging:
@@ -146,12 +146,9 @@ flowchart TD
         CNPG[CNPG operator]:::storage
         PGDB[Postgres - authentik, mealie, n8n]:::storage
         MDB[mariadb-operator]:::storage
-        MDBC[MariaDB - uptime-kuma]:::storage
 
         CNPG -->|Manages| PGDB
-        MDB -->|Manages| MDBC
         PGDB -->|Claims PVs| LH
-        MDBC -->|Claims PVs| LH
     end
 
     subgraph Compute ["Compute & Workloads"]
@@ -160,7 +157,7 @@ flowchart TD
             Media[media-stack - Jellyfin, arr apps, Gluetun]:::compute
             N8N[n8n]:::compute
             Auth[authentik]:::compute
-            Misc[mealie, actual-budget, uptime-kuma, portfolio]:::compute
+            Misc[mealie, actual-budget, gatus, portfolio]:::compute
         end
 
         Cilium --> Apps

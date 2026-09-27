@@ -37,8 +37,8 @@ gitops/
 ├── operators/        # cnpg, falco, kubevirt, mariadb, tailscale
 ├── security/         # falco
 ├── services/         # kubevirt (KubeVirt + CDI CRs)
-├── apps/             # actual-budget, authentik, cloudflared, mealie, media-stack,
-│                     # n8n, portfolio, uptime-kuma
+├── apps/             # actual-budget, authentik, cloudflared, gatus, mealie,
+│                     # media-stack, n8n, portfolio
 └── experimental/      # staging area — no ApplicationSet reads this, nothing here runs
 ```
 
