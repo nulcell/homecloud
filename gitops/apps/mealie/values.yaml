@@ -1,122 +1,138 @@
-# Overrides for the local mealie chart (charts/mealie/).
-# Everything not listed here keeps the chart's default value.
+workloads:
+  mealie:
+    replicas: 1
+    spec:
+      strategy:
+        type: Recreate
+    imagePullSecrets: [dockerhub-credentials]
+    podSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+    containers:
+      mealie:
+        image:
+          repository: ghcr.io/mealie-recipes/mealie
+          tag: v3.27.0
+        # The image drops root itself; started non-root it keeps the uid it got,
+        # and /app/data (below) is writable through fsGroup.
+        securityContext:
+          readOnlyRootFilesystem: false
+        ports:
+          http: 9000
+        env:
+          PUID: "1000"
+          PGID: "1000"
+          TZ: Europe/Amsterdam
+          # Mealie builds notification links and the OIDC callback from this.
+          BASE_URL: https://recipes.nulcell.com
+          API_PORT: "9000"
+          API_DOCS: "false"
+          LOG_LEVEL: info
+          DEFAULT_GROUP: Home
+          DEFAULT_HOUSEHOLD: Family
+          DAILY_SCHEDULE_TIME: "23:45"
+          # Accounts come from Authentik via OIDC, or from an admin invite.
+          ALLOW_SIGNUP: "false"
+          ALLOW_PASSWORD_LOGIN: "false"
+          TOKEN_TIME: "48"
+          UVICORN_WORKERS: "1"
+          SECURITY_MAX_LOGIN_ATTEMPTS: "5"
+          SECURITY_USER_LOCKOUT_TIME: "24"
+          ALLOWED_IFRAME_HOSTS: ""
+          DB_ENGINE: postgres
+          POSTGRES_SERVER: "{{ .Release.Name }}-postgres-rw"
+          POSTGRES_PORT: "5432"
+          POSTGRES_DB: mealie
+          POSTGRES_USER:
+            valueFrom:
+              secretKeyRef: {name: "{{ .Release.Name }}-postgres-app", key: username}
+          POSTGRES_PASSWORD:
+            valueFrom:
+              secretKeyRef: {name: "{{ .Release.Name }}-postgres-app", key: password}
+          # Authentik OAuth2 provider "mealie", application slug "mealie", with the
+          # "Application Entitlements" scope mapping and redirect URIs
+          # https://recipes.nulcell.com/login and /login?direct=1.
+          # https://integrations.goauthentik.io/documentation/mealie/
+          OIDC_AUTH_ENABLED: "true"
+          OIDC_PROVIDER_NAME: Authentik
+          OIDC_CONFIGURATION_URL: https://auth.nulcell.com/application/o/mealie/.well-known/openid-configuration
+          OIDC_CLIENT_ID: Wfg1gOEoYaDbFr6CgaQjSwODeQe5t53ZZkzcWP4P
+          OIDC_CLIENT_SECRET:
+            valueFrom:
+              secretKeyRef: {name: mealie-secrets, key: oidc-client-secret}
+          OIDC_SIGNUP_ENABLED: "true"
+          # Authentik doesn't assert email_verified.
+          OIDC_REQUIRES_EMAIL_VERIFICATION: "false"
+          # Authentik exposes group membership as application entitlements.
+          OIDC_GROUPS_CLAIM: entitlements
+          OIDC_USER_GROUP: mealie-users
+          OIDC_ADMIN_GROUP: mealie-admins
+          OIDC_AUTO_REDIRECT: "true"
+          OIDC_REMEMBER_ME: "true"
+          OIDC_USER_CLAIM: email
+          OIDC_NAME_CLAIM: name
+        probes:
+          startup:
+            httpGet: {path: /api/app/about, port: http}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          liveness:
+            httpGet: {path: /api/app/about, port: http}
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readiness:
+            httpGet: {path: /api/app/about, port: http}
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+        resources:
+          requests: {cpu: 250m, memory: 512Mi}
+          limits: {cpu: 1000m, memory: 1Gi}
+    services:
+      mealie:
+        ports:
+          http: 9000
+    networkPolicy:
+      ingress:
+        # No HTTPRoute: cloudflared forwards straight to the Service.
+        - {namespace: cloudflared, port: http}
+        # Unverified whether uptime-kuma monitors / homarr widgets use the
+        # internal Service URL - allowed for now, tighten once confirmed unused.
+        - {namespace: uptime-kuma, port: http}
+        - {namespace: homarr, port: http}
+      egress:
+        - {datastore: postgres}
+        # Recipe scraping and OIDC discovery reach arbitrary hosts.
+        - world
 
-replicaCount: 1
-
-imagePullSecrets:
-  - name: dockerhub-credentials
-
-resources:
-  requests:
-    cpu: 250m
-    memory: 512Mi
-  limits:
-    # cpu: 1000m
-    memory: 1Gi
-
-gateway:
-  enabled: false
-  hostname: recipes.nulcell.com
-  parentRef:
-    name: internal
-    namespace: gateway
-    sectionName: https
-
+# RWX so a Recreate/rollout never waits on a volume detach.
 persistence:
-  enabled: true
-  storageClass: longhorn
-  accessMode: ReadWriteMany
-  size: 1Gi
+  data:
+    size: 1Gi
+    storageClass: longhorn
+    accessMode: ReadWriteMany
+    advancedMounts:
+      mealie:
+        mealie: [{path: /app/data}]
 
-mealie:
-  # Must match gateway.hostname above - Mealie builds notification links and the
-  # OIDC callback from this.
-  baseUrl: https://recipes.nulcell.com
-  timezone: Europe/Amsterdam
-
-  # Signup without an invite token stays off: accounts come from Authentik via
-  # OIDC below, or from an admin invite in Settings → Users.
-  allowSignup: false
-  # Still true so there is a way in while the Authentik provider is being set
-  # up, and a way back in if it ever breaks. Flip to false once OIDC logins are
-  # confirmed working - see step 5 below.
-  allowPasswordLogin: false
-
-  # Postgres backs the database, so uvicorn can run more than one worker.
-  uvicornWorkers: 1
-
-  oidc:
-    # Flip to true after finishing steps 1-4 below. Left off until then so the
-    # first sync doesn't come up pointing at a provider that doesn't exist yet.
-    enabled: true
-    providerName: Authentik
-    # Authentik's per-application discovery document. <slug> is the application
-    # slug, not the provider name.
-    configurationUrl: https://auth.nulcell.com/application/o/mealie/.well-known/openid-configuration
-    clientId: "Wfg1gOEoYaDbFr6CgaQjSwODeQe5t53ZZkzcWP4P" # from Authentik's mealie OAuth2 provider
-    existingSecret: mealie-secrets
-    secretClientSecretKey: oidc-client-secret
-    # Provision a Mealie account on first login, restricted to userGroup.
-    signupEnabled: true
-    # Authentik's OIDC provider doesn't assert email_verified, so leaving this
-    # on would reject every login.
-    requiresEmailVerification: false
-    # Authentik exposes group membership as application entitlements rather
-    # than a plain `groups` claim.
-    # https://integrations.goauthentik.io/documentation/mealie/
-    groupsClaim: entitlements
-    userGroup: mealie-users
-    adminGroup: mealie-admins
-    rememberMe: true
-    # Keep Mealie's own login page reachable while allowPasswordLogin is true;
-    # turning both around at once would leave no local fallback.
-    autoRedirect: true
-
-# Authentik setup, before flipping mealie.oidc.enabled to true:
-#   1. Create an OAuth2/OpenID provider named "mealie" with a signing key and
-#      two Strict redirect URIs:
-#        https://recipes.nulcell.com/login
-#        https://recipes.nulcell.com/login?direct=1
-#      Under Advanced protocol settings, add the scope mapping
-#      "authentik default OAuth Mapping: Application Entitlements".
-#   2. Create an Application using that provider with slug "mealie" (the slug
-#      is what configurationUrl above resolves against).
-#   3. On that Application, create two entitlements - "mealie-users" and
-#      "mealie-admins" - and bind the groups/users that should get access and
-#      admin rights respectively.
-#   4. Put the provider's Client Secret into the "mealie-secrets" 1Password
-#      item (see mealie-external-secrets.yaml) and its Client ID in clientId
-#      above.
-#   5. Set mealie.oidc.enabled: true. Once an Authentik login lands you in
-#      Mealie as an admin, delete the seeded changeme@example.com account and
-#      set mealie.allowPasswordLogin: false.
-
-# External PostgreSQL - CNPG cluster `mealie-postgres` (postgres-cluster.yaml).
-# CNPG auto-creates a secret named <cluster>-app with keys: username, password.
-database:
-  type: postgres
+datastores:
   postgres:
-    host: mealie-postgres-rw # CNPG read-write service
-    port: 5432
-    name: mealie
-    existingSecret: mealie-postgres-app
-    secretUsernameKey: username
-    secretPasswordKey: password
+    engine: postgres
+    type: cnpg
+    image: {repository: ghcr.io/cloudnative-pg/postgresql, tag: "18.4"}
+    storage: {size: 10Gi}
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+      limits: {cpu: 500m, memory: 512Mi}
+    monitoring: true
 
-# The postgres pods get their own policy in postgres-netpol.yaml.
-networkPolicy:
-  ingress:
-    # No HTTPRoute today (gateway.enabled=false above) - cloudflared forwards
-    # straight to the pod. Flip gateway back on together with gateway.enabled.
-    gateway: false
-    cloudflared:
-      enabled: true
-    # Unverified whether uptime-kuma monitors / homarr widgets use the
-    # internal Service URL - allowed for now, tighten once confirmed unused.
-    allowedNamespaces:
-      - uptime-kuma
-      - homarr
-  egress:
-    database:
-      podSelector:
-        cnpg.io/cluster: mealie-postgres
+externalSecrets:
+  secrets:
+    store: {kind: ClusterSecretStore, name: onepassword}
+    data:
+      # homecloud-k8s/mealie-secrets/oidc-client-secret - client secret from
+      # Authentik's mealie OAuth2 provider.
+      oidc-client-secret: h44pyfwssyswg6l2ngg7yj5v3m/oidc-client-secret

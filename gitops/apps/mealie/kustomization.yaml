@@ -2,11 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: mealie
 
-helmGlobals:
-  chartHome: ../../../charts
-
 helmCharts:
-  - name: mealie
+  - name: app-template
+    repo: oci://ghcr.io/nulcell/charts
+    version: 0.1.1
     releaseName: mealie
     namespace: mealie
     valuesFile: values.yaml
@@ -14,6 +13,3 @@ helmCharts:
 
 resources:
   - namespace.yaml
-  - postgres-cluster.yaml
-  - postgres-netpol.yaml
-  - mealie-external-secrets.yaml

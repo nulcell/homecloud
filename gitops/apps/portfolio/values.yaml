@@ -1,10 +1,6 @@
 workloads:
   portfolio:
     replicas: 2
-    # One-off for the cutover from charts/portfolio: the selector gained
-    # app.kubernetes.io/component, which is immutable. Remove after the first sync.
-    annotations:
-      argocd.argoproj.io/sync-options: Replace=true
     imagePullSecrets: [dockerhub-credentials]
     podSecurityContext:
       runAsUser: 101
