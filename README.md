@@ -10,7 +10,6 @@ Two nodes today (1 control plane with scheduling on, 1 worker), designed to scal
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | [`cluster/`](cluster/)                 | Talos machine configs + imperative bootstrap (Cilium, ArgoCD). Start at [`cluster/README.md`](cluster/README.md). |
 | [`gitops/`](gitops/)                   | ArgoCD's source of truth - root, infrastructure, operators, security, services, apps.                             |
-| [`charts/`](charts/)                   | Helm umbrella charts referenced by `gitops/apps/*`.                                                               |
 | [`manifests/`](manifests/)             | Ad-hoc / one-shot manifests, applied manually. Not reconciled by ArgoCD.                                          |
 | [`scripts/`](scripts/)                 | Standalone operator utilities.                                                                                    |
 | [`network/netboot/`](network/netboot/) | netboot.xyz + ProxyDHCP install notes for the planned provisioning host. Not deployed.                            |

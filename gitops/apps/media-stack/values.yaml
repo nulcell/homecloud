@@ -1,149 +1,351 @@
-# Overrides for the media-stack chart at charts/media-stack/.
-# Everything not listed here keeps the chart's default value.
+# Jellyfin, Seerr, Sonarr, Radarr, Bazarr, and a "servarr" pod running Prowlarr
+# and qBittorrent behind a Gluetun VPN sidecar. Objects keep their pre-app-template
+# names (`name:`) because the apps store each other's Service DNS names.
 
-common:
-  puid: 1000
-  pgid: 1000
-  timezone: Europe/Amsterdam
+defaults:
+  route:
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: external
+        namespace: gateway
+        sectionName: https
+  externalSecret:
+    store: {kind: ClusterSecretStore, name: onepassword}
+  # linuxserver.io images start as root and drop to PUID/PGID themselves, so
+  # they need these capabilities and a writable root filesystem.
+  workload:
+    podSecurityContext:
+      runAsNonRoot: null
+      runAsUser: null
+      runAsGroup: null
+      fsGroup: 1000
+  container:
+    securityContext:
+      readOnlyRootFilesystem: false
+      capabilities:
+        drop: [ALL]
+        add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID, KILL]
+    env:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Amsterdam
+    # Longhorn RWX volumes can stall for tens of seconds, so probes are lenient.
+    probes:
+      startup:
+        tcpSocket: {port: web}
+        periodSeconds: 10
+        failureThreshold: 30
+      liveness:
+        tcpSocket: {port: web}
+        periodSeconds: 30
+        timeoutSeconds: 10
+        failureThreshold: 3
+      readiness:
+        httpGet: {path: /ping, port: web}
+        periodSeconds: 30
+        timeoutSeconds: 15
+        failureThreshold: 12
 
+workloads:
+  jellyfin:
+    name: jellyfin
+    type: statefulset
+    spec:
+      updateStrategy: {type: RollingUpdate}
+    containers:
+      jellyfin:
+        image: {repository: lscr.io/linuxserver/jellyfin, tag: 12.1ubu2604-ls49}
+        env:
+          JELLYFIN_PublishedServerUrl: https://jellyfin.nulcell.com
+        ports:
+          web: 8096
+          discovery: {port: 7359, protocol: UDP}
+          dlna: {port: 1900, protocol: UDP}
+        probes:
+          readiness:
+            httpGet: {path: /health, port: web}
+            periodSeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 12
+        resources:
+          requests: {cpu: 2000m, memory: 2Gi}
+          limits: {memory: 8Gi}
+        # TEMPORARY - proves VAAPI by bypassing the Kubernetes device cgroup.
+        # Drop once a device plugin (e.g. squat/generic-device-plugin) exposes
+        # /dev/dri for non-privileged GPU access.
+        securityContext:
+          privileged: true
+          allowPrivilegeEscalation: true
+    services:
+      jellyfin:
+        ports:
+          web: 8096
+          discovery: {port: 7359, protocol: UDP}
+          dlna: {port: 1900, protocol: UDP}
+    # Shared by every web app below: any peer in the namespace, the gateway on the
+    # web port(s), and homarr / uptime-kuma - unverified whether their widgets and
+    # monitors use the internal Service URLs; tighten once confirmed unused.
+    # Egress is open: these apps reach arbitrary metadata/subtitle providers.
+    networkPolicy: &webPolicy
+      ingress:
+        - {namespace: media}
+        - gateway
+        - {namespace: homarr, port: web}
+        - {namespace: uptime-kuma, port: web}
+      egress: [world]
+
+  seerr:
+    name: seerr
+    type: statefulset
+    spec:
+      updateStrategy: {type: RollingUpdate}
+    containers:
+      seerr:
+        image: {repository: ghcr.io/seerr-team/seerr, tag: v3.4.1}
+        ports: {web: 5055}
+        probes: {startup: {}, liveness: {}, readiness: {}}
+        resources:
+          requests: {cpu: 400m, memory: 256Mi}
+          limits: {memory: 512Mi}
+    services:
+      seerr:
+        ports: {web: 5055}
+    networkPolicy: *webPolicy
+
+  sonarr:
+    name: sonarr
+    spec:
+      strategy: {type: Recreate}
+    containers:
+      sonarr:
+        image: {repository: lscr.io/linuxserver/sonarr, tag: 4.0.20}
+        ports: {web: 8989}
+        resources:
+          requests: {cpu: 400m, memory: 256Mi}
+          limits: {memory: 1Gi}
+    services:
+      sonarr:
+        ports: {web: 8989}
+    networkPolicy: *webPolicy
+
+  radarr:
+    name: radarr
+    spec:
+      strategy: {type: Recreate}
+    containers:
+      radarr:
+        image: {repository: lscr.io/linuxserver/radarr, tag: 6.4.4}
+        ports: {web: 7878}
+        resources:
+          requests: {cpu: 400m, memory: 256Mi}
+          limits: {memory: 1Gi}
+    services:
+      radarr:
+        ports: {web: 7878}
+    networkPolicy: *webPolicy
+
+  bazarr:
+    name: bazarr
+    spec:
+      strategy: {type: Recreate}
+    containers:
+      bazarr:
+        image: {repository: lscr.io/linuxserver/bazarr, tag: 1.6.1}
+        ports: {web: 6767}
+        # Serves no /ping.
+        probes: {startup: {}, liveness: {}, readiness: {}}
+        resources:
+          requests: {cpu: 400m, memory: 128Mi}
+          limits: {memory: 512Mi}
+    services:
+      bazarr:
+        ports: {web: 6767}
+    networkPolicy: *webPolicy
+
+  # Prowlarr and qBittorrent share Gluetun's network namespace, so all their
+  # traffic leaves through the VPN; Gluetun owns the pod's ports.
+  servarr:
+    name: servarr
+    spec:
+      strategy: {type: Recreate}
+    initContainers:
+      gluetun:
+        image: {repository: qmcgaw/gluetun, tag: v3.41.3}
+        restartPolicy: Always
+        env:
+          PUID: null
+          PGID: null
+          VPN_SERVICE_PROVIDER: nordvpn
+          # openvpn or wireguard - both credential sets live in media-stack-vpn.
+          VPN_TYPE: wireguard
+          SERVER_COUNTRIES: Netherlands
+          UPDATER_PERIOD: 24h
+          FIREWALL_OUTBOUND_SUBNETS: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+          FIREWALL_INPUT_PORTS: 9696,8080,6881
+          DNS_UPSTREAM_RESOLVERS: cloudflare,google
+          WIREGUARD_PRIVATE_KEY:
+            valueFrom:
+              secretKeyRef: {name: media-stack-vpn, key: wireguard-private-key}
+          # Resolve via CoreDNS (the service CIDR is inside the killswitch's
+          # 10.0.0.0/8 allowance) instead of gluetun's DoT-through-the-tunnel,
+          # which misbehaves against NordVPN. Health targets an IP, so VPN
+          # health doesn't depend on DNS either.
+          DNS_KEEP_NAMESERVER: "on"
+          HEALTH_TARGET_ADDRESSES: 1.1.1.1:443
+          HEALTH_VPN_DURATION_INITIAL: 30s
+        ports:
+          prowlarr: 9696
+          qbit-web: 8080
+          qbit-bt: 6881
+        probes:
+          startup:
+            exec: {command: [sh, -c, ping -c 1 -W 2 1.1.1.1]}
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          liveness:
+            exec: {command: [sh, -c, ping -c 1 -W 2 1.1.1.1]}
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readiness: {}
+        securityContext:
+          capabilities:
+            drop: [ALL]
+            add: [NET_ADMIN, CHOWN, FOWNER, DAC_OVERRIDE]
+    containers:
+      prowlarr:
+        image: {repository: lscr.io/linuxserver/prowlarr, tag: 2.6.5}
+        # No container ports here - Gluetun owns them.
+        probes:
+          startup: {tcpSocket: {port: 9696}, periodSeconds: 10, failureThreshold: 30}
+          liveness: {tcpSocket: {port: 9696}, periodSeconds: 30, timeoutSeconds: 10, failureThreshold: 3}
+          readiness: {httpGet: {path: /ping, port: 9696}, periodSeconds: 30, timeoutSeconds: 15, failureThreshold: 12}
+        resources:
+          requests: {cpu: 400m, memory: 256Mi}
+          limits: {memory: 1Gi}
+      qbittorrent:
+        image: {repository: lscr.io/linuxserver/qbittorrent, tag: 5.2.3}
+        env:
+          WEBUI_PORT: "8080"
+        # The VPN is the dependency worth restarting on; the WebUI is too slow
+        # on RWX to be a useful signal.
+        probes:
+          startup: {}
+          liveness:
+            exec: {command: [sh, -c, ping -c 1 -W 2 1.1.1.1]}
+            initialDelaySeconds: 20
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readiness: {}
+        resources:
+          requests: {cpu: 500m, memory: 512Mi}
+          limits: {memory: 2Gi}
+    services:
+      prowlarr:
+        name: prowlarr
+        ports:
+          web: {port: 9696, targetPort: 9696}
+      qbittorrent:
+        name: qbittorrent
+        ports:
+          web: {port: 8080, targetPort: 8080}
+          bt: {port: 6881, targetPort: 6881}
+    networkPolicy:
+      ingress:
+        - {namespace: media}
+        - gateway
+        - {namespace: homarr, port: 9696}
+        - {namespace: homarr, port: 8080}
+        - {namespace: uptime-kuma, port: 9696}
+        - {namespace: uptime-kuma, port: 8080}
+      egress: [world]
+
+# RWX, shared by every app; each app's config lives in its own subPath.
 persistence:
-  storageClassName: longhorn
-  accessMode: ReadWriteMany
   config:
     size: 20Gi
+    storageClass: longhorn
+    accessMode: ReadWriteMany
+    advancedMounts:
+      jellyfin: {jellyfin: [{path: /config, subPath: jellyfin}]}
+      seerr: {seerr: [{path: /app/config, subPath: seerr}]}
+      sonarr: {sonarr: [{path: /config, subPath: sonarr}]}
+      radarr: {radarr: [{path: /config, subPath: radarr}]}
+      bazarr: {bazarr: [{path: /config, subPath: bazarr}]}
+      servarr:
+        gluetun: [{path: /gluetun, subPath: gluetun}]
+        prowlarr: [{path: /config, subPath: prowlarr}]
+        qbittorrent: [{path: /config, subPath: qbittorrent}]
+  # Media library + downloads on one volume, so imports are hardlinks/moves.
   data:
     size: 500Gi
-
-gateway:
-  enabled: true
-  parentRef:
-    name: external
-    namespace: gateway
-
-networkPolicy:
-  ingress:
-    # Unverified whether homarr widgets / uptime-kuma monitors use the
-    # internal Service URLs - allowed for now, tighten once confirmed unused.
-    allowedNamespaces:
-      - homarr
-      - uptime-kuma
-
-vpn:
-  enabled: true
-  # renovate: datasource=docker depName=qmcgaw/gluetun
-  image:
-    tag: v3.41.3
-  provider: nordvpn
-  # Switch between openvpn / wireguard freely - both sets of credentials live
-  # in the same Secret, so flipping type and resyncing is enough.
-  type: wireguard
-  serverCountries: Netherlands
-  credentialsSecret:
-    name: media-stack-vpn
-    userKey: openvpn-user
-    passwordKey: openvpn-password
-    wireguardPrivateKeyKey: wireguard-private-key
-  # Disable gluetun's bundled DNS server entirely and let the pod resolve via
-  # Kubernetes CoreDNS - reachable because the cluster service CIDR
-  # (10.96.0.0/12) is inside the killswitch's allowed 10.0.0.0/8 subnet.
-  # Avoids gluetun's DoT-through-the-tunnel issue against NordVPN. Healthcheck
-  # also targets an IP, not a hostname, so VPN health no longer depends on DNS.
-  extraEnv:
-    - { name: DNS_KEEP_NAMESERVER, value: "on" }
-    - { name: HEALTH_TARGET_ADDRESSES, value: "1.1.1.1:443" }
-    - { name: HEALTH_VPN_DURATION_INITIAL, value: "30s" }
-
-# Hostnames published via external-dns. Omit any to keep that app internal-only.
-jellyfin:
-  replicas: 1
-  # renovate: datasource=docker depName=lscr.io/linuxserver/jellyfin
-  image:
-    tag: 12.1ubu2604-ls49
-  publishedServerUrl: https://jellyfin.nulcell.com
-  hwAccel:
-    enabled: true
-    # TEMPORARY - proves VAAPI by bypassing the Kubernetes device cgroup.
-    # Revert to `privileged: false` once we wire up a device plugin (e.g.
-    # squat/generic-device-plugin) for proper, non-privileged GPU access.
-    privileged: true
+    storageClass: longhorn
+    accessMode: ReadWriteMany
+    advancedMounts:
+      jellyfin: {jellyfin: [{path: /data}]}
+      sonarr: {sonarr: [{path: /data}]}
+      radarr: {radarr: [{path: /data}]}
+      bazarr: {bazarr: [{path: /data}]}
+      servarr: {qbittorrent: [{path: /data}]}
+  # Node-local transcode/cache scratch, off the RWX volume.
   scratch:
-    enabled: true
+    type: emptyDir
     sizeLimit: 50Gi
-  resources:
-    requests:
-      cpu: 2000m
-      memory: 2Gi
-    limits:
-      # cpu: 12000m
-      memory: 8Gi
-  gateway:
-    hostname: jellyfin.nulcell.com
-  # Open egress - this app reaches arbitrary external metadata/subtitle providers.
-  networkPolicy:
-    egress:
-      allowAll: true
+    advancedMounts:
+      jellyfin:
+        jellyfin:
+          - {path: /config/data/transcodes, subPath: transcodes}
+          - {path: /config/cache, subPath: cache}
+  dri:
+    type: hostPath
+    path: /dev/dri
+    hostPathType: Directory
+    advancedMounts:
+      jellyfin: {jellyfin: [{path: /dev/dri}]}
+  dev-tun:
+    type: hostPath
+    path: /dev/net/tun
+    hostPathType: CharDevice
+    advancedMounts:
+      servarr: {gluetun: [{path: /dev/net/tun}]}
 
-seerr:
-  replicas: 1
-  # renovate: datasource=docker depName=ghcr.io/seerr-team/seerr
-  image:
-    tag: v3.4.1
-  gateway:
-    hostname: seerr.nulcell.com
-  # Open egress - this app reaches arbitrary external metadata/subtitle providers.
-  networkPolicy:
-    egress:
-      allowAll: true
+# Published via external-dns on the external (LAN/Tailscale) gateway.
+routes:
+  jellyfin:
+    name: jellyfin
+    hostnames: [jellyfin.nulcell.com]
+    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: jellyfin, service: jellyfin, port: web}]}]
+  seerr:
+    name: seerr
+    hostnames: [seerr.nulcell.com]
+    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: seerr, service: seerr, port: web}]}]
+  sonarr:
+    name: sonarr
+    hostnames: [sonarr.nulcell.com]
+    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: sonarr, service: sonarr, port: web}]}]
+  radarr:
+    name: radarr
+    hostnames: [radarr.nulcell.com]
+    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: radarr, service: radarr, port: web}]}]
+  bazarr:
+    name: bazarr
+    hostnames: [bazarr.nulcell.com]
+    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: bazarr, service: bazarr, port: web}]}]
+  prowlarr:
+    name: prowlarr
+    hostnames: [prowlarr.nulcell.com]
+    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: servarr, service: prowlarr, port: web}]}]
+  qbittorrent:
+    name: qbittorrent
+    hostnames: [qbittorrent.nulcell.com]
+    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: servarr, service: qbittorrent, port: web}]}]
 
-sonarr:
-  replicas: 1
-  # renovate: datasource=docker depName=lscr.io/linuxserver/sonarr
-  image:
-    tag: 4.0.20
-  gateway:
-    hostname: sonarr.nulcell.com
-  # Open egress - this app reaches arbitrary external metadata/subtitle providers.
-  networkPolicy:
-    egress:
-      allowAll: true
-
-radarr:
-  replicas: 1
-  # renovate: datasource=docker depName=lscr.io/linuxserver/radarr
-  image:
-    tag: 6.4.4
-  gateway:
-    hostname: radarr.nulcell.com
-  # Open egress - this app reaches arbitrary external metadata/subtitle providers.
-  networkPolicy:
-    egress:
-      allowAll: true
-
-bazarr:
-  replicas: 1
-  # renovate: datasource=docker depName=lscr.io/linuxserver/bazarr
-  image:
-    tag: 1.6.1
-  gateway:
-    hostname: bazarr.nulcell.com
-  # Open egress - this app reaches arbitrary external metadata/subtitle providers.
-  networkPolicy:
-    egress:
-      allowAll: true
-
-servarr:
-  replicas: 1
-
-prowlarr:
-  # renovate: datasource=docker depName=lscr.io/linuxserver/prowlarr
-  image:
-    tag: 2.6.5
-  gateway:
-    hostname: prowlarr.nulcell.com
-
-qbittorrent:
-  # renovate: datasource=docker depName=lscr.io/linuxserver/qbittorrent
-  image:
-    tag: 5.2.3
-  gateway:
-    hostname: qbittorrent.nulcell.com
+externalSecrets:
+  vpn:
+    data:
+      openvpn-user: za2fsoqefbny5mbvdbx6zclvpy/openvpn-user # homecloud-k8s/nordvpn/openvpn-user
+      openvpn-password: za2fsoqefbny5mbvdbx6zclvpy/openvpn-password # homecloud-k8s/nordvpn/openvpn-password
+      wireguard-private-key: za2fsoqefbny5mbvdbx6zclvpy/wireguard-private-key # homecloud-k8s/nordvpn/wireguard-private-key

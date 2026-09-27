@@ -1,6 +1,6 @@
 # Cluster
 
-Bring-up artifacts for the Talos Kubernetes cluster: machine configs and the imperative bootstrap of Cilium + ArgoCD. ArgoCD takes over from [`bootstrap/install.sh`](bootstrap/install.sh) onward - everything else lives at the repo root under [`/gitops/`](../gitops/), [`/charts/`](../charts/), and [`/manifests/`](../manifests/).
+Bring-up artifacts for the Talos Kubernetes cluster: machine configs and the imperative bootstrap of Cilium + ArgoCD. ArgoCD takes over from [`bootstrap/install.sh`](bootstrap/install.sh) onward - everything else lives at the repo root under [`/gitops/`](../gitops/) and [`/manifests/`](../manifests/).
 
 ## Stack
 

@@ -69,7 +69,7 @@ kustomize.buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
 ```
 
 - `--enable-helm` renders the `helmCharts:` blocks that most directories use to pull upstream charts inline.
-- `--load-restrictor=LoadRestrictionsNone` lets a kustomization read files outside its own directory - needed for `helmGlobals.chartHome: ../../../charts` in `gitops/apps/media-stack` pointing at [`/charts/`](../../charts/).
+- `--load-restrictor=LoadRestrictionsNone` lets a kustomization read files outside its own directory. Nothing needs it since the local charts moved to [`nulcell/charts`](https://github.com/nulcell/charts).
 
 ## Secrets
 

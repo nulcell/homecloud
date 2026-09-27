@@ -37,16 +37,12 @@
       matchFileNames: ["gitops/apps/**"],
       groupName: "app helm charts",
     },
-    // Container image tags declared alongside their `repository:` (chart
-    // defaults in charts/*/values.yaml, plugin images in
-    // gitops/infrastructure/headlamp/values.yaml) are handled by the
-    // built-in `helm-values` manager automatically.
+    // Container image tags declared alongside their `repository:` (app-template
+    // values, plugin images in gitops/infrastructure/headlamp/values.yaml) are
+    // handled by the built-in `helm-values` manager automatically.
     {
       matchManagers: ["helm-values", "custom.regex"],
-      matchFileNames: [
-        "charts/media-stack/values.yaml",
-        "gitops/apps/media-stack/values.yaml",
-      ],
+      matchFileNames: ["gitops/apps/media-stack/values.yaml"],
       groupName: "media-stack container images",
     },
     // Some linuxserver.io images carry stale 2021–2022 tags that are *not*
@@ -76,11 +72,10 @@
 
   customManagers: [
     {
-      // Some app-level overrides (e.g. gitops/apps/media-stack/values.yaml)
-      // set only `tag:` without a sibling `repository:` in the same file -
-      // the repository default lives in charts/*/values.yaml instead, so the
-      // built-in helm-values manager can't resolve a package name on its
-      // own. Annotate those blocks with a hint comment, e.g.:
+      // Some app-level overrides set only `tag:` without a sibling
+      // `repository:` in the same file - the repository default lives in the
+      // upstream chart instead, so the built-in helm-values manager can't
+      // resolve a package name on its own. Annotate those blocks with a hint comment, e.g.:
       //
       //   jellyfin:
       //     # renovate: datasource=docker depName=lscr.io/linuxserver/jellyfin

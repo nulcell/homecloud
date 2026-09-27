@@ -44,7 +44,6 @@ Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap steps: [`clu
 | [`gitops/services/`](gitops/services/)             | Platform services on top of operators: kubevirt.                                                                                                                                                                               |
 | [`gitops/apps/`](gitops/apps/)                     | Workloads (`actual-budget`, `authentik`, `cloudflared`, `mealie`, `media-stack`, `n8n`, `portfolio`, `uptime-kuma`).                                                                                                           |
 | [`gitops/exprimental/`](gitops/exprimental/)       | Staging area, not referenced by any ApplicationSet - candidates for promotion or retirement.                                                                                                                                   |
-| [`charts/`](charts/)                               | Local Helm umbrella chart (`media-stack`), referenced via `chartHome: ../../../charts`. Being moved to [`nulcell/charts`](https://github.com/nulcell/charts).                                                                                                 |
 | [`manifests/`](manifests/)                         | Ad-hoc / one-shot manifests applied manually - NOT reconciled by ArgoCD.                                                                                                                                                       |
 | [`scripts/`](scripts/)                             | Standalone operator utilities.                                                                                                                                                                                                 |
 | [`network/netboot/`](network/netboot/)             | netboot.xyz + ProxyDHCP install notes for the planned provisioning host. Not deployed.                                                                                                                                         |
@@ -56,7 +55,7 @@ Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap steps: [`clu
 ## Conventions
 
 - **Never `kubectl apply` from this repo.** ArgoCD owns reconciliation for everything under `gitops/`. Validate with `helm template`, `helm lint`, or `kubectl diff -f`. The user applies anything manual themselves.
-- **New workloads**: default to a maintained upstream chart pinned inline in `kustomization.yaml` (`repo:` + `version:`), so Renovate's kustomize manager tracks the bump - this is what `actual-budget`, `authentik`, `cloudflared`, `n8n` and `uptime-kuma`'s MariaDB do. When no upstream chart fits, use `app-template` from `oci://ghcr.io/nulcell/charts` (source: [`nulcell/charts`](https://github.com/nulcell/charts)) the same way - `mealie`, `portfolio` and `uptime-kuma` do. The legacy local chart under [`charts/<name>/`](charts/) (`media-stack`) uses `helmGlobals.chartHome: ../../../charts` until migrated. Either way the `apps` ApplicationSet picks up the directory on the next reconcile.
+- **New workloads**: default to a maintained upstream chart pinned inline in `kustomization.yaml` (`repo:` + `version:`), so Renovate's kustomize manager tracks the bump - this is what `actual-budget`, `authentik`, `cloudflared`, `n8n` and `uptime-kuma`'s MariaDB do. When no upstream chart fits, use `app-template` from `oci://ghcr.io/nulcell/charts` the same way - `mealie`, `media-stack`, `portfolio` and `uptime-kuma` do. Chart source and changes live in [`nulcell/charts`](https://github.com/nulcell/charts); bump every app pinning it together. Either way the `apps` ApplicationSet picks up the directory on the next reconcile.
 - **Ad-hoc / one-shot manifests** go in [`manifests/`](manifests/) and are applied manually.
 - **Helm chart values**: prefer Gateway API `HTTPRoute` over Ingress; `storageClassName: longhorn`; security context `runAsNonRoot: true` with explicit `runAsUser`/`runAsGroup`; always set both `resources.requests` and `resources.limits`.
 - **Gateways** (both in the `gateway` namespace, both L2-announced on the LAN, both terminating the same wildcard cert):
@@ -70,12 +69,8 @@ Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap steps: [`clu
 ## Common commands
 
 ```bash
-# Vendor / refresh chart dependencies
-helm dependency update charts/<chart>/
-
-# Validate without applying
-helm template <release> charts/<chart>/ -f gitops/apps/<chart>/values.yaml
-helm lint charts/<chart>/
+# Render an app without applying (delete the pulled gitops/apps/<app>/charts/ afterwards)
+kustomize build --enable-helm gitops/apps/<app>
 ```
 
 Talos workflow lives in [`cluster/talos/README.md`](cluster/talos/README.md).
