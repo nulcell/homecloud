@@ -7,6 +7,9 @@ on:
       - scripts/validate.sh
       - .mise.toml
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
