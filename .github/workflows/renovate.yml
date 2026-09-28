@@ -9,6 +9,9 @@ concurrency:
   group: renovate
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   renovate:
     runs-on: ubuntu-latest
