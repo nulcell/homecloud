@@ -6,7 +6,7 @@ helmCharts:
   # Not managed by falco-operator: response actions engine.
   - name: falco-talon
     repo: https://falcosecurity.github.io/charts
-    version: 0.4.2
+    version: 0.5.0
     releaseName: falco-talon
     namespace: falco
     valuesFile: talon-values.yaml
