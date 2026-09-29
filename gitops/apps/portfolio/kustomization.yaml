@@ -5,7 +5,7 @@ namespace: portfolio
 helmCharts:
   - name: app-template
     repo: oci://ghcr.io/nulcell/charts
-    version: 0.3.3
+    version: 0.3.4
     releaseName: portfolio
     namespace: portfolio
     valuesFile: values.yaml

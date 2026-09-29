@@ -5,7 +5,7 @@ namespace: gatus
 helmCharts:
   - name: app-template
     repo: oci://ghcr.io/nulcell/charts
-    version: 0.3.3
+    version: 0.3.4
     releaseName: gatus
     namespace: gatus
     valuesFile: values.yaml
@@ -14,21 +14,6 @@ helmCharts:
 resources:
   - namespace.yaml
   - postgres-backup.yaml
-
-# The chart's datastore policy is default-deny with no way out; the barman sidecar needs S3.
-patches:
-  - target: {kind: CiliumNetworkPolicy, name: gatus-postgres}
-    patch: |-
-      - op: add
-        path: /spec/egress/-
-        value:
-          toFQDNs:
-            - matchName: s3.eu-central-1.amazonaws.com
-            - matchPattern: "*.s3.eu-central-1.amazonaws.com"
-            - matchName: s3.amazonaws.com
-            - matchPattern: "*.s3.amazonaws.com"
-          toPorts:
-            - ports: [{port: "443", protocol: TCP}]
 
 configMapGenerator:
   - name: gatus-config
