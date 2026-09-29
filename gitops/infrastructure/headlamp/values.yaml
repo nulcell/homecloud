@@ -72,20 +72,20 @@ initContainers:
       - mountPath: /build/plugins
         name: headlamp-plugins
 
+  # Trivy: vulnerability, config-audit and compliance views over the trivy-operator reports (gitops/security/trivy)
+  - name: trivy-plugin
+    image: ghcr.io/kubebeam/trivy-headlamp-plugin:v0.3.2
+    command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
+    volumeMounts:
+      - mountPath: /build/plugins
+        name: headlamp-plugins
+
   # --- Optional: uncomment to enable ---
 
   # # Kubescape: security posture assessment
   # - name: kubescape-plugin
   #   image: quay.io/kubescape/headlamp-plugin:v0.11.2
   #   command: ["/bin/sh", "-c", "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
-  #   volumeMounts:
-  #     - mountPath: /build/plugins
-  #       name: headlamp-plugins
-
-  # # Trivy: vulnerability and compliance reports (tarball install - no container image published)
-  # - name: trivy-plugin
-  #   image: ghcr.io/kubebeam/trivy-headlamp-plugin:v0.3.2
-  #   command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/trivy-plugin /build/plugins/"]
   #   volumeMounts:
   #     - mountPath: /build/plugins
   #       name: headlamp-plugins
