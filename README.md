@@ -85,10 +85,10 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
   - [ ] Pi-hole (DNS + DHCP) + netboot + Tailscale on a Raspberry Pi for bare-metal provisioning.
 - [ ] Testing:
   - [ ] [Kube-monkey](https://github.com/asobti/kube-monkey) for chaos testing.
-- [ ] Backups ([runbook](cluster/docs/backup-restore.md)):
+- [x] Backups ([runbook](cluster/docs/backup-restore.md)):
   - [x] Longhorn volume backups to [AWS S3](https://aws.amazon.com/s3/) (opt-in per PVC).
   - [x] CNPG barman-cloud backups to S3 for gatus, mealie, n8n and authentik.
-  - [ ] Point-in-time restore drill (`gitops/experimental/apps/pitr-test`, steps in the runbook).
+  - [x] Point-in-time restore drill, rehearsed with `gitops/experimental/apps/pitr-test` (steps in the runbook).
 - [ ] HA home cluster.
   - [ ] 2.5GbE network upgrade for cluster nodes.
   - [ ] Dedicated control-plane nodes with similar mini-pcs (1 -> 3, never 2).

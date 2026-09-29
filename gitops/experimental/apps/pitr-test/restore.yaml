@@ -15,7 +15,7 @@ spec:
     recovery:
       source: origin
       recoveryTarget:
-        targetTime: "2026-09-29 19:02:00+00" # between row 1 (19:00:36) and row 2 (19:04:15)
+        targetTime: "2026-01-01 00:00:00+00" # REPLACE: between the two rows' `at` values, UTC
   externalClusters:
     - name: origin
       plugin:

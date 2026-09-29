@@ -13,4 +13,4 @@ helmCharts:
 
 resources:
   - objectstore.yaml
-  - restore.yaml # is applied only during the drill (see cluster/docs/backup-restore.md).
+  # restore.yaml is applied only during the drill (see cluster/docs/backup-restore.md).
