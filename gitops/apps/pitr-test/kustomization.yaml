@@ -5,7 +5,7 @@ namespace: pitr-test
 helmCharts:
   - name: app-template
     repo: oci://ghcr.io/nulcell/charts
-    version: 0.3.4
+    version: 0.3.5
     releaseName: pitr-test
     namespace: pitr-test
     valuesFile: values.yaml
@@ -13,4 +13,4 @@ helmCharts:
 
 resources:
   - objectstore.yaml
-  # restore.yaml is applied only during the drill (see cluster/docs/backup-restore.md).
+  - restore.yaml # is applied only during the drill (see cluster/docs/backup-restore.md).
