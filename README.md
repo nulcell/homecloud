@@ -40,7 +40,7 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
 | [`services/`](gitops/services/) wave 15            | kubevirt (KubeVirt + CDI CRs)                                                                                                                                      |
 | [`apps/`](gitops/apps/) wave 100                   | actual-budget, authentik, cloudflared, gatus, mealie, media-stack, n8n, portfolio                                                                                  |
 
-[`gitops/experimental/`](gitops/experimental/) is a staging area - no ApplicationSet reads it, so nothing in it runs. It currently holds homarr, outline, speedtest-tracker, uptime-kuma, rancher, seaweedfs, kubescape and the `restore-test` and `pitr-test` drill apps.
+[`gitops/experimental/`](gitops/experimental/) is a staging area - no ApplicationSet reads it, so nothing in it runs. It mirrors the layers: `apps/` holds homarr, outline, speedtest-tracker, uptime-kuma and the `restore-test` and `pitr-test` drill apps; `infrastructure/` rancher; `operators/` and `services/` seaweedfs; `security/` kubescape.
 
 ## Roadmap
 
@@ -88,7 +88,7 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
 - [ ] Backups ([runbook](cluster/docs/backup-restore.md)):
   - [x] Longhorn volume backups to [AWS S3](https://aws.amazon.com/s3/) (opt-in per PVC).
   - [x] CNPG barman-cloud backups to S3 for gatus, mealie, n8n and authentik.
-  - [ ] Point-in-time restore drill (`gitops/experimental/pitr-test`, steps in the runbook).
+  - [ ] Point-in-time restore drill (`gitops/experimental/apps/pitr-test`, steps in the runbook).
 - [ ] HA home cluster.
   - [ ] 2.5GbE network upgrade for cluster nodes.
   - [ ] Dedicated control-plane nodes with similar mini-pcs (1 -> 3, never 2).
