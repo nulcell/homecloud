@@ -108,9 +108,8 @@ kubectl get nodes -o wide         # node IPs
 mise run talos:upgrade <node-ip>
 mise run talos:upgrade-k8s        # add --dry-run to preview
 
-# Config changes (patches below): applied live; if one needs a reboot the task fails, so rerun it with
-# `--mode staged` by hand and let the next talos:upgrade apply it.
-mise run talos:config <node-ip> <controlplane|worker>
+# Config changes (patches below): apply the role's patch; add --mode staged if it needs a reboot,
+# then run talos:upgrade to apply it.
 
 # Graceful full shutdown / start (physical move): see gitops/root/safe-scaledown.md
 mise run cluster:shutdown
@@ -119,8 +118,6 @@ mise run cluster:start            # after powering the nodes on
 # Day never
 talosctl reset --nodes ${NODE_IP} --graceful=false --reboot=true
 
-# New schematic (added/removed system extensions): bump SCHEMATIC_ID in .mise.toml, then
-mise run talos:config && mise run talos:upgrade
-# talos:config injects install.image from .mise.toml, so the image in the patch files only
-# matters at bootstrap.
+# New schematic (added/removed system extensions): bump SCHEMATIC_ID and machine.install.image in
+# both patches, apply them (above), then mise run talos:upgrade per node.
 ```

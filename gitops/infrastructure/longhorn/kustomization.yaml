@@ -14,4 +14,3 @@ helmCharts:
 resources:
   - namespace.yaml
   - recurring-jobs.yaml
-  - storageclass-backup.yaml

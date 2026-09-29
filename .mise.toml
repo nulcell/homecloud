@@ -61,14 +61,6 @@ description = "Upgrade Talos on one node (IP) to $TALOS_VERSION; run per node, w
 usage = 'arg "<node>"'
 run = 'talosctl upgrade -n "$usage_node" --image "factory.talos.dev/metal-installer/$SCHEMATIC_ID:$TALOS_VERSION" --drain-timeout 45m --timeout 90m'
 
-[tasks."talos:config"]
-description = "Apply cluster/talos/patches to one node (fails if it needs a reboot: rerun with --mode staged, then talos:upgrade)"
-usage = '''
-arg "<node>" help="node IP"
-arg "<role>" help="controlplane|worker"
-'''
-run = '''talosctl patch machineconfig -n "$usage_node" --mode no-reboot --patch "@cluster/talos/patches/$usage_role.yaml" --patch "[{\"op\":\"replace\",\"path\":\"/machine/install/image\",\"value\":\"factory.talos.dev/metal-installer/$SCHEMATIC_ID:$TALOS_VERSION\"}]"'''
-
 [tasks."talos:upgrade-k8s"]
 description = "Upgrade Kubernetes to $KUBERNETES_VERSION (add --dry-run to preview)"
 run = 'talosctl upgrade-k8s -n "$CONTROLPLANE_IP" --to "$KUBERNETES_VERSION"'
