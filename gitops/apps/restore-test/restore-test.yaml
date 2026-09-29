@@ -1,5 +1,5 @@
 # Throwaway app for rehearsing `mise run restore restore-test/data` through ArgoCD;
-# steps in cluster/docs/backup-restore.md. Deployed by manifests/restore-test-app.yaml.
+# steps in cluster/docs/backup-restore.md. Temporarily under gitops/apps so the apps ApplicationSet deploys it.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

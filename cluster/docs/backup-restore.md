@@ -38,16 +38,14 @@ Not for Postgres PVCs (below).
 
 #### Restore drill (throwaway app, nothing real is touched)
 
-`gitops/experimental/restore-test/` is a 1Gi PVC plus a pod that writes `original` to `/data/marker`. `manifests/restore-test-app.yaml` deploys it through ArgoCD with the same sync policy as your apps, so the drill exercises the real delete-and-recreate path. It must be on `main` first.
+`gitops/apps/restore-test/` is a 1Gi PVC plus a pod that writes `original` to `/data/marker`. The `apps` ApplicationSet deploys it as `app-restore-test` with your normal sync policy, so the drill exercises the real delete-and-recreate path. Keep it in `gitops/apps/` only while testing; afterwards `git mv` it to `gitops/experimental/`.
 
-1. `kubectl apply -f manifests/restore-test-app.yaml`, wait until the app is Healthy, then `kubectl -n restore-test exec deploy/writer -- cat /data/marker` prints `original`.
-2. Back it up now: Longhorn UI > Volume `restore-test/data` > Create Backup, and wait for it to complete (or wait for 03:00). `kubectl -n longhorn-system get backupvolumes` then lists the volume.
+1. Push it; once `app-restore-test` is Healthy, `kubectl -n restore-test exec deploy/writer -- cat /data/marker` prints `original`.
+2. Back it up: Longhorn UI > Volume `restore-test/data` > Create Backup, and wait for it to complete (or wait for 03:00). `kubectl -n longhorn-system get backupvolumes` then lists the volume.
 3. Change it: `kubectl -n restore-test exec deploy/writer -- sh -c 'echo changed > /data/marker'`.
 4. `mise run restore restore-test/data`.
-5. Pass when: the marker reads `original` again; the PVC is Bound to a `restore-<timestamp>` volume; `restore-test` is Synced/Healthy in ArgoCD without any manual step; `kubectl get pv | grep restore-test` shows one PV.
-6. Clean up: `kubectl delete -f manifests/restore-test-app.yaml` (the finalizer removes the namespace and PVC), then delete the `restore-test` volume under Backup in the Longhorn UI to drop its S3 objects.
-
-Longhorn cannot restore "latest backup" on PVC creation by itself (`fromBackup` needs one pinned URL and backups are keyed by the old `pvc-<uuid>`), hence the script.
+5. Pass when: the marker reads `original` again; the PVC is Bound to a `restore-<timestamp>` volume; `app-restore-test` is Synced/Healthy without any manual step; `kubectl get pv | grep restore-test` shows one PV.
+6. Clean up: `git mv gitops/apps/restore-test gitops/experimental/restore-test` and push. The apps template has no deletion finalizer, so the resources stay: run `kubectl delete ns restore-test`, then delete the `restore-test` volume under Backup in the Longhorn UI to drop its S3 objects.
 
 ## Postgres (CNPG barman-cloud plugin)
 
