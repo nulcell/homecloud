@@ -1,13 +1,13 @@
 defaultSettings:
-  defaultReplicaCount: 1 # Raise to 3 once you have 3 or more§ nodes
+  defaultReplicaCount: 2 # one per node; raise to 3 with 3+ nodes
   defaultDataPath: /var/lib/longhorn
   storageOverProvisioningPercentage: 100
   storageMinimalAvailablePercentage: 15
   deletingConfirmationFlag: true # disable to prevent accidental deletions after testing
 
   defaultDataLocality: best-effort
-  # Node drain policy
-  nodeDrainPolicy: block-for-eviction
+  # Drain proceeds while another healthy replica exists; needs replica >= 2
+  nodeDrainPolicy: block-if-contains-last-replica
   # Guaranteed instance manager CPU
   guaranteedInstanceManagerCPU: 12
 
@@ -15,9 +15,17 @@ defaultSettings:
 
 persistence:
   defaultClass: true
-  defaultClassReplicaCount: 1
+  defaultClassReplicaCount: 2
   reclaimPolicy: Delete # Retain
   defaultFsType: ext4
+
+# Backups are opt-in per PVC: label it
+#   recurring-job.longhorn.io/source: enabled
+#   recurring-job-group.longhorn.io/backup: enabled
+defaultBackupStore:
+  backupTarget: s3://nulcell-homecloud-backup@eu-central-1/longhorn
+  backupTargetCredentialSecret: backup-s3
+  pollInterval: "300"
 
 # Resource limits
 longhornManager:

@@ -1,0 +1,18 @@
+# Same as the chart's default class plus the backup recurring-job group: any PVC
+# created from it is backed up, with no PVC labels needed (works with any chart).
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-backup
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "2"
+  staleReplicaTimeout: "30"
+  fsType: ext4
+  dataLocality: disabled
+  disableRevisionCounter: "true"
+  dataEngine: v1
+  recurringJobSelector: '[{"name":"backup","isGroup":true}]'

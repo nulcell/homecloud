@@ -113,6 +113,9 @@ persistence:
     size: 1Gi
     storageClass: longhorn
     accessMode: ReadWriteMany
+    labels:
+      recurring-job.longhorn.io/source: enabled
+      recurring-job-group.longhorn.io/backup: enabled
     advancedMounts:
       mealie:
         mealie: [{path: /app/data}]
@@ -127,6 +130,11 @@ datastores:
       requests: {cpu: 100m, memory: 256Mi}
       limits: {cpu: 500m, memory: 512Mi}
     monitoring: true
+    cluster:
+      inheritedMetadata:
+        labels:
+          recurring-job.longhorn.io/source: enabled
+          recurring-job-group.longhorn.io/backup: enabled
 
 externalSecrets:
   secrets:

@@ -9,6 +9,10 @@ spec:
   primaryUpdateStrategy: unsupervised
   storage:
     size: 10Gi
+  inheritedMetadata:
+    labels:
+      recurring-job.longhorn.io/source: enabled
+      recurring-job-group.longhorn.io/backup: enabled
   bootstrap:
     initdb:
       database: authentik

@@ -1,0 +1,28 @@
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: gatus-postgres
+spec:
+  retentionPolicy: 30d
+  instanceSidecarConfiguration:
+    env:
+      - {name: AWS_REGION, value: eu-central-1}
+  configuration:
+    destinationPath: s3://nulcell-homecloud-backup/cnpg/gatus-postgres
+    s3Credentials:
+      accessKeyId: {name: backup-s3, key: AWS_ACCESS_KEY_ID}
+      secretAccessKey: {name: backup-s3, key: AWS_SECRET_ACCESS_KEY}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: gatus-postgres
+spec:
+  schedule: "0 0 2 * * *"
+  immediate: true
+  backupOwnerReference: self
+  method: plugin
+  cluster:
+    name: gatus-postgres
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io

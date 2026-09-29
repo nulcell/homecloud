@@ -266,6 +266,9 @@ persistence:
     size: 20Gi
     storageClass: longhorn
     accessMode: ReadWriteMany
+    labels:
+      recurring-job.longhorn.io/source: enabled
+      recurring-job-group.longhorn.io/backup: enabled
     advancedMounts:
       jellyfin: {jellyfin: [{path: /config, subPath: jellyfin}]}
       seerr: {seerr: [{path: /app/config, subPath: seerr}]}

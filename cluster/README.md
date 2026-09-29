@@ -15,7 +15,7 @@ Bring-up artifacts for the Talos Kubernetes cluster: machine configs and the imp
 
 ## Topology phases
 
-- **Phase 1 (current)** - 1 control plane with `allowSchedulingOnControlPlanes: true`, 1 worker, Longhorn replica 1, etcd quorum 1.
+- **Phase 1 (current)** - 1 control plane with `allowSchedulingOnControlPlanes: true`, 1 worker, Longhorn replica 2, etcd quorum 1.
 - **Phase 2** - 3-node HA control plane. Jump straight from 1 → 3 (2-node etcd is worse than 1-node). Raise Longhorn default replicas to 3.
 - **Phase 3** *(optional)* - dedicated workers; flip `allowSchedulingOnControlPlanes` to false.
 
@@ -68,6 +68,6 @@ cluster/
 
 ## Not here yet
 
-- Backup strategy for etcd and Longhorn (add before this cluster holds anything irreplaceable).
+- etcd backup (Longhorn and Postgres backups exist: [docs/backup-restore.md](docs/backup-restore.md)).
 - Non-privileged GPU device plugin (Jellyfin currently reaches `/dev/dri` via `privileged: true` as a stopgap - see [`/gitops/apps/media-stack/values.yaml`](../gitops/apps/media-stack/values.yaml)).
 - Terraform + Terragrunt for Talos + bootstrap - see [docs/terraform.md](docs/terraform.md).

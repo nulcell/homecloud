@@ -5,7 +5,7 @@ namespace: mealie
 helmCharts:
   - name: app-template
     repo: oci://ghcr.io/nulcell/charts
-    version: 0.3.2
+    version: 0.3.3
     releaseName: mealie
     namespace: mealie
     valuesFile: values.yaml

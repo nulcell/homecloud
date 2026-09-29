@@ -84,9 +84,9 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
   - [ ] Pi-hole (DNS + DHCP) + netboot + Tailscale on a Raspberry Pi for bare-metal provisioning.
 - [ ] Testing:
   - [ ] [Kube-monkey](https://github.com/asobti/kube-monkey) for chaos testing.
-- [ ] Backups:
-  - [ ] [Velero](https://velero.io/) for cluster state and persistent volume backups.
-  - [ ] [AWS S3](https://aws.amazon.com/s3/) for Longhorn volume backups and Velero backup storage.
+- [ ] Backups ([runbook](cluster/docs/backup-restore.md)):
+  - [x] Longhorn volume backups to [AWS S3](https://aws.amazon.com/s3/) (opt-in per PVC).
+  - [ ] CNPG barman-cloud backups + PITR: gatus first, then mealie, n8n, authentik.
 - [ ] HA home cluster.
   - [ ] 2.5GbE network upgrade for cluster nodes.
   - [ ] Dedicated control-plane nodes with similar mini-pcs (1 -> 3, never 2).

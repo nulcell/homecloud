@@ -24,3 +24,13 @@ resources:
 images:
   - name: jhonderson/actual-http-api
     newTag: 26.9.0
+
+patches:
+  - target: {kind: PersistentVolumeClaim}
+    patch: |-
+      - op: add
+        path: /metadata/labels/recurring-job.longhorn.io~1source
+        value: enabled
+      - op: add
+        path: /metadata/labels/recurring-job-group.longhorn.io~1backup
+        value: enabled
