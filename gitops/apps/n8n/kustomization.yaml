@@ -9,7 +9,7 @@ commonAnnotations:
 helmCharts:
   - name: app-template
     repo: oci://ghcr.io/nulcell/charts
-    version: 0.3.4
+    version: 0.3.5
     releaseName: n8n
     namespace: n8n
     valuesFile: values.yaml
