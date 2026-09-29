@@ -57,13 +57,38 @@ description = "Install Cilium + ArgoCD and hand off to GitOps"
 run = "helmfile -f cluster/bootstrap/helmfile.yaml sync" # sync: no helm-diff plugin needed
 
 [tasks."talos:upgrade"]
-description = "Upgrade Talos on a node to $TALOS_VERSION"
-usage = 'arg "<node>"'
-run = 'talosctl upgrade --nodes "$usage_node" --image "factory.talos.dev/metal-installer/$SCHEMATIC_ID:$TALOS_VERSION"'
+description = "Upgrade every node (or one) to $TALOS_VERSION: workers first, drained, health-gated"
+usage = 'arg "[node]"'
+run = 'scripts/cluster.sh rollout upgrade $usage_node'
+
+[tasks."talos:config"]
+description = "Apply cluster/talos/patches to every node (or one); reboots only when required"
+usage = 'arg "[node]"'
+run = 'scripts/cluster.sh rollout config $usage_node'
 
 [tasks."talos:upgrade-k8s"]
-description = "Upgrade Kubernetes to $KUBERNETES_VERSION"
-run = 'talosctl upgrade-k8s --nodes "$CONTROLPLANE_IP" --to "$KUBERNETES_VERSION"'
+description = "Upgrade Kubernetes to $KUBERNETES_VERSION (shows the plan first)"
+run = "scripts/cluster.sh upgrade-k8s"
+
+[tasks.preflight]
+description = "Check nodes, Longhorn replicas and backup freshness (read-only)"
+run = "scripts/cluster.sh preflight"
+
+[tasks.restore]
+description = "Restore a PVC from its newest Longhorn backup"
+usage = '''
+arg "<app>" help="ArgoCD Application"
+arg "<pvc>" help="namespace/pvc"
+'''
+run = 'scripts/cluster.sh restore "$usage_app" "$usage_pvc"'
+
+[tasks."cluster:shutdown"]
+description = "Quiesce workloads, detach volumes, power off all nodes"
+run = "scripts/cluster.sh shutdown"
+
+[tasks."cluster:start"]
+description = "After powering nodes on: un-hibernate and unfreeze ArgoCD"
+run = "scripts/cluster.sh start"
 
 [tasks."argo:sync"]
 description = "Sync an ArgoCD Application"

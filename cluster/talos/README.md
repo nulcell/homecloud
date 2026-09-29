@@ -100,22 +100,25 @@ mise run bootstrap
 talosctl get links
 talosctl health --nodes ${NODE_IP}
 talosctl dashboard
-# Upgrades: bump SCHEMATIC_ID / TALOS_VERSION / KUBERNETES_VERSION in .mise.toml [env] first
-mise run talos:upgrade 10.10.17.5
-mise run talos:upgrade 10.10.27.254
-mise run talos:upgrade-k8s
+# Upgrades: bump SCHEMATIC_ID / TALOS_VERSION / KUBERNETES_VERSION (and the kubectl pin) in .mise.toml first.
+# Nodes are discovered from the cluster: workers first, then control planes, one at a time.
+# Each node: preflight, drain, upgrade, wait Ready, wait for Longhorn to be healthy again.
+mise run preflight                # read-only: nodes Ready, 2 healthy replicas per volume, fresh backups
+mise run talos:upgrade [node]     # node name or IP limits it to one node
+mise run talos:upgrade-k8s        # prints the plan, asks to confirm
+
+# Config changes (patches below) use the same flow; a reboot (with drain) only happens when required.
+mise run talos:config [node]
+
+# Graceful full shutdown / start (physical move): see gitops/root/safe-scaledown.md
+mise run cluster:shutdown
+mise run cluster:start            # after powering the nodes on
 
 # Day never
 talosctl reset --nodes ${NODE_IP} --graceful=false --reboot=true
 
-# Regular patches
-talosctl patch machineconfig --patch @cluster/talos/patches/controlplane.yaml --nodes 10.10.17.5
-talosctl patch machineconfig --patch @cluster/talos/patches/worker.yaml --nodes 10.10.27.254
-
-# Update the Talos image: bump machine.install.image in the patch, re-apply, then upgrade.
-# A new schematic (added/removed system extensions) needs this — it can't be hot-added.
-talosctl patch machineconfig --patch @cluster/talos/patches/controlplane.yaml --nodes ${NODE_IP}
-talosctl upgrade --image ${INSTALL_IMAGE} --nodes ${NODE_IP}
-talosctl patch machineconfig --patch @cluster/talos/patches/worker.yaml --nodes ${WORKER_IP}
-talosctl upgrade --image ${INSTALL_IMAGE} --nodes ${WORKER_IP}
+# New schematic (added/removed system extensions): bump SCHEMATIC_ID in .mise.toml, then
+mise run talos:config && mise run talos:upgrade
+# talos:config injects install.image from .mise.toml, so the image in the patch files only
+# matters at bootstrap.
 ```
