@@ -20,3 +20,7 @@ config:
         Port            9765
         URI             /k8s-audit
         Format          json
+
+# Skip the chart's Helm test pod (busybox:latest); ArgoCD never runs it.
+testFramework:
+  enabled: false

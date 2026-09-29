@@ -2,7 +2,7 @@
 # sidecar. All state is in Postgres; every volume here is an emptyDir. Release name `n8n` keeps the old
 # object names (Service n8n, Deployments n8n / n8n-worker, Cluster n8n-postgres, StatefulSet n8n-redis).
 #
-# Image tags: bump `n8nio/n8n` and `n8nio/runners` together (Renovate groups them).
+# Image tags: bump `docker.io/n8nio/n8n` and `docker.io/n8nio/runners` together (Renovate groups them).
 
 defaults:
   externalSecret:
@@ -78,7 +78,7 @@ workloads:
     pdb: {enabled: true, maxUnavailable: 1}
     initContainers:
       npm-install: &npm-install
-        image: {repository: node, tag: 20-alpine}
+        image: {repository: docker.io/library/node, tag: 20-alpine}
         command: [/bin/sh, -c]
         # Community nodes to install; emptyDirs start empty, so this runs on every pod start.
         args: ['npm install --loglevel info --no-save --ignore-scripts $COMMUNITY_PACKAGES --prefix /nodesdata/nodes']
@@ -89,7 +89,7 @@ workloads:
           readOnlyRootFilesystem: false
     containers:
       n8n:
-        image: {repository: n8nio/n8n, tag: 2.40.5}
+        image: {repository: docker.io/n8nio/n8n, tag: 2.40.5}
         envFrom:
           - configMap: env
           - secret: encryption-key
@@ -153,7 +153,7 @@ workloads:
       npm-install: *npm-install
     containers:
       worker:
-        image: {repository: n8nio/n8n, tag: 2.40.5}
+        image: {repository: docker.io/n8nio/n8n, tag: 2.40.5}
         command: [n8n]
         args: [worker, --concurrency=10]
         envFrom:
@@ -183,7 +183,7 @@ workloads:
           readOnlyRootFilesystem: false
       # Executes Code nodes for this worker; shares its packages and talks to its broker on localhost.
       runners:
-        image: {repository: n8nio/runners, tag: 2.40.5}
+        image: {repository: docker.io/n8nio/runners, tag: 2.40.5}
         command: [/usr/local/bin/task-runner-launcher]
         args: [javascript, python]
         envFrom:
@@ -277,7 +277,7 @@ datastores:
   redis:
     engine: redis
     type: standalone
-    image: {repository: redis, tag: 7-alpine}
+    image: {repository: docker.io/library/redis, tag: 7-alpine}
     args: [redis-server, --save, "60 1", --loglevel, warning]
     storage: {size: 1Gi, storageClass: longhorn}
     resources:

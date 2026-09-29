@@ -26,7 +26,7 @@ workloads:
     containers:
       actualbudget:
         image:
-          repository: actualbudget/actual-server
+          repository: docker.io/actualbudget/actual-server
           tag: 26.9.0
         env:
           ACTUAL_PORT: "5006"
@@ -73,7 +73,7 @@ workloads:
     containers:
       http-api:
         image:
-          repository: jhonderson/actual-http-api
+          repository: docker.io/jhonderson/actual-http-api
           tag: 26.9.0
         env:
           ACTUAL_SERVER_URL: http://actualbudget:5006/

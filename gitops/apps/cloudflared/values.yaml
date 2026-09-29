@@ -65,7 +65,7 @@ workloads:
       sysctls: [{name: net.ipv4.ping_group_range, value: "0 2147483647"}]
     containers:
       cloudflared:
-        image: &image {repository: cloudflare/cloudflared, tag: 2026.9.1}
+        image: &image {repository: docker.io/cloudflare/cloudflared, tag: 2026.9.1}
         args: [tunnel, --config, /etc/cloudflared/config/config.yaml, run]
         env:
           TUNNEL_ORIGIN_CERT: /etc/cloudflared/creds/cert.pem

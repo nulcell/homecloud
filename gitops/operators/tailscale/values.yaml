@@ -3,4 +3,9 @@ operatorConfig:
     - "tag:k8s-operator"
 
   image:
+    repository: docker.io/tailscale/k8s-operator
     pullPolicy: IfNotPresent
+
+proxyConfig:
+  image:
+    repository: docker.io/tailscale/tailscale

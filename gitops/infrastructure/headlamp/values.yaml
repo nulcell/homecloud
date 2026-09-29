@@ -6,7 +6,7 @@ initContainers:
   - name: cert-manager-plugin
     # image: ghcr.io/headlamp-k8s/headlamp-plugin-cert-manager:v0.1.1
     # command: [/bin/sh, -c, "mkdir -p /build/plugins && cp -r /plugins/* /build/plugins/"]
-    image: alpine:3
+    image: docker.io/library/alpine:3
     command:
       - /bin/sh
       - -c
@@ -21,7 +21,7 @@ initContainers:
 
   # ArgoCD (tarball install - no container image published)
   - name: argocd-plugin
-    image: alpine:3
+    image: docker.io/library/alpine:3
     command:
       - /bin/sh
       - -c
@@ -44,7 +44,7 @@ initContainers:
 
   # Plugin Catalog (tarball install - no container image published)
   - name: plugin-catalog-plugin
-    image: alpine:3
+    image: docker.io/library/alpine:3
     command:
       - /bin/sh
       - -c
@@ -59,7 +59,7 @@ initContainers:
 
   # App Catalog (tarball install - no container image published)
   - name: app-catalog-plugin
-    image: alpine:3
+    image: docker.io/library/alpine:3
     command:
       - /bin/sh
       - -c
@@ -108,7 +108,7 @@ initContainers:
 
   # Gatekeeper: OPA policy enforcement UI (tarball install - no container image published)
   # - name: gatekeeper-plugin
-  #   image: alpine:3
+  #   image: docker.io/library/alpine:3
   #   command:
   #     - /bin/sh
   #     - -c

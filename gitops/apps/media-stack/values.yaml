@@ -170,7 +170,7 @@ workloads:
       strategy: {type: Recreate}
     initContainers:
       gluetun:
-        image: {repository: qmcgaw/gluetun, tag: v3.41.3}
+        image: {repository: docker.io/qmcgaw/gluetun, tag: v3.41.3}
         restartPolicy: Always
         env:
           PUID: null

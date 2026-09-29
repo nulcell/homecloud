@@ -4,7 +4,7 @@ metadata:
   name: seaweedfs
   namespace: seaweedfs
 spec:
-  image: chrislusf/seaweedfs:4.28
+  image: docker.io/chrislusf/seaweedfs:4.28
   volumeServerDiskCount: 1
   hostSuffix: sfs.nulcell.com
   master:

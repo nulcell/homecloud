@@ -38,7 +38,7 @@ rbac:
     automount: true
 
 image:
-  registry: chrislusf
+  registry: docker.io/chrislusf
   repository: seaweedfs-operator
   # -- tag of image to use. Defaults to appVersion in Chart.yaml
   tag: ""
@@ -109,7 +109,7 @@ webhook:
   # -- Configuration for webhook certificate jobs
   initContainer:
     # -- Image for webhook readiness check init container
-    image: curlimages/curl:8.22.0
+    image: docker.io/curlimages/curl:8.22.0
   # -- Pod security context for webhook jobs
   # ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
   podSecurityContext:
