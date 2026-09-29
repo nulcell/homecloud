@@ -32,13 +32,13 @@ Common tasks live in `.mise.toml` - `mise tasks` lists them (`render`, `validate
 
 Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart versions, [`cluster/bootstrap/helmfile.yaml`](cluster/bootstrap/helmfile.yaml) for Cilium / Gateway API / ArgoCD.
 
-| Layer                                              | Deployed                                                                                                                                                           |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Layer                                              | Deployed                                                                                                                                                              |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`infrastructure/`](gitops/infrastructure/) wave 0 | cert-manager, external-dns, external-secrets, gateway, headlamp, infra-app-httproutes, keda, kube-prometheus-stack, loki, longhorn, metrics-server, reloader, secrets |
-| [`operators/`](gitops/operators/) wave 5           | cnpg, falco, kubevirt, mariadb, tailscale                                                                                                                          |
-| [`security/`](gitops/security/) wave 10            | falco, trivy                                                                                                                                                       |
-| [`services/`](gitops/services/) wave 15            | kubevirt (KubeVirt + CDI CRs)                                                                                                                                      |
-| [`apps/`](gitops/apps/) wave 100                   | actual-budget, authentik, cloudflared, gatus, mealie, media-stack, n8n, portfolio                                                                                  |
+| [`operators/`](gitops/operators/) wave 5           | cnpg, falco, kubevirt, mariadb, tailscale                                                                                                                             |
+| [`security/`](gitops/security/) wave 10            | falco, trivy                                                                                                                                                          |
+| [`services/`](gitops/services/) wave 15            | kubevirt (KubeVirt + CDI CRs)                                                                                                                                         |
+| [`apps/`](gitops/apps/) wave 100                   | actual-budget, authentik, cloudflared, gatus, mealie, media-stack, n8n, portfolio                                                                                     |
 
 [`gitops/experimental/`](gitops/experimental/) is a staging area - no ApplicationSet reads it, so nothing in it runs. It mirrors the layers: `apps/` holds homarr, outline, speedtest-tracker, uptime-kuma and the `restore-test` and `pitr-test` drill apps; `infrastructure/` rancher; `operators/` and `services/` seaweedfs; `security/` kubescape.
 
