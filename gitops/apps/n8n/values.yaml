@@ -276,11 +276,13 @@ datastores:
         - name: barman-cloud.cloudnative-pg.io
           isWALArchiver: true
           parameters: {barmanObjectName: n8n-postgres}
-  # Queue only; nothing here needs to survive a restart.
+  # Queue only; nothing here needs to survive a restart. Real Redis, not the chart's Valkey default:
+  # the existing volume holds an RDB written by Redis 7.4 (format 12), which Valkey 8 cannot load.
   redis:
     engine: redis
     type: standalone
-    image: {repository: valkey/valkey, tag: "8"}
+    image: {repository: redis, tag: 7-alpine}
+    args: [redis-server, --save, "60 1", --loglevel, warning]
     storage: {size: 1Gi, storageClass: longhorn}
     resources:
       requests: {cpu: 50m, memory: 64Mi}
