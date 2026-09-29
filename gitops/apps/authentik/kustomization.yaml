@@ -18,5 +18,6 @@ helmCharts:
 resources:
   - namespace.yaml
   - postgres-cluster.yaml
+  - postgres-backup.yaml
   - httproute.yaml
   - authentik-external-secret.yaml

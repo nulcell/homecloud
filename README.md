@@ -86,7 +86,8 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
   - [ ] [Kube-monkey](https://github.com/asobti/kube-monkey) for chaos testing.
 - [ ] Backups ([runbook](cluster/docs/backup-restore.md)):
   - [x] Longhorn volume backups to [AWS S3](https://aws.amazon.com/s3/) (opt-in per PVC).
-  - [ ] CNPG barman-cloud backups + PITR: gatus first, then mealie, n8n, authentik.
+  - [x] CNPG barman-cloud backups to S3 for gatus, mealie, n8n and authentik.
+  - [ ] Point-in-time restore drill (then drop the Longhorn backup label from the Postgres PVCs).
 - [ ] HA home cluster.
   - [ ] 2.5GbE network upgrade for cluster nodes.
   - [ ] Dedicated control-plane nodes with similar mini-pcs (1 -> 3, never 2).

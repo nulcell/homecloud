@@ -51,7 +51,7 @@ Not for Postgres PVCs (below).
 
 ## Postgres (CNPG barman-cloud plugin)
 
-WAL archiving plus a daily base backup (02:00, 30-day retention) to `s3://nulcell-homecloud-backup/cnpg/<cluster>`. Enabled on `gatus-postgres` only ([`gitops/apps/gatus/postgres-backup.yaml`](../../gitops/apps/gatus/postgres-backup.yaml), plugin block in its `values.yaml`). Roll out to mealie, n8n and authentik after the gatus drill passes; drop each database's Longhorn `backup` label after its own drill.
+WAL archiving plus a daily base backup (30-day retention) to `s3://nulcell-homecloud-backup/cnpg/<cluster>`, enabled on `gatus-postgres` (02:00), `mealie-postgres` (02:15), `n8n-postgres` (02:30) and `authentik-postgres` (02:45). Each app has a `postgres-backup.yaml` (ObjectStore + ScheduledBackup) and the plugin block on its Cluster (`values.yaml` for chart-rendered ones). Their PVCs keep the Longhorn `backup` label as a safety net until you have run the point-in-time restore below once; then drop the label.
 
 To enable another cluster:
 
@@ -59,7 +59,7 @@ To enable another cluster:
 2. Copy `postgres-backup.yaml` (change names and `destinationPath`), add it to the app's `kustomization.yaml`.
 3. Add `plugins: [{name: barman-cloud.cloudnative-pg.io, isWALArchiver: true, parameters: {barmanObjectName: <cluster>}}]` to the Cluster (`datastores.<key>.cluster` for chart-rendered ones).
 
-Check: `kubectl -n gatus get backups.postgresql.cnpg.io,scheduledbackups.postgresql.cnpg.io` and objects under `cnpg/gatus-postgres/` in S3.
+Check: `kubectl cnpg status -n <ns> <cluster>` (recovery window filled, WAL archiving OK) and objects under `cnpg/<cluster>/` in S3. Chart-rendered clusters need `datastores.<key>.networkPolicy.egress` for S3 (their policy is default-deny); raw clusters with no policy do not.
 
 ### Restore / point in time
 
@@ -90,7 +90,7 @@ plugins:
 
 Then delete the Cluster and its PVC, resync. CNPG runs the recovery job and starts the new primary. Afterwards the `bootstrap.recovery` block can stay (it is only read at creation).
 
-Drill on gatus first: confirm a base backup and WAL in S3, restore to a point in time into a throwaway name, check the data.
+Drill on gatus first (lowest stakes): restore to a point in time into a new generation and check the data.
 
 ## Restore checklist after a full rebuild
 

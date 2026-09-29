@@ -13,3 +13,4 @@ helmCharts:
 
 resources:
   - namespace.yaml
+  - postgres-backup.yaml

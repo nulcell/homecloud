@@ -26,3 +26,7 @@ spec:
       memory: 512Mi
   monitoring:
     enablePodMonitor: true
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters: {barmanObjectName: n8n-postgres}

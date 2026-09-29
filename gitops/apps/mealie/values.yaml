@@ -130,11 +130,22 @@ datastores:
       requests: {cpu: 100m, memory: 256Mi}
       limits: {cpu: 500m, memory: 512Mi}
     monitoring: true
+    # The barman sidecar uploads to S3; datastore policies are default-deny.
+    networkPolicy:
+      egress:
+        - {fqdn: s3.eu-central-1.amazonaws.com, port: 443}
+        - {fqdn: "*.s3.eu-central-1.amazonaws.com", port: 443}
+        - {fqdn: s3.amazonaws.com, port: 443}
+        - {fqdn: "*.s3.amazonaws.com", port: 443}
     cluster:
       inheritedMetadata:
         labels:
           recurring-job.longhorn.io/source: enabled
           recurring-job-group.longhorn.io/backup: enabled
+      plugins:
+        - name: barman-cloud.cloudnative-pg.io
+          isWALArchiver: true
+          parameters: { barmanObjectName: mealie-postgres }
 
 externalSecrets:
   secrets:
