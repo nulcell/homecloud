@@ -57,6 +57,8 @@ Check: `kubectl -n gatus get backups.postgresql.cnpg.io,scheduledbackups.postgre
 
 ### Restore / point in time
 
+Deleting a cluster whose manifest still says `initdb` is not a restore: it creates an empty database with a new system ID, and barman refuses to archive it into the old non-empty path (`Expected empty archive`, WAL archiving never starts). Either add the recovery block below, or, to start over, empty `s3://nulcell-homecloud-backup/cnpg/<cluster>/`. A restore also needs a completed base backup: check `Recovery window` in `kubectl cnpg status`.
+
 Recovery always creates a new cluster generation: the recovered cluster archives under a new `serverName`, because barman refuses to write into a non-empty path. With the ArgoCD app paused, edit the Cluster (for gatus, `datastores.postgres.cluster` in `values.yaml`):
 
 ```yaml
