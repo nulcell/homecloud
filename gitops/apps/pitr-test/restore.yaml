@@ -1,5 +1,5 @@
-# The recovered cluster for the drill: add to kustomization.yaml `resources`, set targetTime (UTC, between
-# the rows you inserted), push. Remove it again afterwards.
+# The recovered cluster for the drill: add to kustomization.yaml `resources`, set targetTime (UTC, between the
+# two rows' `at` values), push. Remove it again afterwards.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -15,7 +15,7 @@ spec:
     recovery:
       source: origin
       recoveryTarget:
-        targetTime: "2026-09-29 19:00:36+00" # REPLACE
+        targetTime: "2026-09-29 19:02:00+00" # between row 1 (19:00:36) and row 2 (19:04:15)
   externalClusters:
     - name: origin
       plugin:
