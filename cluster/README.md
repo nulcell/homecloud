@@ -10,7 +10,7 @@ Bring-up artifacts for the Talos Kubernetes cluster: machine configs and the imp
 
 - **Phase 1 (current)** - 1 control plane with `allowSchedulingOnControlPlanes: true`, 1 worker, Longhorn replica 2, etcd quorum 1.
 - **Phase 2** - 3-node HA control plane. Jump straight from 1 → 3 (2-node etcd is worse than 1-node). Raise Longhorn default replicas to 3.
-- **Phase 3** *(optional)* - dedicated workers; flip `allowSchedulingOnControlPlanes` to false.
+- **Phase 3** _(optional)_ - dedicated workers; flip `allowSchedulingOnControlPlanes` to false.
 
 ## Bootstrap order
 

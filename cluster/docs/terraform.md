@@ -25,18 +25,18 @@ State backend: decide at build time (S3-compatible bucket, e.g. Cloudflare R2, k
 
 ## `talos` module (`siderolabs/talos` provider)
 
-| Resource                                         | Replaces                                                                                |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| `talos_image_factory_schematic`                  | Clicking through factory.talos.dev; `SCHEMATIC_ID` in `.mise.toml`.                     |
-| `talos_machine_secrets`                          | `talosctl gen secrets`. **Import** the existing `secrets.yaml`, never regenerate.       |
-| `data.talos_machine_configuration` (per role)    | `talosctl gen config`, with `config_patches` = the files in `cluster/talos/patches/`.   |
-| `talos_machine_configuration_apply` (per node)   | `machineconfig patch` + `apply-config`. Per-node patches (hostname, IPs) inline.        |
-| `talos_machine_bootstrap`                        | `talosctl bootstrap` - once, first control plane.                                       |
-| `talos_cluster_kubeconfig` / `data.talos_client_configuration` | `talosctl kubeconfig` / `talosconfig`. Output to gitignored files.      |
+| Resource                                                       | Replaces                                                                              |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `talos_image_factory_schematic`                                | Clicking through factory.talos.dev; `SCHEMATIC_ID` in `.mise.toml`.                   |
+| `talos_machine_secrets`                                        | `talosctl gen secrets`. **Import** the existing `secrets.yaml`, never regenerate.     |
+| `data.talos_machine_configuration` (per role)                  | `talosctl gen config`, with `config_patches` = the files in `cluster/talos/patches/`. |
+| `talos_machine_configuration_apply` (per node)                 | `machineconfig patch` + `apply-config`. Per-node patches (hostname, IPs) inline.      |
+| `talos_machine_bootstrap`                                      | `talosctl bootstrap` - once, first control plane.                                     |
+| `talos_cluster_kubeconfig` / `data.talos_client_configuration` | `talosctl kubeconfig` / `talosconfig`. Output to gitignored files.                    |
 
 Nodes are a map input (`{ cp1 = { ip = "10.10.17.5", role = "controlplane" }, w1 = {...} }`), so going 1 → 3 control planes is two map entries.
 
-Talos/Kubernetes *upgrades* stay on `mise run talos:upgrade` / `talos:upgrade-k8s` - the provider applies config, it doesn't orchestrate rolling OS upgrades.
+Talos/Kubernetes _upgrades_ stay on `mise run talos:upgrade` / `talos:upgrade-k8s` - the provider applies config, it doesn't orchestrate rolling OS upgrades.
 
 ## `bootstrap` module
 

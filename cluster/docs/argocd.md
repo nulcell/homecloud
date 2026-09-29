@@ -18,7 +18,7 @@ ArgoCD ──watches──► gitops/root/   (root Application, directory.recurs
                                 • gitops/apps/*            → app-*        (wave 100)
 ```
 
-What each layer holds is listed in the [README](../../README.md#whats-running). Source of truth = this repo. Cluster state ArgoCD does *not* own: the `onepassword-credentials` Secret applied by the bootstrap helmfile, and the rotated admin password.
+What each layer holds is listed in the [README](../../README.md#whats-running). Source of truth = this repo. Cluster state ArgoCD does _not_ own: the `onepassword-credentials` Secret applied by the bootstrap helmfile, and the rotated admin password.
 
 ## Layout
 

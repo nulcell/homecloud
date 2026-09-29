@@ -24,15 +24,15 @@ Kernel customizations:
 
 ```yaml
 customization:
-    extraKernelArgs:
-        - -lockdown
-        - --lockdown=integrity
-    systemExtensions:
-        officialExtensions:
-            - siderolabs/amd-ucode
-            - siderolabs/amdgpu
-            - siderolabs/iscsi-tools
-            - siderolabs/util-linux-tools
+  extraKernelArgs:
+    - -lockdown
+    - --lockdown=integrity
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/amd-ucode
+      - siderolabs/amdgpu
+      - siderolabs/iscsi-tools
+      - siderolabs/util-linux-tools
 ```
 
 The **schematic ID** lives in `.mise.toml` `[env]` as `SCHEMATIC_ID` - `mise run talos:upgrade` uses it.
@@ -60,7 +60,7 @@ talosctl gen config homecloud https://k8s.nulcell.com:6443 \
   --install-disk /dev/nvme0n1 \
   --with-secrets cluster/talos/secrets/secret.yaml \
   --output-dir cluster/talos/generated --force
-rm ~/.talos/config 
+rm ~/.talos/config
 talosctl config merge $TALOSCONFIG_PATH --context homecloud
 talosctl config endpoints k8s.nulcell.com --context homecloud
 talosctl config nodes ${NODE_IP} ${WORKER_IP} --context homecloud
@@ -78,7 +78,7 @@ talosctl bootstrap --nodes ${NODE_IP} --endpoints ${NODE_IP}
 # Pull kubeconfig
 talosctl kubeconfig --merge --force --nodes ${NODE_IP}
 # OR, if you want to keep it separate:
-talosctl kubeconfig cluster/talos/kubeconfig --nodes ${NODE_IP} 
+talosctl kubeconfig cluster/talos/kubeconfig --nodes ${NODE_IP}
 export KUBECONFIG=cluster/talos/kubeconfig
 
 # Approve CSRs if any are pending

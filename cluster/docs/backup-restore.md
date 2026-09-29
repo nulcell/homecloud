@@ -67,21 +67,21 @@ Recovery always creates a new cluster generation: the recovered cluster archives
 bootstrap:
   recovery:
     source: origin
-    recoveryTarget:            # optional; omit to recover to the latest WAL
+    recoveryTarget: # optional; omit to recover to the latest WAL
       targetTime: "2026-10-01 12:00:00+00"
 externalClusters:
   - name: origin
     plugin:
       name: barman-cloud.cloudnative-pg.io
       parameters:
-        barmanObjectName: gatus-postgres   # the ObjectStore holding the old archive
-        serverName: gatus-postgres         # archive name the old cluster wrote under
+        barmanObjectName: gatus-postgres # the ObjectStore holding the old archive
+        serverName: gatus-postgres # archive name the old cluster wrote under
 plugins:
   - name: barman-cloud.cloudnative-pg.io
     isWALArchiver: true
     parameters:
       barmanObjectName: gatus-postgres
-      serverName: gatus-postgres-2         # new generation; bump on every restore
+      serverName: gatus-postgres-2 # new generation; bump on every restore
 ```
 
 Then delete the Cluster and its PVC, resync. CNPG runs the recovery job and starts the new primary. Afterwards the `bootstrap.recovery` block can stay (it is only read at creation).
@@ -93,14 +93,16 @@ Then delete the Cluster and its PVC, resync. CNPG runs the recovery job and star
 1. Move it into the synced tree: `git mv gitops/experimental/apps/pitr-test gitops/apps/pitr-test`, push, wait for `app-pitr-test` to be Healthy.
 2. Take a base backup and wait for it: `kubectl cnpg backup -n pitr-test pitr-test-postgres --method plugin --plugin-name barman-cloud.cloudnative-pg.io`; `kubectl cnpg status -n pitr-test pitr-test-postgres` then shows a recovery window.
 3. Insert two rows about ten seconds apart and read their commit times from the table itself:
+
    ```bash
    kubectl cnpg psql -n pitr-test pitr-test-postgres -- -d app -c "create table t(n int, at timestamptz default clock_timestamp()); insert into t(n) values (1);"
    sleep 10
    kubectl cnpg psql -n pitr-test pitr-test-postgres -- -d app -c "insert into t(n) values (2); select pg_switch_wal();"
    kubectl cnpg psql -n pitr-test pitr-test-postgres -- -d app -c "select n, at from t order by n"
    ```
+
    Wait a minute so the WAL holding both rows is archived (`Last Archived WAL` in `kubectl cnpg status`).
-4. In `restore.yaml` set `targetTime` to a moment between the two `at` values, e.g. row 1's `at` plus three seconds, in UTC (`"2026-01-01 12:00:03+00"`). Don't take it from `date`: it truncates to whole seconds, so it can land *before* row 1 and recovery then stops with an empty database. Add `restore.yaml` to `kustomization.yaml` `resources`, push.
+4. In `restore.yaml` set `targetTime` to a moment between the two `at` values, e.g. row 1's `at` plus three seconds, in UTC (`"2026-01-01 12:00:03+00"`). Don't take it from `date`: it truncates to whole seconds, so it can land _before_ row 1 and recovery then stops with an empty database. Add `restore.yaml` to `kustomization.yaml` `resources`, push.
 5. Pass when: the marker reads `original` again; the PVC is Bound to a `restore-<timestamp>` volume; `app-restore-test` is Synced/Healthy without any manual step; `kubectl get pv | grep restore-test` shows one PV.
 6. Clean up: `git mv gitops/apps/restore-test gitops/experimental/apps/restore-test` and push. The apps template has no deletion finalizer, so the resources stay: run `kubectl delete ns restore-test`, then delete the `restore-test` volume under Backup in the Longhorn UI to drop its S3 objects.
 
@@ -126,21 +128,21 @@ Recovery always creates a new cluster generation: the recovered cluster archives
 bootstrap:
   recovery:
     source: origin
-    recoveryTarget:            # optional; omit to recover to the latest WAL
+    recoveryTarget: # optional; omit to recover to the latest WAL
       targetTime: "2026-10-01 12:00:00+00"
 externalClusters:
   - name: origin
     plugin:
       name: barman-cloud.cloudnative-pg.io
       parameters:
-        barmanObjectName: gatus-postgres   # the ObjectStore holding the old archive
-        serverName: gatus-postgres         # archive name the old cluster wrote under
+        barmanObjectName: gatus-postgres # the ObjectStore holding the old archive
+        serverName: gatus-postgres # archive name the old cluster wrote under
 plugins:
   - name: barman-cloud.cloudnative-pg.io
     isWALArchiver: true
     parameters:
       barmanObjectName: gatus-postgres
-      serverName: gatus-postgres-2         # new generation; bump on every restore
+      serverName: gatus-postgres-2 # new generation; bump on every restore
 ```
 
 Then delete the Cluster and its PVC, resync. CNPG runs the recovery job and starts the new primary. Afterwards the `bootstrap.recovery` block can stay (it is only read at creation).
@@ -152,11 +154,13 @@ Then delete the Cluster and its PVC, resync. CNPG runs the recovery job and star
 1. Move it into the synced tree: `git mv gitops/experimental/apps/pitr-test gitops/apps/pitr-test`, push, wait for `app-pitr-test` to be Healthy.
 2. Take a base backup and wait for it: `kubectl cnpg backup -n pitr-test pitr-test-postgres --method plugin --plugin-name barman-cloud.cloudnative-pg.io`; `kubectl cnpg status -n pitr-test pitr-test-postgres` then shows a recovery window.
 3. Insert a row, note the time, insert a second row:
+
    ```bash
    kubectl cnpg psql -n pitr-test pitr-test-postgres -- -d app -c "create table t(n int, at timestamptz default now()); insert into t(n) values (1);"
    date -u +"%Y-%m-%d %H:%M:%S+00"          # this is targetTime
    kubectl cnpg psql -n pitr-test pitr-test-postgres -- -d app -c "insert into t(n) values (2);"
    ```
+
    Wait about a minute (or `select pg_switch_wal();`) so the WAL holding both rows is archived.
 4. In `restore.yaml` set `targetTime` to the time from step 3, add `restore.yaml` to `kustomization.yaml` `resources`, push.
 5. Pass when `pitr-test-restored` becomes healthy and `kubectl cnpg psql -n pitr-test pitr-test-restored -- -d app -c "select n from t"` returns only `1`. An empty database means `targetTime` is earlier than row 1's `at`; to retry, fix it, push, then `kubectl -n pitr-test delete cluster pitr-test-restored` (recovery only runs when a cluster is created).

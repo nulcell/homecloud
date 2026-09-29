@@ -86,7 +86,7 @@ mise run bootstrap
 
 1. **Gateway API CRDs** (cilium presync) - before Cilium so its gateway controller registers. Cilium 1.20.x targets Gateway API v1.6.x; Renovate bumps them together in the `bootstrap` PR.
 2. **Cilium** ([`cilium-values.yaml`](../bootstrap/cilium-values.yaml)): `kubeProxyReplacement: true`, native routing, WireGuard pod-to-pod encryption, `bpf.hostLegacyRouting: true` (apiserver→pod aggregator routes on Talos), L2 announcements, Gateway API. Postsync applies [`cilium-l2.yaml`](../bootstrap/cilium-l2.yaml) (LB pool + announcement policy). Nodes go Ready.
-3. **Namespaces + 1Password credential** (argocd presync): [`namespaces.yaml`](../bootstrap/namespaces.yaml) (`argocd` with privileged PSS labels, `external-secrets`), then `sops -d onepassword-credentials.sops.yaml | kubectl apply -f -`. ESO's `onepassword` `ClusterSecretStore` needs this *before* ArgoCD deploys ESO, or every `ExternalSecret` stalls.
+3. **Namespaces + 1Password credential** (argocd presync): [`namespaces.yaml`](../bootstrap/namespaces.yaml) (`argocd` with privileged PSS labels, `external-secrets`), then `sops -d onepassword-credentials.sops.yaml | kubectl apply -f -`. ESO's `onepassword` `ClusterSecretStore` needs this _before_ ArgoCD deploys ESO, or every `ExternalSecret` stalls.
 4. **ArgoCD** ([`argocd-values.yaml`](../bootstrap/argocd-values.yaml)): TLS terminates at the Gateway (`server.insecure: true`); repo-server runs stock kustomize with `--enable-helm`, no CMP sidecar - see [argocd.md §Rendering](argocd.md#rendering).
 5. **Root Application** (argocd postsync).
 

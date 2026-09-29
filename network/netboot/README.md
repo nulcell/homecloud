@@ -52,7 +52,7 @@ port=0
 # Log DHCP/PXE interactions for easy troubleshooting
 log-dhcp
 
-# Enable ProxyDHCP mode on your network subnet. 
+# Enable ProxyDHCP mode on your network subnet.
 # (Replace 10.10.16.136 with your Raspberry Pi IP)
 dhcp-range=10.10.16.136,proxy
 
