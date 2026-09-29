@@ -66,9 +66,12 @@ description = "Upgrade Kubernetes to $KUBERNETES_VERSION (add --dry-run to previ
 run = 'talosctl upgrade-k8s -n "$CONTROLPLANE_IP" --to "$KUBERNETES_VERSION"'
 
 [tasks.restore]
-description = "Replace a PVC with its newest Longhorn backup"
-usage = 'arg "<pvc>" help="namespace/pvc"'
-run = 'scripts/cluster.sh restore "$usage_pvc"'
+description = "Replace a PVC with a Longhorn backup; lists them and asks which (Enter = newest)"
+usage = '''
+arg "<pvc>" help="namespace/pvc"
+arg "[number]" help="skip the prompt: position in the printed list (1 = newest)"
+'''
+run = 'scripts/cluster.sh restore "$usage_pvc" $usage_number'
 
 [tasks."cluster:shutdown"]
 description = "Hibernate databases, detach all volumes, power off the nodes"

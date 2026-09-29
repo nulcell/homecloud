@@ -29,10 +29,12 @@ kubectl -n longhorn-system get volumes.longhorn.io -o custom-columns=VOL:.status
 ### Restore a PVC
 
 ```bash
-mise run restore <namespace>/<pvc>   # e.g. mealie/mealie-data
+mise run restore <namespace>/<pvc> [number]   # e.g. mealie/mealie-data
 ```
 
-ArgoCD is not paused. The script creates a Longhorn volume `fromBackup` (newest backup of that PVC's volume) and a PV pre-bound to the PVC's name, waits for the restore to finish, then deletes the PVC and the pods that mount it. Their replacements stay `Pending` until ArgoCD recreates the PVC from git; Kubernetes binds it to the pre-bound PV instead of provisioning an empty volume. The old volume is deleted (`reclaimPolicy: Delete`); backups stay in S3.
+It lists the PVC's completed backups, newest first, and asks which to restore (a number; Enter picks 1, the newest). Pass the number as the second argument to skip the prompt. Backups are matched by the PVC they were taken from, not by volume, so history survives earlier restores (a restored PVC gets a new volume; its older backups stay under the old volume name).
+
+ArgoCD is not paused. The script creates a Longhorn volume `fromBackup` and a PV pre-bound to the PVC's name, waits for the restore to finish, then deletes the PVC and the pods that mount it. Their replacements stay `Pending` until ArgoCD recreates the PVC from git; Kubernetes binds it to the pre-bound PV instead of provisioning an empty volume. The old volume is deleted (`reclaimPolicy: Delete`); backups stay in S3.
 
 Not for Postgres PVCs (below).
 

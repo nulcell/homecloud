@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cluster shutdown/start and PVC restore, driven from live cluster state. Run through `mise run <task>`.
-# usage: cluster.sh restore <namespace>/<pvc> | shutdown | start
+# usage: cluster.sh restore <namespace>/<pvc> [number] | shutdown | start
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
@@ -20,17 +20,28 @@ nodes() {
 talos() { local ip=$1; shift; talosctl -e "$ip" -n "$ip" "$@"; }
 
 bound_to() { [ "$(kubectl -n "$1" get pvc "$2" -o jsonpath='{.spec.volumeName}')" = "$3" ]; } # ns pvc volume
+# A new volume also reads restoreRequired=false/detached before its restore starts, so require proof it ran.
+restored() { "${LH[@]}" get volumes.longhorn.io "$1" -o json | jq -e --arg b "$2" '.status | .state == "detached" and .restoreRequired == false and (.restoreInitiated or .lastBackup == $b)' >/dev/null; } # volume backup
 
 # Replaces a git-owned PVC with its newest backup. The restored PV is created first and pre-bound to the
 # PVC's name, so the PVC ArgoCD recreates after the delete binds to it instead of a new empty volume.
 restore() {
-  local ref=${1:?usage: restore <namespace>/<pvc>} ns pvc pvcjson vol last url new
+  local ref=${1:?usage: restore <namespace>/<pvc> [number]} ns pvc pvcjson vol backups last url new
   ns=${ref%/*} pvc=${ref#*/}
   pvcjson=$(kubectl -n "$ns" get pvc "$pvc" -o json)
   vol=$(jq -r .spec.volumeName <<<"$pvcjson")
-  last=$("${LH[@]}" get backupvolumes.longhorn.io "$vol" -o jsonpath='{.status.lastBackupName}')
-  [ -n "$last" ] || { echo "no backup for volume $vol" >&2; exit 1; }
-  url=$("${LH[@]}" get backups.longhorn.io "$last" -o jsonpath='{.status.url}')
+  # Match backups by the PVC they were taken from (their KubernetesStatus label): a restored PVC gets a new
+  # volume, so its older backups are filed under the previous volume name.
+  backups=$("${LH[@]}" get backups.longhorn.io -o json | jq -c --arg ns "$ns" --arg pvc "$pvc" '[.items[] | select(.status.state == "Completed")
+    | select((.spec.labels.KubernetesStatus // "{}" | fromjson) | .namespace == $ns and .pvcName == $pvc)] | sort_by(.status.snapshotCreatedAt) | reverse')
+  [ "$backups" != "[]" ] || { echo "no completed backup of PVC $ref" >&2; exit 1; }
+  echo "backups of $ref, newest first:"
+  jq -r 'to_entries[] | "  \(.key + 1)) \(.value.metadata.name)  \(.value.status.snapshotCreatedAt)  volume \(.value.status.volumeName)"' <<<"$backups"
+  pick=${2:-}
+  [ -n "$pick" ] || read -rp "Restore which backup [1]: " pick
+  sel=$(jq -c --arg n "${pick:-1}" 'if ($n | test("^[1-9][0-9]*$")) then .[($n | tonumber) - 1] else empty end // empty' <<<"$backups")
+  [ -n "$sel" ] || { echo "'$pick' is not a number in the list above" >&2; exit 1; }
+  last=$(jq -r .metadata.name <<<"$sel") url=$(jq -r .status.url <<<"$sel")
   confirm "Replace PVC $ref with backup $last? Its current data is discarded." || exit 1
 
   new="restore-$(date +%s)"
@@ -43,6 +54,7 @@ spec:
   accessMode: $("${LH[@]}" get volumes.longhorn.io "$vol" -o jsonpath='{.spec.accessMode}')
   numberOfReplicas: 2
   frontend: blockdev
+  backupTargetName: default
   fromBackup: "$url"
 ---
 apiVersion: v1
@@ -60,8 +72,7 @@ spec:
     volumeHandle: $new
     volumeAttributes: {numberOfReplicas: "2", staleReplicaTimeout: "30"}
 EOF
-  "${LH[@]}" wait "volumes.longhorn.io/$new" --for=jsonpath='{.status.restoreRequired}'=false --timeout=15m
-  "${LH[@]}" wait "volumes.longhorn.io/$new" --for=jsonpath='{.status.state}'=detached --timeout=5m
+  retry restored "$new" "$last" || { echo "restore of $last into $new did not finish; nothing was deleted" >&2; exit 1; }
 
   # The PVC stays Terminating until its pods go; their replacements stay Pending until the new PVC binds.
   kubectl -n "$ns" delete pvc "$pvc" --wait=false
