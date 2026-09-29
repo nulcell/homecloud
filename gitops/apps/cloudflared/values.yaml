@@ -1,81 +1,161 @@
-# -- This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
-replica:
-  # -- This will use DaemonSet to deploy cloudflared to all nodes
-  allNodes: true
-  # -- If previous flag disabled, this will use Deployment to deploy cloudflared only number of following count
-  count: 2
+# The tunnel `homecloud-k8s`: one connector per node, forwarding public hostnames to the internal
+# gateway (or a Service). First-time setup is at the bottom.
+#
+# To publish a hostname add it to BOTH lists: `ingress` in the config below and a `register-*` init
+# container in `dns-registration` (the image has no shell, so the DNS job takes one container per name).
 
-tunnelConfig:
-  # Must match the tunnel name you created with: cloudflared tunnel create <name>
-  name: homecloud-k8s
-  logLevel: info
-  protocol: auto
+defaults:
+  externalSecret:
+    store: {kind: ClusterSecretStore, name: onepassword}
 
-tunnelSecrets:
-  existingPemFileSecret:
-    name: cloudflared-cert-pem
-    key: cert.pem
-  existingConfigJsonFileSecret:
-    name: cloudflared-credentials-json
-    key: credentials.json
+configMaps:
+  config:
+    data:
+      config.yaml: |
+        tunnel: homecloud-k8s
+        credentials-file: /etc/cloudflared/creds/credentials.json
+        originRequest:
+          connectTimeout: 30s
+        ingress:
+          - hostname: workflow.nulcell.com
+            service: https://cilium-gateway-internal.gateway.svc.cluster.local
+            originRequest: {httpHostHeader: workflow.internal.nulcell.com, noTLSVerify: true}
+          - hostname: auth.nulcell.com
+            service: https://cilium-gateway-internal.gateway.svc.cluster.local
+            originRequest: {httpHostHeader: auth.internal.nulcell.com, noTLSVerify: true}
+          - hostname: budget.nulcell.com
+            service: https://cilium-gateway-internal.gateway.svc.cluster.local
+            originRequest: {httpHostHeader: budget.internal.nulcell.com, noTLSVerify: true}
+          - hostname: status.nulcell.com
+            service: https://cilium-gateway-internal.gateway.svc.cluster.local
+            originRequest: {httpHostHeader: status.internal.nulcell.com, noTLSVerify: true}
+          - hostname: nulcell.com
+            service: https://cilium-gateway-internal.gateway.svc.cluster.local
+            originRequest: {httpHostHeader: portfolio.internal.nulcell.com, noTLSVerify: true}
+          - hostname: www.nulcell.com
+            service: https://cilium-gateway-internal.gateway.svc.cluster.local
+            originRequest: {httpHostHeader: portfolio.internal.nulcell.com, noTLSVerify: true}
+          # No route on the gateway: straight to the Service.
+          - hostname: recipes.nulcell.com
+            service: http://mealie.mealie.svc.cluster.local:9000
+          - hostname: meridian-demo.nulcell.com
+            service: https://cilium-gateway-internal.gateway.svc.cluster.local
+            originRequest: {httpHostHeader: meridian.internal.nulcell.com, noTLSVerify: true}
+          - service: http_status:404
+        metrics: 0.0.0.0:2000
+        metrics-update-freq: 5s
+        no-autoupdate: true
+        grace-period: 30s
+        retries: 5
+        protocol: auto # auto, http2, h2mux, quic
 
-ingress:
-  - hostname: workflow.nulcell.com
-    service: https://cilium-gateway-internal.gateway.svc.cluster.local
-    originRequest:
-      httpHostHeader: workflow.internal.nulcell.com
-      noTLSVerify: true
-  - hostname: auth.nulcell.com
-    service: https://cilium-gateway-internal.gateway.svc.cluster.local
-    originRequest:
-      httpHostHeader: auth.internal.nulcell.com
-      noTLSVerify: true
-  - hostname: budget.nulcell.com
-    service: https://cilium-gateway-internal.gateway.svc.cluster.local
-    originRequest:
-      httpHostHeader: budget.internal.nulcell.com
-      noTLSVerify: true
-  # - hostname: wiki.nulcell.com
-  #   service: https://cilium-gateway-internal.gateway.svc.cluster.local
-  #   originRequest:
-  #     httpHostHeader: wiki.internal.nulcell.com
-  #     noTLSVerify: true
-  # - hostname: home.nulcell.com
-  #   service: https://cilium-gateway-internal.gateway.svc.cluster.local
-  #   originRequest:
-  #     httpHostHeader: home.internal.nulcell.com
-  #     noTLSVerify: true
-  - hostname: status.nulcell.com
-    service: https://cilium-gateway-internal.gateway.svc.cluster.local
-    originRequest:
-      httpHostHeader: status.internal.nulcell.com
-      noTLSVerify: true
-  - hostname: nulcell.com
-    service: https://cilium-gateway-internal.gateway.svc.cluster.local
-    originRequest:
-      httpHostHeader: portfolio.internal.nulcell.com
-      noTLSVerify: true
-  - hostname: www.nulcell.com
-    service: https://cilium-gateway-internal.gateway.svc.cluster.local
-    originRequest:
-      httpHostHeader: portfolio.internal.nulcell.com
-      noTLSVerify: true
-  - hostname: recipes.nulcell.com
-    service: http://mealie.mealie.svc.cluster.local:9000
-  - hostname: meridian-demo.nulcell.com
-    service: https://cilium-gateway-internal.gateway.svc.cluster.local
-    originRequest:
-      httpHostHeader: meridian.internal.nulcell.com
-      noTLSVerify: true
-  - service: http_status:404
+workloads:
+  # Named like the release, so the DaemonSet stays `cloudflared`.
+  cloudflared:
+    type: daemonset
+    imagePullSecrets: [dockerhub-credentials]
+    # Connectors run on the control-plane node too.
+    tolerations: [{operator: Exists, effect: NoSchedule}]
+    podSecurityContext:
+      runAsUser: 65532
+      runAsGroup: 65532
+      fsGroup: 65532
+      fsGroupChangePolicy: OnRootMismatch
+      # Lets cloudflared open unprivileged ICMP sockets for its connectivity checks.
+      sysctls: [{name: net.ipv4.ping_group_range, value: "0 2147483647"}]
+    containers:
+      cloudflared:
+        image: &image {repository: cloudflare/cloudflared, tag: 2026.9.1}
+        args: [tunnel, --config, /etc/cloudflared/config/config.yaml, run]
+        env:
+          TUNNEL_ORIGIN_CERT: /etc/cloudflared/creds/cert.pem
+        ports:
+          metrics: 2000
+        probes:
+          liveness:
+            httpGet: {path: /ready, port: 2000}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 1
+          readiness:
+            httpGet: {path: /ready, port: 2000}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+        resources:
+          requests: {cpu: 100m, memory: 64Mi}
+          limits: {memory: 128Mi}
+    networkPolicy:
+      egress:
+        - world
 
-imagePullSecrets:
-  - name: dockerhub-credentials
+  # Registers a DNS route for every hostname after each sync (idempotent).
+  dns-registration:
+    type: job
+    annotations:
+      argocd.argoproj.io/hook: PostSync
+      argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    job: {ttlSecondsAfterFinished: 300}
+    pod: {restartPolicy: OnFailure}
+    imagePullSecrets: [dockerhub-credentials]
+    initContainers:
+      register-workflow: &register
+        image: *image
+        args: &route [tunnel, --origincert, /etc/cloudflared/cert.pem, route, dns, homecloud-k8s, $(DOMAIN)]
+        env: {DOMAIN: workflow.nulcell.com}
+      register-auth: {<<: *register, env: {DOMAIN: auth.nulcell.com}}
+      register-budget: {<<: *register, env: {DOMAIN: budget.nulcell.com}}
+      register-status: {<<: *register, env: {DOMAIN: status.nulcell.com}}
+      register-apex: {<<: *register, env: {DOMAIN: nulcell.com}}
+      register-www: {<<: *register, env: {DOMAIN: www.nulcell.com}}
+      register-recipes: {<<: *register, env: {DOMAIN: recipes.nulcell.com}}
+      register-meridian: {<<: *register, env: {DOMAIN: meridian-demo.nulcell.com}}
+    containers:
+      done:
+        image: *image
+        args: [--version]
+    networkPolicy:
+      egress:
+        - world
 
-resources:
-  requests:
-    cpu: 100m
-    memory: 64Mi
-  limits:
-    # cpu: 200m
-    memory: 128Mi
+persistence:
+  config:
+    type: configMap
+    name: config
+    items: [{key: config.yaml, path: config.yaml}]
+    advancedMounts:
+      cloudflared: {cloudflared: [{path: /etc/cloudflared/config, readOnly: true}]}
+  cert-pem:
+    type: secret
+    name: cert-pem
+    advancedMounts:
+      cloudflared: {cloudflared: [{path: /etc/cloudflared/creds/cert.pem, subPath: cert.pem, readOnly: true}]}
+      dns-registration:
+        register-workflow: &cert [{path: /etc/cloudflared/cert.pem, subPath: cert.pem, readOnly: true}]
+        register-auth: *cert
+        register-budget: *cert
+        register-status: *cert
+        register-apex: *cert
+        register-www: *cert
+        register-recipes: *cert
+        register-meridian: *cert
+  credentials-json:
+    type: secret
+    name: credentials-json
+    advancedMounts:
+      cloudflared: {cloudflared: [{path: /etc/cloudflared/creds/credentials.json, subPath: credentials.json, readOnly: true}]}
+
+# Secrets `cloudflared-cert-pem` and `cloudflared-credentials-json`, both base64 in 1Password
+# (homecloud-k8s/cloudflared-secrets).
+externalSecrets:
+  cert-pem:
+    data:
+      cert.pem: {key: ambaukrg6cqbwxx6d3r3zhsjgq/cert-pem, decodingStrategy: Base64}
+  credentials-json:
+    data:
+      credentials.json: {key: ambaukrg6cqbwxx6d3r3zhsjgq/credentials-json, decodingStrategy: Base64}
+
+## Initial manual setup
+# 1. `cloudflared tunnel login`
+# 2. `cloudflared tunnel create homecloud-k8s`
+# 3. Store cert.pem and credentials.json (base64) in 1Password as cloudflared-secrets/cert-pem and
+#    cloudflared-secrets/credentials-json, e.g. `base64 -b 0 -i ~/.cloudflared/cert.pem`.

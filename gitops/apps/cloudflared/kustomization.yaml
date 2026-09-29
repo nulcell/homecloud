@@ -7,27 +7,13 @@ commonAnnotations:
   reloader.stakater.com/auto: "true"
 
 helmCharts:
-  - name: cloudflared
-    repo: https://community-charts.github.io/helm-charts
-    version: 2.2.18
+  - name: app-template
+    repo: oci://ghcr.io/nulcell/charts
+    version: 0.3.4
     releaseName: cloudflared
     namespace: cloudflared
     valuesFile: values.yaml
     includeCRDs: false
-  - name: cloudflared-dns-registration
-    releaseName: cloudflared-dns-registration
-    namespace: cloudflared
-    valuesFile: values.yaml
 
 resources:
   - namespace.yaml
-  - cloudflared-external-secrets.yaml
-
-## Initial manual setup
-# 1. Login
-#    `cloudflared tunnel login`
-# 2. Create the tunnel and get the credentials:
-#    `cloudflared tunnel create homecloud-k8s`
-# 3. Store the cert.pem and credentials.json in your secret store (e.g. 1Password) with the following keys:
-#    - cloudflared-secrets/cert-pem from `base64 -b 0 -i ~/.cloudflared/*.json`
-#    - cloudflared-secrets/credentials-json from `base64 -b 0 -i ~/.cloudflared/cert.pem`
