@@ -1,0 +1,21 @@
+# The barman-cloud plugin's own metrics; cnpg_collector_*backup* only covers in-tree backups.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cnpg-backups
+spec:
+  groups:
+    - name: cnpg-backups
+      rules:
+        - alert: CNPGBackupStale
+          expr: time() - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp > 26 * 3600
+          for: 15m
+          labels: {severity: warning}
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }}: no successful backup in 26h"
+        - alert: CNPGBackupFailed
+          expr: barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp > barman_cloud_cloudnative_pg_io_last_available_backup_timestamp
+          for: 5m
+          labels: {severity: warning}
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }}: the last backup failed"
