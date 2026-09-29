@@ -71,7 +71,7 @@ description = "Upgrade Kubernetes to $KUBERNETES_VERSION (shows the plan first)"
 run = "scripts/cluster.sh upgrade-k8s"
 
 [tasks.preflight]
-description = "Check nodes, Longhorn replicas and backup freshness (read-only)"
+description = "Check nodes are Ready and attached Longhorn volumes have 2 healthy replicas (read-only)"
 run = "scripts/cluster.sh preflight"
 
 [tasks.restore]

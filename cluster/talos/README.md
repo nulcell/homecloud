@@ -103,7 +103,7 @@ talosctl dashboard
 # Upgrades: bump SCHEMATIC_ID / TALOS_VERSION / KUBERNETES_VERSION (and the kubectl pin) in .mise.toml first.
 # Nodes are discovered from the cluster: workers first, then control planes, one at a time.
 # Each node: preflight, drain, upgrade, wait Ready, wait for Longhorn to be healthy again.
-mise run preflight                # read-only: nodes Ready, 2 healthy replicas per volume, fresh backups
+mise run preflight                # read-only: nodes Ready, attached volumes have 2 healthy replicas; logs each check
 mise run talos:upgrade [node]     # node name or IP limits it to one node
 mise run talos:upgrade-k8s        # prints the plan, asks to confirm
 

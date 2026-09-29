@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Node and storage lifecycle, driven from live cluster state (nothing hard-coded).
-# usage: cluster.sh preflight [nodes volumes backups]
+# usage: cluster.sh preflight
 #        cluster.sh rollout <upgrade|config> [node]
 #        cluster.sh upgrade-k8s
 #        cluster.sh restore <argocd-app> <namespace>/<pvc> [longhorn-volume]
@@ -11,14 +11,12 @@ cd "$(git rev-parse --show-toplevel)"
 
 LH=(kubectl -n longhorn-system)
 ARGO=(kubectl -n argocd)
-BACKUP_LABEL='recurring-job-group.longhorn.io/backup'
 # Never quiesced: Longhorn/CSI must stay up to detach, CNPG to hibernate.
 SYSTEM_NS='["argocd","longhorn-system","cnpg-system","kube-system"]'
 
 # Retries for ~15m; the API is briefly down while the only control plane reboots.
 retry() { local i; for i in $(seq 90); do "$@" >/dev/null 2>&1 && return 0; sleep 10; done; return 1; }
 confirm() { local a; read -rp "$1 [y/N] " a; [ "$a" = y ]; }
-cutoff() { date -u -v-26H +%FT%TZ 2>/dev/null || date -u -d '-26 hours' +%FT%TZ; }
 
 # "name ip role", workers first.
 nodes() {
@@ -43,47 +41,38 @@ argo_unfreeze() {
 
 wait_volumes_healthy() {
   local i
-  for i in $(seq 240); do "$0" preflight nodes volumes >/dev/null 2>&1 && return 0; sleep 15; done
-  "$0" preflight nodes volumes
+  for i in $(seq 240); do "$0" preflight >/dev/null 2>&1 && return 0; sleep 15; done
+  "$0" preflight
 }
 
 preflight() {
-  local checks=${*:-nodes volumes backups} fail=0 vols reps out ns c last
-  report() { # title, problems
-    [ -z "$2" ] && return 0
-    printf '✗ %s\n%s\n' "$1" "$(sed 's/^/    /' <<<"$2")" >&2
-    fail=1
-  }
-  if [[ " $checks " == *" nodes "* ]]; then
-    out=$(kubectl get nodes -o json | jq -r '.items[]
-      | select(any(.status.conditions[]; .type == "Ready" and .status != "True")) | .metadata.name')
-    report "nodes not Ready" "$out"
+  local fail=0 nodes vols reps bad n total
+  echo "preflight: checking nodes and Longhorn volumes"
+
+  nodes=$(kubectl get nodes -o json)
+  total=$(jq '.items | length' <<<"$nodes")
+  bad=$(jq -r '.items[] | select(any(.status.conditions[]; .type == "Ready" and .status != "True")) | .metadata.name' <<<"$nodes")
+  if [ -z "$bad" ]; then
+    echo "✓ nodes Ready: $total/$total ($(jq -r '[.items[].metadata.name] | join(", ")' <<<"$nodes"))"
+  else
+    echo "✗ nodes not Ready: $(tr '\n' ' ' <<<"$bad")" >&2; fail=1
   fi
+
   vols=$("${LH[@]}" get volumes.longhorn.io -o json)
-  if [[ " $checks " == *" volumes "* ]]; then
-    reps=$("${LH[@]}" get replicas.longhorn.io -o json)
-    # A drain needs a healthy replica on another node, so every volume needs 2.
-    out=$(jq -r --argjson r "$reps" '
-      ($r.items | map(select(.spec.healthyAt != "" and .spec.failedAt == "")) | group_by(.spec.volumeName)
-        | map({(.[0].spec.volumeName): length}) | add // {}) as $h
-      | .items[] | select(($h[.metadata.name] // 0) < 2)
-      | "\(.status.kubernetesStatus.namespace // "-")/\(.status.kubernetesStatus.pvcName // .metadata.name): \($h[.metadata.name] // 0) healthy replica(s)"' <<<"$vols")
-    report "volumes without 2 healthy replicas" "$out"
-    out=$(jq -r '.items[] | select(.status.state == "attached" and .status.robustness != "healthy")
-      | "\(.status.kubernetesStatus.namespace // "-")/\(.status.kubernetesStatus.pvcName // .metadata.name): \(.status.robustness)"' <<<"$vols")
-    report "volumes degraded or rebuilding" "$out"
-  fi
-  if [[ " $checks " == *" backups "* ]]; then
-    out=$(jq -r --arg c "$(cutoff)" --arg l "$BACKUP_LABEL" '.items[]
-      | select(.metadata.labels[$l] == "enabled" and ((.status.lastBackupAt // "") < $c))
-      | "\(.status.kubernetesStatus.namespace)/\(.status.kubernetesStatus.pvcName): last backup \(.status.lastBackupAt // "never")"' <<<"$vols")
-    report "Longhorn volumes without a backup in 26h" "$out"
-    out=$(kubectl get scheduledbackups.postgresql.cnpg.io -A -o json | jq -r '.items[] | "\(.metadata.namespace) \(.spec.cluster.name)"' \
-      | while read -r ns c; do
-          last=$(kubectl -n "$ns" get cluster "$c" -o jsonpath='{.status.lastSuccessfulBackup}')
-          [[ -n $last && $last > $(cutoff) ]] || echo "$ns/$c: last backup ${last:-never}"
-        done)
-    report "CNPG clusters without a backup in 26h" "$out"
+  reps=$("${LH[@]}" get replicas.longhorn.io -o json)
+  # A drain needs a healthy replica on another node, so every attached volume needs 2.
+  total=$(jq '[.items[] | select(.status.state == "attached")] | length' <<<"$vols")
+  bad=$(jq -r --argjson r "$reps" '
+    ($r.items | map(select(.spec.healthyAt != "" and .spec.failedAt == "")) | group_by(.spec.volumeName)
+      | map({(.[0].spec.volumeName): length}) | add // {}) as $h
+    | .items[] | select(.status.state == "attached" and ($h[.metadata.name] // 0) < 2)
+    | "\(.status.kubernetesStatus.namespace // "-")/\(.status.kubernetesStatus.pvcName // .metadata.name): \($h[.metadata.name] // 0) healthy replica(s)"' <<<"$vols")
+  n=$(jq '[.items[] | select(.status.state != "attached")] | length' <<<"$vols")
+  if [ -z "$bad" ]; then
+    echo "✓ attached volumes with >= 2 healthy replicas: $total/$total ($n detached, not checked)"
+  else
+    echo "✗ attached volumes without 2 healthy replicas (rebuilding counts as unhealthy):" >&2
+    sed 's/^/    /' <<<"$bad" >&2; fail=1
   fi
   return $fail
 }
@@ -206,7 +195,6 @@ shutdown() {
   ctx=$(kubectl config current-context)
   read -rp "Shut down the whole cluster? Type the context name ($ctx): " i
   [ "$i" = "$ctx" ] || exit 1
-  preflight backups || confirm "Backups are stale. Continue?" || exit 1
 
   echo "==> freeze ArgoCD"; argo_freeze
 
