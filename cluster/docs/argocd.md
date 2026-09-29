@@ -108,7 +108,7 @@ external-dns watches `gateway-httproute` + `ingress` sources and syncs every HTT
 - **Add an app**: drop `gitops/apps/<name>/kustomization.yaml` (+ resources), commit, push. AppSet picks it up.
 - **Remove an app**: delete the directory. `prune: true` + the resources finalizer clean up the cluster.
 - **Park something without deleting it**: move it under `gitops/experimental/` - no ApplicationSet reads that tree.
-- **Pause reconcile while debugging**: set `selfHeal: false` on the Application. For a full cluster freeze (e.g. a physical move), see [`gitops/root/safe-scaledown.md`](../../gitops/root/safe-scaledown.md).
+- **Pause every app while debugging**: give the `default` AppProject an always-on deny sync window, which blocks automated sync and self-heal but keeps status updating: `kubectl -n argocd patch appproject default --type merge -p '{"spec":{"syncWindows":[{"kind":"deny","schedule":"* * * * *","duration":"24h","applications":["*"],"namespaces":["*"],"clusters":["*"]}]}}'`; remove it with `-p '{"spec":{"syncWindows":null}}'`. One app: set `selfHeal: false` on it. Full shutdown: [`gitops/root/safe-scaledown.md`](../../gitops/root/safe-scaledown.md).
 - **Stuck Terminating**: `kubectl patch <kind> <name> -p '{"metadata":{"finalizers":[]}}' --type=merge`.
 
 ## References

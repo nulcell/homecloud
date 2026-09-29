@@ -4,12 +4,7 @@ Bucket `nulcell-homecloud-backup` (`eu-central-1`), prefixes `longhorn/` and `cn
 
 ## Volumes (Longhorn)
 
-Opt-in per PVC. `RecurringJob` `backup-daily` (03:00, keeps 7) backs up volumes in the `backup` group. Two ways in:
-
-- **New PVCs: `storageClass: longhorn-backup`.** The class carries the group, so it works with any chart that accepts a storage class and needs no labels. `storageClassName` is immutable, so this cannot be applied to an existing PVC. Bulk media stays on `longhorn`.
-- **Existing PVCs: label them** (below), through `persistence.<name>.labels` in app-template >= 0.3.3, a kustomize patch for other charts, or `kubectl label`. Labels join a PVC to the group whatever its class.
-
-Labels:
+Opt-in per PVC (they cost money). `RecurringJob` `backup-daily` (03:00, keeps 7) backs up PVCs in the `backup` group. A PVC joins with these labels, set through `persistence.<name>.labels` (app-template >= 0.3.3), `cluster.inheritedMetadata` (CNPG) or a kustomize patch (other charts):
 
 ```
 recurring-job.longhorn.io/source: enabled
@@ -34,10 +29,10 @@ kubectl -n longhorn-system get volumes.longhorn.io -o custom-columns=VOL:.status
 ### Restore a PVC
 
 ```bash
-mise run restore <argocd-app> <namespace>/<pvc>   # e.g. app-mealie mealie/mealie-data
+mise run restore <namespace>/<pvc>   # e.g. mealie/mealie-data
 ```
 
-It restores from the newest backup of that PVC's volume: pauses the app (applicationset controller off, `automated` removed), scales the workload down, deletes the PVC, creates a Longhorn volume `fromBackup` plus a PV bound to the PVC name, then resumes so ArgoCD recreates the PVC onto the restored data. The old volume is deleted (`reclaimPolicy: Delete`); backups stay in S3.
+ArgoCD is not paused. The script creates a Longhorn volume `fromBackup` (newest backup of that PVC's volume) and a PV pre-bound to the PVC's name, waits for the restore to finish, then deletes the PVC and the pods that mount it. Their replacements stay `Pending` until ArgoCD recreates the PVC from git; Kubernetes binds it to the pre-bound PV instead of provisioning an empty volume. The old volume is deleted (`reclaimPolicy: Delete`); backups stay in S3.
 
 Not for Postgres PVCs (below). Nondestructive drill first: restore into a scratch PVC from the Longhorn UI and diff it.
 

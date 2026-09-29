@@ -74,19 +74,16 @@ description = "Upgrade Kubernetes to $KUBERNETES_VERSION (add --dry-run to previ
 run = 'talosctl upgrade-k8s -n "$CONTROLPLANE_IP" --to "$KUBERNETES_VERSION"'
 
 [tasks.restore]
-description = "Restore a PVC from its newest Longhorn backup"
-usage = '''
-arg "<app>" help="ArgoCD Application"
-arg "<pvc>" help="namespace/pvc"
-'''
-run = 'scripts/cluster.sh restore "$usage_app" "$usage_pvc"'
+description = "Replace a PVC with its newest Longhorn backup"
+usage = 'arg "<pvc>" help="namespace/pvc"'
+run = 'scripts/cluster.sh restore "$usage_pvc"'
 
 [tasks."cluster:shutdown"]
-description = "Quiesce workloads, detach volumes, power off all nodes"
+description = "Hibernate databases, detach all volumes, power off the nodes"
 run = "scripts/cluster.sh shutdown"
 
 [tasks."cluster:start"]
-description = "After powering nodes on: un-hibernate and unfreeze ArgoCD"
+description = "After powering nodes on: uncordon and un-hibernate"
 run = "scripts/cluster.sh start"
 
 [tasks."argo:sync"]
