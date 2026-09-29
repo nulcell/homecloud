@@ -1,27 +1,158 @@
-replicaCount: 1
+defaults:
+  # Routes without their own parentRefs use the LAN/Tailscale-only external gateway.
+  route:
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: external
+        namespace: gateway
+        sectionName: https
+  externalSecret:
+    store: {kind: ClusterSecretStore, name: onepassword}
 
-imagePullSecrets:
-  - name: dockerhub-credentials
+workloads:
+  # Named like the release so the Service stays `actualbudget`, which the API and route address.
+  actualbudget:
+    replicas: 1
+    # The data directory is SQLite files on an RWX volume; never run two pods on it at once.
+    spec:
+      strategy:
+        type: Recreate
+    imagePullSecrets: [dockerhub-credentials]
+    podSecurityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
+    containers:
+      actualbudget:
+        image:
+          repository: actualbudget/actual-server
+          tag: 26.9.0
+        env:
+          ACTUAL_PORT: "5006"
+          ACTUAL_DATA_DIR: /data
+          ACTUAL_SERVER_FILES: /data/server-files
+          ACTUAL_USER_FILES: /data/user-files
+          ACTUAL_UPLOAD_FILE_SYNC_SIZE_LIMIT_MB: "20"
+          ACTUAL_UPLOAD_SYNC_ENCRYPTED_FILE_SYNC_SIZE_LIMIT_MB: "50"
+          ACTUAL_UPLOAD_FILE_SIZE_LIMIT_MB: "20"
+          ACTUAL_LOGIN_METHOD: password
+          ACTUAL_ALLOWED_LOGIN_METHODS: password
+        ports:
+          http: 5006
+        probes:
+          liveness:
+            httpGet: {path: /, port: http}
+          readiness:
+            httpGet: {path: /, port: http}
+        resources:
+          requests: {cpu: 500m, memory: 1Gi}
+          limits: {memory: 2Gi}
+    services:
+      actualbudget:
+        ports:
+          http: 5006
+    networkPolicy:
+      ingress:
+        - gateway
+        - {workload: http-api, port: http}
+        - {namespace: n8n, port: http}
+      # Bank sync and update checks reach the internet.
+      egress:
+        - world
+
+  # REST wrapper for n8n and scripts. /data is a re-downloadable budget cache, so an emptyDir.
+  http-api:
+    name: actual-http-api # keep the old object name; workflows may address the Service
+    replicas: 1
+    imagePullSecrets: [dockerhub-credentials]
+    podSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+    containers:
+      http-api:
+        image:
+          repository: jhonderson/actual-http-api
+          tag: 26.9.0
+        env:
+          ACTUAL_SERVER_URL: http://actualbudget:5006/
+          # Anything but "production" makes the image try to load a .env file.
+          NODE_ENV: production
+          # Swagger UI defaults to localhost:443; point it at the route.
+          SWAGGER_HOST: budget-api.nulcell.com
+          API_KEY:
+            valueFrom:
+              secretKeyRef: {name: "{{ .Release.Name }}-http-api", key: api-key}
+          ACTUAL_SERVER_PASSWORD:
+            valueFrom:
+              secretKeyRef: {name: "{{ .Release.Name }}-http-api", key: actual-server-password}
+        ports:
+          http: 5007
+        probes:
+          readiness:
+            tcpSocket: {port: http}
+        # Node writes to /tmp, so no read-only root filesystem.
+        securityContext:
+          readOnlyRootFilesystem: false
+        resources:
+          requests: {cpu: 100m, memory: 256Mi}
+          limits: {memory: 512Mi}
+    services:
+      http-api:
+        name: actual-http-api
+        ports:
+          http: 5007
+    networkPolicy:
+      ingress:
+        - gateway
+        - {namespace: n8n, port: http}
+      egress:
+        - {workload: actualbudget, port: http}
 
 persistence:
-  enabled: true
-  storageClass: longhorn
-  accessModes:
-    - ReadWriteMany
-  size: 10Gi
+  data:
+    size: 10Gi
+    storageClass: longhorn
+    accessMode: ReadWriteMany
+    labels:
+      recurring-job.longhorn.io/source: enabled
+      recurring-job-group.longhorn.io/backup: enabled
+    advancedMounts:
+      actualbudget:
+        actualbudget: [{path: /data}]
+  tmp:
+    type: emptyDir
+    advancedMounts:
+      actualbudget:
+        actualbudget: [{path: /tmp}]
+  api-data:
+    type: emptyDir
+    advancedMounts:
+      http-api:
+        http-api: [{path: /data}]
 
-ingress:
-  enabled: false
+routes:
+  actual-budget:
+    name: actual-budget
+    # cloudflared origin / in-cluster UI: internal gateway only.
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: internal
+        namespace: gateway
+        sectionName: https-internal
+    hostnames: [budget.internal.nulcell.com]
+    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: actualbudget, service: actualbudget, port: http}]}]
+  actual-http-api:
+    name: actual-http-api
+    # LAN/Tailscale only: `external` gateway + plain hostname, deliberately not a cloudflared origin.
+    hostnames: [budget-api.nulcell.com]
+    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: http-api, service: http-api, port: http}]}]
 
-resources:
-  requests:
-    cpu: 500m
-    memory: 1Gi
-  limits:
-    # cpu: 1000m
-    memory: 2Gi
-
-login:
-  method: password
-  allowedLoginMethods:
-    - password
+# Secret `actualbudget-http-api`, from 1Password homecloud-k8s/actual-http-api.
+externalSecrets:
+  http-api:
+    data:
+      api-key: nbod7fc6moceeitnaaiz4sgpky/api-key
+      actual-server-password: nbod7fc6moceeitnaaiz4sgpky/actual-server-password

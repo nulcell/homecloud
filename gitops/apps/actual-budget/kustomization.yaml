@@ -7,30 +7,13 @@ commonAnnotations:
   reloader.stakater.com/auto: "true"
 
 helmCharts:
-  - name: actualbudget
-    repo: https://community-charts.github.io/helm-charts
+  - name: app-template
+    repo: oci://ghcr.io/nulcell/charts
+    version: 0.3.4
     releaseName: actualbudget
-    version: 1.9.4
     namespace: actual-budget
     valuesFile: values.yaml
     includeCRDs: false
 
 resources:
   - namespace.yaml
-  - httproute.yaml
-  - actual-http-api-external-secret.yaml
-  - actual-http-api.yaml
-
-images:
-  - name: jhonderson/actual-http-api
-    newTag: 26.9.0
-
-patches:
-  - target: {kind: PersistentVolumeClaim}
-    patch: |-
-      - op: add
-        path: /metadata/labels/recurring-job.longhorn.io~1source
-        value: enabled
-      - op: add
-        path: /metadata/labels/recurring-job-group.longhorn.io~1backup
-        value: enabled
