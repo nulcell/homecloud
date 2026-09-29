@@ -78,7 +78,7 @@ workloads:
     pdb: {enabled: true, maxUnavailable: 1}
     initContainers:
       npm-install: &npm-install
-        image: {repository: docker.io/library/node, tag: 20-alpine}
+        image: {repository: docker.io/library/node, tag: 24-alpine}
         command: [/bin/sh, -c]
         # Community nodes to install; emptyDirs start empty, so this runs on every pod start.
         args: ['npm install --loglevel info --no-save --ignore-scripts $COMMUNITY_PACKAGES --prefix /nodesdata/nodes']
@@ -277,7 +277,7 @@ datastores:
   redis:
     engine: redis
     type: standalone
-    image: {repository: docker.io/library/redis, tag: 7-alpine}
+    image: {repository: docker.io/library/redis, tag: 8-alpine}
     args: [redis-server, --save, "60 1", --loglevel, warning]
     storage: {size: 1Gi, storageClass: longhorn}
     resources:
