@@ -36,7 +36,7 @@ Not for Postgres PVCs (below).
 
 #### Restore drill (throwaway app, nothing real is touched)
 
-`gitops/experimental/apps/restore-test/` is a 1Gi PVC plus a pod that writes `original` to `/data/marker`. The `apps` ApplicationSet deploys it as `app-restore-test` with your normal sync policy, so the drill exercises the real delete-and-recreate path. It lives in `experimental/` (not synced). To run the drill, `git mv gitops/experimental/restore-test gitops/apps/restore-test` and push; move it back afterwards.
+`gitops/experimental/apps/restore-test/` is a 1Gi PVC plus a pod that writes `original` to `/data/marker`. The `apps` ApplicationSet deploys it as `app-restore-test` with your normal sync policy, so the drill exercises the real delete-and-recreate path. It lives in `experimental/` (not synced) until you move it.
 
 1. `git mv gitops/experimental/apps/restore-test gitops/apps/restore-test` and push. Once `app-restore-test` is Healthy, `kubectl -n restore-test exec deploy/writer -- cat /data/marker` prints `original`.
 2. Back it up: Longhorn UI > Volume `restore-test/data` > Create Backup, and wait for it to complete (or wait for 03:00). `kubectl -n longhorn-system get backupvolumes` then lists the volume.
