@@ -1,6 +1,6 @@
 # Security Stack
 
-Wave 10. One Application today: `sec-falco`, generated from [`falco/`](falco/).
+Wave 10. Two Applications: `sec-falco` (runtime detection, from [`falco/`](falco/)) and `sec-trivy` (posture scanning, from [`trivy/`](trivy/)).
 
 ## Falco
 
@@ -35,6 +35,15 @@ Talos writes the kube-apiserver audit log to `/var/log/audit/kube/kube-apiserver
 
 Both Falco and falcosidekick are scraped via ServiceMonitors in [`monitoring.yaml`](falco/monitoring.yaml).
 
+## Trivy Operator
+
+[`trivy/`](trivy/) scans what is running and records the results as CRDs in each workload's namespace: vulnerability, config-audit, exposed-secret, RBAC and infra-assessment reports, plus cluster compliance reports (CIS, NSA, Pod Security baseline/restricted). It detects nothing at runtime and blocks nothing; Falco does the former, Kyverno will do the latter.
+
+- **Server**: one built-in Trivy server (`trivy-server`, 5Gi Longhorn volume, not backed up) keeps the vulnerability DB; scan jobs are its clients, so they never race to initialise a local DB.
+- **Scope**: every namespace except `kube-system`, `kube-public`, `kube-node-lease` and `trivy` itself.
+- **Viewing**: the Trivy plugin in Headlamp, and Prometheus metrics through a ServiceMonitor (per-CVE metrics are off to keep cardinality down).
+- **Falco noise**: scan jobs pull images and the node collector mounts host paths, which trips Falco rules. Expect alerts at first; suppress the known-good ones in [`falco/custom-rules.yaml`](falco/custom-rules.yaml).
+
 ## Planned: Kyverno
 
 Not deployed. Kyverno is the intended policy engine over OPA Gatekeeper - policies are Kubernetes YAML rather than Rego, it emits `PolicyReport` CRDs natively for a future Policy Reporter, and its mutate/generate rules can inject repo-wide defaults (imagePullSecrets, baseline network policies) instead of every chart repeating them.
@@ -43,4 +52,4 @@ When it lands it becomes a second directory here, `gitops/security/kyverno/`, pi
 
 ## Parked
 
-[`gitops/experimental/security/`](../experimental/security/) holds Kubescape and Trivy Operator manifests. No ApplicationSet reads that tree, so none of it runs.
+[`gitops/experimental/security/`](../experimental/security/) holds Kubescape. No ApplicationSet reads that tree, so it does not run.

@@ -111,7 +111,7 @@ mise run talos:upgrade-k8s        # add --dry-run to preview
 # Config changes (patches below): apply the role's patch; add --mode staged if it needs a reboot,
 # then run talos:upgrade to apply it.
 
-# Graceful full shutdown / start (physical move): see gitops/root/safe-scaledown.md
+# Graceful full shutdown / start (physical move): see cluster/docs/shutdown.md
 mise run cluster:shutdown
 mise run cluster:start            # after powering the nodes on
 

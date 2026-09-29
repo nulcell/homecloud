@@ -4,7 +4,7 @@ Bucket `nulcell-homecloud-backup` (`eu-central-1`), prefixes `longhorn/` and `cn
 
 ## Volumes (Longhorn)
 
-Opt-in per PVC (they cost money). `RecurringJob` `backup-daily` (03:00, keeps 7) backs up PVCs in the `backup` group. A PVC joins with these labels, set through `persistence.<name>.labels` (app-template >= 0.3.3), `cluster.inheritedMetadata` (CNPG) or a kustomize patch (other charts):
+Opt-in per PVC (they cost money). `RecurringJob` `backup-daily` (03:00, keeps 7) backs up PVCs in the `backup` group. A PVC joins with these labels, set through `persistence.<name>.labels` (app-template >= 0.3.3), or `cluster.inheritedMetadata` (CNPG):
 
 ```
 recurring-job.longhorn.io/source: enabled
@@ -13,11 +13,7 @@ recurring-job-group.longhorn.io/backup: enabled
 
 Never labeled: `media-stack-data` (restore it with `manifests/loader-ssh.yaml`) and Prometheus.
 
-Labels are in git for `media-stack-config`, `actualbudget-data`, `mealie-data` and the four Postgres PVCs. Others (StatefulSet claim templates are immutable) are labeled by hand, and lost if the PVC is recreated:
-
-```bash
-kubectl -n <ns> label pvc <pvc> recurring-job.longhorn.io/source=enabled recurring-job-group.longhorn.io/backup=enabled
-```
+Labeled in git: `media-stack-config`, `actualbudget-data`, `mealie-data` and the four Postgres PVCs. Everything else (Grafana, Alertmanager, Loki, Redis, VM disks) is deliberately not backed up. To back up another PVC whose chart cannot set labels, add a kustomize `patches` entry that adds them.
 
 A new volume gets 2 replicas. Existing volumes are raised once:
 

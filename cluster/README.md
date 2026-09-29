@@ -4,14 +4,7 @@ Bring-up artifacts for the Talos Kubernetes cluster: machine configs and the imp
 
 ## Stack
 
-- **OS**: [Talos Linux](https://www.talos.dev/) v1.13.2, Kubernetes v1.36.1
-- **CNI / LB / Gateway**: [Cilium](https://cilium.io/) 1.20.0 - kube-proxy replacement, Gateway API v1.6.1, L2 announcements
-- **Storage**: [Longhorn](https://longhorn.io/)
-- **Virtualization**: [KubeVirt](https://kubevirt.io/) + CDI
-- **GitOps**: [Argo CD](https://argo-cd.readthedocs.io/) 10.3.0
-- **Certificates**: [cert-manager](https://cert-manager.io/) + Cloudflare DNS-01
-- **Metrics / logs**: metrics-server, kube-prometheus-stack, Loki + Alloy
-- **Secrets**: [External Secrets](https://external-secrets.io/) against 1Password
+[Talos Linux](https://www.talos.dev/) and Kubernetes (versions in [`/.mise.toml`](../.mise.toml)), [Cilium](https://cilium.io/) (kube-proxy replacement, Gateway API, L2 announcements) and [Argo CD](https://argo-cd.readthedocs.io/) (versions in [`bootstrap/helmfile.yaml`](bootstrap/helmfile.yaml)). Everything else - storage, virtualization, certificates, secrets, observability, security - is GitOps; the component list is in the [root README](../README.md#whats-running).
 
 ## Topology phases
 
@@ -45,6 +38,8 @@ cluster/
 ├── docs/
 │   ├── bootstrap.md
 │   ├── argocd.md
+│   ├── backup-restore.md
+│   ├── shutdown.md
 │   └── terraform.md
 ├── talos/
 │   ├── patches/        # controlplane.yaml, worker.yaml
@@ -63,8 +58,10 @@ cluster/
 
 - [bootstrap.md](docs/bootstrap.md) - step-by-step from a blank node to a working cluster.
 - [argocd.md](docs/argocd.md) - app-of-apps layout, secret wiring, operating notes.
+- [backup-restore.md](docs/backup-restore.md) - Longhorn and Postgres backups to S3, restore drills.
+- [shutdown.md](docs/shutdown.md) - graceful full shutdown and start.
 - [terraform.md](docs/terraform.md) - planned Terraform + Terragrunt replacement for Talos config and bootstrap.
-- [talos/README.md](talos/README.md) - common `talosctl` commands.
+- [talos/README.md](talos/README.md) - `talosctl` commands, upgrades.
 
 ## Not here yet
 

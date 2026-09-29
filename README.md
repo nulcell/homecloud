@@ -11,7 +11,7 @@ Two nodes today (1 control plane with scheduling on, 1 worker), designed to scal
 | [`cluster/`](cluster/)                 | Talos machine configs + imperative bootstrap (Cilium, ArgoCD). Start at [`cluster/README.md`](cluster/README.md). |
 | [`gitops/`](gitops/)                   | ArgoCD's source of truth - root, infrastructure, operators, security, services, apps.                             |
 | [`manifests/`](manifests/)             | Ad-hoc / one-shot manifests, applied manually. Not reconciled by ArgoCD.                                          |
-| [`scripts/`](scripts/)                 | Standalone operator utilities.                                                                                    |
+| [`scripts/`](scripts/)                 | `validate.sh` and `cluster.sh` (restore, shutdown, start), behind the mise tasks.                                 |
 | [`network/netboot/`](network/netboot/) | netboot.xyz + ProxyDHCP install notes for the planned provisioning host. Not deployed.                            |
 | [`renovate.json5`](renovate.json5)     | Renovate config; runs every 4h via [`.github/workflows/renovate.yml`](.github/workflows/renovate.yml).            |
 
@@ -26,7 +26,7 @@ mise install   # everything pinned in .mise.toml
 
 `op` (1Password CLI) is the only required tool not managed by mise. It backs the `op://homecloud/...` URIs used in `.env` generation and in re-encrypting the bootstrap credential.
 
-Common tasks live in `.mise.toml` - `mise tasks` lists them (`render`, `validate`, `bootstrap`, `talos:upgrade`, `talos:upgrade-k8s`, `argo:sync`). PRs touching `gitops/` run `mise run validate` in [`.github/workflows/validate.yml`](.github/workflows/validate.yml).
+Common tasks live in `.mise.toml` - `mise tasks` lists them (`render`, `validate`, `bootstrap`, `talos:upgrade`, `talos:upgrade-k8s`, `restore`, `cluster:shutdown`, `cluster:start`, `argo:sync`). PRs touching `gitops/` run `mise run validate` in [`.github/workflows/validate.yml`](.github/workflows/validate.yml).
 
 ## What's running
 
@@ -36,11 +36,11 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [`infrastructure/`](gitops/infrastructure/) wave 0 | cert-manager, external-dns, external-secrets, gateway, headlamp, infra-app-httproutes, keda, kube-prometheus-stack, loki, longhorn, metrics-server, reloader, secrets |
 | [`operators/`](gitops/operators/) wave 5           | cnpg, falco, kubevirt, mariadb, tailscale                                                                                                                          |
-| [`security/`](gitops/security/) wave 10            | falco                                                                                                                                                              |
+| [`security/`](gitops/security/) wave 10            | falco, trivy                                                                                                                                                       |
 | [`services/`](gitops/services/) wave 15            | kubevirt (KubeVirt + CDI CRs)                                                                                                                                      |
 | [`apps/`](gitops/apps/) wave 100                   | actual-budget, authentik, cloudflared, gatus, mealie, media-stack, n8n, portfolio                                                                                  |
 
-[`gitops/experimental/`](gitops/experimental/) is a staging area - no ApplicationSet reads it, so nothing in it runs. It currently holds homarr, outline, speedtest-tracker, uptime-kuma, rancher, seaweedfs, kubescape and trivy.
+[`gitops/experimental/`](gitops/experimental/) is a staging area - no ApplicationSet reads it, so nothing in it runs. It currently holds homarr, outline, speedtest-tracker, uptime-kuma, rancher, seaweedfs, kubescape and the `restore-test` drill app.
 
 ## Roadmap
 
@@ -76,6 +76,7 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
     - [ ] [RabbitMQ plugin](https://knative.dev/docs/install/eventing/rabbitmq-install/) for messaging events.
 - [ ] Security tooling:
   - [x] [Falco](https://falco.org/) (modern eBPF) + [Falcosidekick](https://github.com/falcosecurity/falcosidekick) + [Falco Talon](https://docs.falco-talon.org/) for runtime detection and automated response.
+  - [x] [Trivy Operator](https://aquasecurity.github.io/trivy-operator/) for continuous vulnerability and config scanning, with the Headlamp plugin.
   - [ ] [Kyverno](https://kyverno.io/) for policy enforcement and configuration validation. See [gitops/security/README.md](gitops/security/README.md).
   - [ ] [Policy Reporter](https://kyverno.github.io/policy-reporter/) for aggregating `PolicyReport` CRDs.
 - [ ] Provisioning:
@@ -112,6 +113,7 @@ flowchart TD
         CF[Cloudflare DNS + Tunnel]:::external
         OP[1Password vault]:::external
         TS[Tailscale]:::external
+        S3[AWS S3 - backups]:::external
     end
 
     subgraph GitOps ["GitOps"]
@@ -145,11 +147,13 @@ flowchart TD
     subgraph DataStore ["Storage & Databases"]
         LH[Longhorn block storage]:::storage
         CNPG[CNPG operator]:::storage
-        PGDB[Postgres - authentik, mealie, n8n]:::storage
+        PGDB[Postgres - authentik, gatus, mealie, n8n]:::storage
         MDB[mariadb-operator]:::storage
 
         CNPG -->|Manages| PGDB
         PGDB -->|Claims PVs| LH
+        LH -->|Volume backups| S3
+        PGDB -->|Base backups + WAL| S3
     end
 
     subgraph Compute ["Compute & Workloads"]
@@ -174,6 +178,7 @@ flowchart TD
         FB[Fluent Bit - kube-apiserver audit logs]:::security
         FSide[Falcosidekick + UI]:::security
         Talon[Falco Talon - response actions]:::security
+        Trivy[Trivy Operator - vulnerability and config scans]:::security
 
         FB -->|Audit webhook| Falco
         Falco -->|Alerts| FSide
@@ -194,6 +199,8 @@ flowchart TD
         FSide -->|Alerts >= error| KPM
     end
 
+    Trivy -->|ServiceMonitor| KPM
+
     Argo -.->|Deploys & manages| Networking
     Argo -.->|Deploys & manages| DataStore
     Argo -.->|Deploys & manages| Compute
@@ -201,7 +208,9 @@ flowchart TD
     Argo -.->|Deploys & manages| Observability
 ```
 
-### Runtime security
+### Security (work in progress)
+
+Detection and response run today; posture scanning is new and Falco will be tuned for its noise. Kyverno (policy) is planned.
 
 ```mermaid
 flowchart LR
@@ -224,6 +233,22 @@ flowchart LR
     Sidekick -->|priority >= error| Talon[Falco Talon]
     Sidekick -->|priority >= error| AM[Alertmanager - kube-prometheus-stack]
     Talon -->|k8sevents notifier| Events[Kubernetes Events]
+
+    subgraph Posture ["Posture scanning"]
+        Trivy[Trivy Operator]
+        TServer[Trivy server - vulnerability DB]
+        Reports[(Report CRDs - vulnerabilities, config audit, secrets, RBAC, compliance)]
+
+        Trivy -->|scan jobs| TServer
+        Trivy --> Reports
+    end
+
+    Reports --> HL[Headlamp Trivy plugin]
+    Trivy -->|ServiceMonitor| Prom[Prometheus]
+
+    Kyverno[Kyverno - planned]:::planned
+    Kyverno -.->|PolicyReports| PR[Policy Reporter - planned]:::planned
+    classDef planned stroke-dasharray: 5 5;
 ```
 
 ### Hardware layout

@@ -18,7 +18,7 @@ ArgoCD ──watches──► gitops/root/   (root Application, directory.recurs
                                 • gitops/apps/*            → app-*        (wave 100)
 ```
 
-Source of truth = this repo. Cluster state ArgoCD does *not* own: the `onepassword-credentials` Secret applied by the bootstrap helmfile, and the rotated admin password.
+What each layer holds is listed in the [README](../../README.md#whats-running). Source of truth = this repo. Cluster state ArgoCD does *not* own: the `onepassword-credentials` Secret applied by the bootstrap helmfile, and the rotated admin password.
 
 ## Layout
 
@@ -31,15 +31,12 @@ gitops/
 │   ├── security-appset.yaml
 │   ├── services-appset.yaml
 │   └── apps-appset.yaml
-├── infrastructure/   # cert-manager, external-dns, external-secrets, gateway, headlamp,
-│                     # infra-app-httproutes, kube-prometheus-stack, loki, longhorn,
-│                     # metrics-server, secrets
-├── operators/        # cnpg, falco, kubevirt, mariadb, tailscale
-├── security/         # falco
-├── services/         # kubevirt (KubeVirt + CDI CRs)
-├── apps/             # actual-budget, authentik, cloudflared, gatus, mealie,
-│                     # media-stack, n8n, portfolio
-└── experimental/      # staging area — no ApplicationSet reads this, nothing here runs
+├── infrastructure/   # base platform
+├── operators/        # operators and their CRDs
+├── security/         # runtime detection and posture scanning
+├── services/         # platform services on the operators (KubeVirt + CDI CRs)
+├── apps/             # workloads
+└── experimental/     # staging area — no ApplicationSet reads this, nothing here runs
 ```
 
 Every directory under the five generated paths must contain a `kustomization.yaml` - the ApplicationSets pick them up automatically. The generated Application's destination namespace is the directory basename.
@@ -62,14 +59,7 @@ Two notable overrides:
 
 ## Rendering
 
-No config management plugin. The repo-server runs stock kustomize with build options set in [`bootstrap/argocd-values.yaml`](../bootstrap/argocd-values.yaml):
-
-```yaml
-kustomize.buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
-```
-
-- `--enable-helm` renders the `helmCharts:` blocks that most directories use to pull upstream charts inline.
-- `--load-restrictor=LoadRestrictionsNone` lets a kustomization read files outside its own directory. Nothing needs it since the local charts moved to [`nulcell/charts`](https://github.com/nulcell/charts).
+No config management plugin. The repo-server runs stock kustomize with `--enable-helm` (set in [`bootstrap/argocd-values.yaml`](../bootstrap/argocd-values.yaml)), which renders the `helmCharts:` blocks every directory uses to pull its chart inline - mostly `app-template` from [`nulcell/charts`](https://github.com/nulcell/charts). There are no local charts in this repo.
 
 ## Secrets
 
@@ -106,9 +96,9 @@ external-dns watches `gateway-httproute` + `ingress` sources and syncs every HTT
 ## Operating
 
 - **Add an app**: drop `gitops/apps/<name>/kustomization.yaml` (+ resources), commit, push. AppSet picks it up.
-- **Remove an app**: delete the directory. `prune: true` + the resources finalizer clean up the cluster.
+- **Remove an app**: delete the directory. The ApplicationSets add no deletion finalizer, so the Application disappears but its resources stay - delete the namespace yourself (`kubectl delete ns <app>`).
 - **Park something without deleting it**: move it under `gitops/experimental/` - no ApplicationSet reads that tree.
-- **Pause every app while debugging**: give the `default` AppProject an always-on deny sync window, which blocks automated sync and self-heal but keeps status updating: `kubectl -n argocd patch appproject default --type merge -p '{"spec":{"syncWindows":[{"kind":"deny","schedule":"* * * * *","duration":"24h","applications":["*"],"namespaces":["*"],"clusters":["*"]}]}}'`; remove it with `-p '{"spec":{"syncWindows":null}}'`. One app: set `selfHeal: false` on it. Full shutdown: [`gitops/root/safe-scaledown.md`](../../gitops/root/safe-scaledown.md).
+- **Pause every app while debugging**: give the `default` AppProject an always-on deny sync window, which blocks automated sync and self-heal but keeps status updating: `kubectl -n argocd patch appproject default --type merge -p '{"spec":{"syncWindows":[{"kind":"deny","schedule":"* * * * *","duration":"24h","applications":["*"],"namespaces":["*"],"clusters":["*"]}]}}'`; remove it with `-p '{"spec":{"syncWindows":null}}'`. One app: set `selfHeal: false` on it. Full shutdown: [`shutdown.md`](shutdown.md).
 - **Stuck Terminating**: `kubectl patch <kind> <name> -p '{"metadata":{"finalizers":[]}}' --type=merge`.
 
 ## References
