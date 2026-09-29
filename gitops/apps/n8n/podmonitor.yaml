@@ -1,0 +1,19 @@
+# Worker pods have no Service, so they are scraped directly (main is scraped through its ServiceMonitor).
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: n8n-worker
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: n8n
+      app.kubernetes.io/instance: n8n
+      app.kubernetes.io/component: worker
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      relabelings:
+        - {action: replace, sourceLabels: [__meta_kubernetes_pod_name], targetLabel: pod_name}
+        - {action: replace, replacement: worker, targetLabel: role}

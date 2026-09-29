@@ -77,7 +77,7 @@ Runtime secrets come from 1Password via [External Secrets](https://external-secr
 
 - [`gitops/infrastructure/external-secrets/cluster-secret-store.yaml`](../../gitops/infrastructure/external-secrets/cluster-secret-store.yaml) defines the `onepassword` `ClusterSecretStore` (provider `onepasswordSDK`, 1-hour refresh, 5m cache).
 - It authenticates with the `onepassword-credentials` Secret in the `external-secrets` namespace, which [`bootstrap/helmfile.yaml`](../bootstrap/helmfile.yaml) decrypts with SOPS and applies before ArgoCD is installed. ESO cannot reconcile without it.
-- Add a secret by writing an `ExternalSecret` next to the workload that consumes it, e.g. [`gitops/apps/n8n/n8n-external-secrets.yaml`](../../gitops/apps/n8n/n8n-external-secrets.yaml).
+- Add a secret by writing an `ExternalSecret` next to the workload that consumes it, e.g. [`gitops/apps/authentik/authentik-external-secret.yaml`](../../gitops/apps/authentik/authentik-external-secret.yaml), or an `externalSecrets:` block in an app-template `values.yaml`.
 
 ### SOPS (bootstrap only)
 

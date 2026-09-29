@@ -2,20 +2,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: n8n
 
-# Migrated from the local chart at charts/n8n/ to the community-charts n8n
-# chart so version bumps flow through Renovate's kustomize manager like the
-# other third-party charts, instead of being hand-maintained. charts/n8n/ has
-# since been deleted - git history holds the previous helmCharts entry
-# (chartHome: ../../../charts, name: n8n) and values.yaml if it's ever needed.
-
 # Roll workloads when their ExternalSecret-backed Secrets change.
 commonAnnotations:
   reloader.stakater.com/auto: "true"
 
 helmCharts:
-  - name: n8n
-    repo: https://community-charts.github.io/helm-charts
-    version: 1.24.42
+  - name: app-template
+    repo: oci://ghcr.io/nulcell/charts
+    version: 0.3.4
     releaseName: n8n
     namespace: n8n
     valuesFile: values.yaml
@@ -23,8 +17,5 @@ helmCharts:
 
 resources:
   - namespace.yaml
-  - postgres-cluster.yaml
   - postgres-backup.yaml
-  - redis.yaml
-  - n8n-external-secrets.yaml
-  - httproute.yaml
+  - podmonitor.yaml

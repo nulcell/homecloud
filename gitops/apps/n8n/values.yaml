@@ -1,164 +1,309 @@
-# Overrides for the community-charts n8n chart.
-# https://github.com/community-charts/helm-charts/tree/main/charts/n8n
-# https://community-charts.github.io/docs/charts/n8n/usage
-# Everything not listed here keeps the chart's default value.
+# n8n in queue mode: `n8n` (UI, API, webhooks) enqueues to Redis, `worker` executes with a task-runner
+# sidecar. All state is in Postgres; every volume here is an emptyDir. Release name `n8n` keeps the old
+# object names (Service n8n, Deployments n8n / n8n-worker, Cluster n8n-postgres, StatefulSet n8n-redis).
+#
+# Image tags: bump `n8nio/n8n` and `n8nio/runners` together (Renovate groups them).
 
-imagePullSecrets:
-  - name: dockerhub-credentials
+defaults:
+  externalSecret:
+    store: {kind: ClusterSecretStore, name: onepassword}
 
-timezone: Europe/Amsterdam
+configMaps:
+  env:
+    data:
+      NODE_ENV: production
+      N8N_PORT: "5678"
+      N8N_DEFAULT_LOCALE: en
+      GENERIC_TIMEZONE: Europe/Amsterdam
+      N8N_HIRING_BANNER_ENABLED: "false"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_GRACEFUL_SHUTDOWN_TIMEOUT: "30"
+      N8N_HOST: workflow.nulcell.com
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://workflow.nulcell.com/
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_METRICS: "true"
+      N8N_WORKFLOW_HISTORY_PRUNE_TIME: "336"
+      # The heap is pinned rather than trusting cgroup auto-sizing, which left the UI process with too
+      # little headroom and crashed it with "JavaScript heap out of memory".
+      NODE_OPTIONS: --max-old-space-size=768
+      # The npm-install init container puts community nodes under /home/node/.n8n; without this,
+      # Code-node require() cannot find them.
+      NODE_PATH: /home/node/.n8n/node_modules
+      N8N_RUNNERS_INSECURE_MODE: "true"
+      # Postgres: the CNPG cluster below; the password comes from its generated secret.
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: "{{ .Release.Name }}-postgres-rw"
+      DB_POSTGRESDB_PORT: "5432"
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: n8n
+      # Queue mode.
+      EXECUTIONS_MODE: queue
+      OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: "true"
+      QUEUE_BULL_REDIS_HOST: "{{ .Release.Name }}-redis"
+      QUEUE_BULL_REDIS_PORT: "6379"
+      # Code nodes run in the worker's task-runner sidecar over localhost.
+      N8N_RUNNERS_MODE: external
+      N8N_NATIVE_PYTHON_RUNNER: "true"
+      N8N_RUNNERS_BROKER_LISTEN_ADDRESS: 127.0.0.1
+      N8N_RUNNERS_BROKER_PORT: "5679"
+      N8N_RUNNERS_EXTERNAL_ALLOW: "*"
+      N8N_RUNNERS_STDLIB_ALLOW: "*"
+      N8N_RUNNERS_TASK_TIMEOUT: "60"
+      N8N_RUNNERS_HEARTBEAT_INTERVAL: "30"
+  runners:
+    data:
+      GENERIC_TIMEZONE: Europe/Amsterdam
+      N8N_RUNNERS_TASK_BROKER_URI: http://127.0.0.1:5679
+      N8N_RUNNERS_LAUNCHER_HEALTH_CHECK_PORT: "5680"
+      N8N_RUNNERS_LAUNCHER_LOG_LEVEL: info
+      N8N_RUNNERS_MAX_CONCURRENCY: "5"
+      N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT: "15"
+      N8N_RUNNERS_EXTERNAL_ALLOW: "*"
+      N8N_RUNNERS_STDLIB_ALLOW: "*"
+      N8N_RUNNERS_TASK_TIMEOUT: "60"
+      NODE_OPTIONS: --max-semi-space-size=16 --max-old-space-size=300
 
-securityContext:
-  readOnlyRootFilesystem: false
+workloads:
+  # Named like the release, so its Service is `n8n`.
+  n8n:
+    imagePullSecrets: &pull [dockerhub-credentials]
+    podSecurityContext: &psc
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+      fsGroupChangePolicy: OnRootMismatch
+    replicas: 1
+    pdb: {enabled: true, maxUnavailable: 1}
+    initContainers:
+      npm-install: &npm-install
+        image: {repository: node, tag: 20-alpine}
+        command: [/bin/sh, -c]
+        # Community nodes to install; emptyDirs start empty, so this runs on every pod start.
+        args: ['npm install --loglevel info --no-save --ignore-scripts $COMMUNITY_PACKAGES --prefix /nodesdata/nodes']
+        env:
+          COMMUNITY_PACKAGES: "@emilfrom/n8n-nodes-actual-budget@2.4.0"
+          NPM_CONFIG_CACHE: /npmdata/.npm-cache
+        securityContext:
+          readOnlyRootFilesystem: false
+    containers:
+      n8n:
+        image: {repository: n8nio/n8n, tag: 2.40.5}
+        envFrom:
+          - configMap: env
+          - secret: encryption-key
+        env:
+          N8N_EDITOR_BASE_URL: https://workflow.nulcell.com/
+          NPM_CONFIG_CACHE: /home/node/.cache/npm
+          DB_POSTGRESDB_PASSWORD:
+            valueFrom:
+              secretKeyRef: {name: "{{ .Release.Name }}-postgres-app", key: password}
+          N8N_RUNNERS_AUTH_TOKEN:
+            valueFrom:
+              secretKeyRef: {name: "{{ .Release.Name }}-runner-auth", key: auth-token}
+        ports:
+          http: 5678
+        probes:
+          liveness:
+            httpGet: {path: /healthz, port: http}
+          readiness:
+            httpGet: {path: /healthz/readiness, port: http}
+        resources:
+          requests: {cpu: 250m, memory: 512Mi}
+          limits: {memory: 1Gi}
+        securityContext:
+          readOnlyRootFilesystem: false
+    services:
+      n8n:
+        ports:
+          http: 5678
+        serviceMonitor:
+          enabled: true
+          endpoints:
+            - port: http
+              path: /metrics
+              interval: 30s
+              scrapeTimeout: 10s
+              relabelings:
+                - {action: replace, sourceLabels: [__meta_kubernetes_pod_name], targetLabel: pod_name}
+                - {action: replace, replacement: main, targetLabel: role}
+    networkPolicy:
+      ingress:
+        - gateway
+        - prometheus
+      egress:
+        - {datastore: postgres}
+        - {datastore: redis}
+        - world
 
-main:
-  count: 1
-  editorBaseUrl: "https://workflow.nulcell.com/"
-  # 256Mi/512Mi (carried over from the old chart's stated defaults) crashed in
-  # practice: "JavaScript heap out of memory" right around ~256MB. Modern
-  # Node auto-sizes its default V8 old-space heap to roughly half the
-  # container's cgroup memory limit when not told otherwise, which left main
-  # (UI + API + DB + webhooks) with far too little headroom. Sized up and
-  # pinned NODE_OPTIONS explicitly below instead of relying on that
-  # auto-detection.
-  resources:
-    requests:
-      cpu: 250m
-      memory: 512Mi
-    limits:
-      memory: 1Gi
-  # N8N_HOST/N8N_PROTOCOL aren't first-class chart values (only editorBaseUrl
-  # and webhook.url are) - set explicitly so generated links match the old
-  # custom chart's behavior instead of falling back to localhost/http.
-  # NODE_OPTIONS caps the V8 heap at 768Mi, leaving ~256Mi of the 1Gi limit
-  # for non-heap/native memory instead of trusting cgroup auto-detection.
-  # NODE_PATH: the npm-install init container installs `nodes.external.packages`
-  # with `--prefix /npmdata`, and that volume mounts at /home/node/.n8n - which
-  # is not on Node's resolution path from the /home/node workdir. Without this,
-  # Code-node `require()` fails with "module not available" even though the
-  # package is present and allowlisted.
-  extraEnvVars:
-    N8N_HOST: workflow.nulcell.com
-    N8N_PROTOCOL: https
-    NODE_OPTIONS: "--max-old-space-size=768"
-    NODE_PATH: /home/node/.n8n/node_modules
-    N8N_RUNNERS_INSECURE_MODE: true
+  worker:
+    imagePullSecrets: *pull
+    podSecurityContext: *psc
+    pdb: {enabled: true, maxUnavailable: 1}
+    autoscaling:
+      enabled: true
+      type: hpa
+      minReplicas: 1
+      maxReplicas: 10
+      metrics:
+        - {type: Resource, resource: {name: memory, target: {type: Utilization, averageUtilization: 80}}}
+        - {type: Resource, resource: {name: cpu, target: {type: Utilization, averageUtilization: 80}}}
+    initContainers:
+      npm-install: *npm-install
+    containers:
+      worker:
+        image: {repository: n8nio/n8n, tag: 2.40.5}
+        command: [n8n]
+        args: [worker, --concurrency=10]
+        envFrom:
+          - configMap: env
+          - secret: encryption-key
+        env:
+          N8N_DISABLE_UI: "true"
+          QUEUE_HEALTH_CHECK_ACTIVE: "true"
+          N8N_CONCURRENCY_PRODUCTION_LIMIT: "10"
+          DB_POSTGRESDB_PASSWORD:
+            valueFrom:
+              secretKeyRef: {name: "{{ .Release.Name }}-postgres-app", key: password}
+          N8N_RUNNERS_AUTH_TOKEN:
+            valueFrom:
+              secretKeyRef: {name: "{{ .Release.Name }}-runner-auth", key: auth-token}
+        ports:
+          http: 5678
+        probes:
+          liveness:
+            httpGet: {path: /healthz, port: http}
+          readiness:
+            httpGet: {path: /healthz/readiness, port: http}
+        resources:
+          requests: {cpu: 500m, memory: 512Mi}
+          limits: {cpu: 2000m, memory: 1Gi}
+        securityContext:
+          readOnlyRootFilesystem: false
+      # Executes Code nodes for this worker; shares its packages and talks to its broker on localhost.
+      runners:
+        image: {repository: n8nio/runners, tag: 2.40.5}
+        command: [/usr/local/bin/task-runner-launcher]
+        args: [javascript, python]
+        envFrom:
+          - configMap: runners
+        env:
+          NODE_FUNCTION_ALLOW_BUILTIN: "*"
+          NODE_FUNCTION_ALLOW_EXTERNAL: "*"
+          N8N_REINSTALL_MISSING_PACKAGES: "true"
+          N8N_RUNNERS_AUTH_TOKEN:
+            valueFrom:
+              secretKeyRef: {name: "{{ .Release.Name }}-runner-auth", key: auth-token}
+        ports:
+          runner-health: 5680
+        probes:
+          liveness:
+            httpGet: {path: /healthz, port: runner-health}
+          readiness:
+            httpGet: {path: /healthz, port: runner-health}
+        resources:
+          requests: {cpu: 100m, memory: 32Mi}
+          limits: {cpu: 2000m, memory: 512Mi}
+        securityContext:
+          readOnlyRootFilesystem: false
+    networkPolicy:
+      ingress:
+        - prometheus
+      egress:
+        - {datastore: postgres}
+        - {datastore: redis}
+        - world
 
-webhook:
-  url: "https://workflow.nulcell.com/"
+# One emptyDir per role, mounted where the old chart mounted it.
+persistence:
+  tmp:
+    type: emptyDir
+    advancedMounts:
+      n8n: {npm-install: [{path: /tmp}], n8n: [{path: /tmp}]}
+      worker: {npm-install: [{path: /tmp}], worker: [{path: /tmp}], runners: [{path: /tmp}]}
+  cache:
+    type: emptyDir
+    advancedMounts:
+      n8n: {n8n: [{path: /home/node/.cache}]}
+      worker: {worker: [{path: /home/node/.cache}], runners: [{path: /home/node/.cache}]}
+  npm-home:
+    type: emptyDir
+    advancedMounts:
+      n8n: {npm-install: [{path: /home/node/.npm}], n8n: [{path: /home/node/.npm}]}
+      worker: {npm-install: [{path: /home/node/.npm}]}
+  python-packages:
+    type: emptyDir
+    advancedMounts:
+      worker: {runners: [{path: /home/node/.python-packages}]}
+  node-modules:
+    type: emptyDir
+    advancedMounts:
+      n8n: {npm-install: [{path: /npmdata}], n8n: [{path: /home/node/.n8n}]}
+      worker: {npm-install: [{path: /npmdata}], worker: [{path: /home/node/.n8n}], runners: [{path: /home/node/.n8n}]}
+  community-node-modules:
+    type: emptyDir
+    advancedMounts:
+      n8n: {npm-install: [{path: /nodesdata/nodes}], n8n: [{path: /home/node/.n8n/nodes}]}
+      worker: {npm-install: [{path: /nodesdata/nodes}], worker: [{path: /home/node/.n8n/nodes}], runners: [{path: /home/node/.n8n/nodes}]}
 
-# -- Node configurations for built-in and external npm packages
-nodes:
-  # -- Enable built-in node functions (e.g., HTTP Request, Code Node, etc.)
-  builtin:
-    # -- Enable built-in modules for the Code node
-    enabled: true
-    # -- List of built-in Node.js modules to allow in the Code node (e.g., crypto, fs).
-    # Empty means allow all: the chart renders a quoted "*" for the empty case.
-    # Listing "*" here instead breaks the render - the chart joins this list
-    # unquoted, so a bare `value: *` is parsed as a YAML alias.
-    modules: []
-  # -- External npm packages to install and allow in the Code node
-  external:
-    # -- Allow all external npm packages.
-    # Must stay false. The task runner pre-requires each allowlisted package
-    # *before* freezing Error/Object prototypes, but only when the allowlist is
-    # an explicit list - `*` skips that step, so any package that subclasses
-    # Error at load time (@actual-app/api) dies with "Cannot assign to read
-    # only property 'constructor' of object 'Error'".
-    allowAll: true
-    # -- Whether to reinstall missing packages. For more information, see https://docs.n8n.io/integrations/community-nodes/troubleshooting/#error-missing-packages
-    reinstallMissingPackages: true
-    # -- List of npm package names and versions (e.g., "package-name@1.0.0")
-    packages: #[]
-      - "@emilfrom/n8n-nodes-actual-budget@2.4.0"
-      # - "moment@2.29.4"
-      # - "lodash@4.17.21"
-  # -- Python Code node configuration. Requires n8n 1.111.0+ and taskRunners.mode: external.
-  python:
-    # -- Enable Python code execution in the Code node via external task runners.
-    enabled: true
-    # -- Built-in Python module access for the Code node.
-    builtin:
-      # -- Python standard library modules allowed in Code nodes. Use ['*'] to allow all.
-      modules: #[]
-        - "*"
-    # -- External Python package access for the Code node.
-    external:
-      # -- Allow all external Python packages in Code nodes. When true, sets N8N_RUNNERS_EXTERNAL_ALLOW=* regardless of packages list.
-      allowAll: true
-      # -- Python packages to install via uv before starting the runner (e.g. ["pandas", "numpy"]). Each listed package is also automatically allowed as an external package in Code nodes.
-      packages: []
-        # - pandas
-        # - numpy
+datastores:
+  # CNPG cluster `n8n-postgres`, adopted as it is (same database, owner, image and size).
+  postgres:
+    engine: postgres
+    type: cnpg
+    database: n8n
+    owner: n8n
+    image: {repository: ghcr.io/cloudnative-pg/postgresql, tag: "18.4"}
+    storage: {size: 10Gi}
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+      limits: {cpu: 500m, memory: 512Mi}
+    monitoring: true
+    # The barman sidecar uploads to S3; datastore policies are default-deny.
+    networkPolicy:
+      egress:
+        - {fqdn: s3.eu-central-1.amazonaws.com, port: 443}
+        - {fqdn: "*.s3.eu-central-1.amazonaws.com", port: 443}
+        - {fqdn: s3.amazonaws.com, port: 443}
+        - {fqdn: "*.s3.amazonaws.com", port: 443}
+    cluster:
+      inheritedMetadata:
+        labels:
+          recurring-job.longhorn.io/source: enabled
+          recurring-job-group.longhorn.io/backup: enabled
+      plugins:
+        - name: barman-cloud.cloudnative-pg.io
+          isWALArchiver: true
+          parameters: {barmanObjectName: n8n-postgres}
+  # Queue only; nothing here needs to survive a restart.
+  redis:
+    engine: redis
+    type: standalone
+    image: {repository: valkey/valkey, tag: "8"}
+    storage: {size: 1Gi, storageClass: longhorn}
+    resources:
+      requests: {cpu: 50m, memory: 64Mi}
+      limits: {cpu: 200m, memory: 256Mi}
 
-db:
-  type: postgresdb
+routes:
+  n8n:
+    name: n8n
+    # cloudflared reaches n8n (and its public webhooks) through the internal gateway.
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: internal
+        namespace: gateway
+        sectionName: https-internal
+    hostnames: [workflow.internal.nulcell.com]
+    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: n8n, service: n8n, port: http}]}]
 
-# External PostgreSQL - CNPG cluster `n8n-postgres` (postgres-cluster.yaml).
-# CNPG auto-creates a secret named <cluster>-app with keys: username, password.
-externalPostgresql:
-  host: n8n-postgres-rw # CNPG read-write service
-  port: 5432
-  username: n8n # matches spec.bootstrap.initdb.owner in postgres-cluster.yaml
-  database: n8n
-  existingSecret: n8n-postgres-app
-  existingSecretPasswordKey: password
-
-# External Redis (unauthenticated) - see redis.yaml.
-externalRedis:
-  host: n8n-redis
-  port: 6379
-
-# 1Password-backed ExternalSecret (n8n-external-secrets.yaml), unchanged from
-# before the migration.
-existingEncryptionKeySecret: n8n-encryption-key
-
-worker:
-  # options: regular (main node executes), queue (separate worker pods)
-  mode: queue
-  concurrency: 10
-  resources:
-    requests:
-      cpu: 500m
-      memory: 512Mi
-    limits:
-      cpu: 2000m
-      memory: 1Gi
-  autoscaling:
-    enabled: true
-    minReplicas: 1
-    maxReplicas: 10
-  # Same NODE_OPTIONS reasoning as main: pin the V8 heap explicitly (768Mi of
-  # the 1Gi limit) rather than relying on cgroup-based auto-sizing.
-  extraEnvVars:
-    N8N_HOST: workflow.nulcell.com
-    N8N_PROTOCOL: https
-    NODE_OPTIONS: "--max-old-space-size=768"
-    NODE_PATH: /home/node/.n8n/node_modules
-    N8N_RUNNERS_INSECURE_MODE: true
-
-# Isolate Code-node execution in a task-runner sidecar, matching the previous
-# custom chart's architecture. In worker.mode=queue this sidecar attaches only
-# to worker pods (not main, which never executes workflow code directly -
-# OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS is on by default in queue mode). Note
-# this does change the scaling shape versus before: previously task-runner was
-# one standalone deployment; now one sidecar comes and goes with every worker
-# replica (1-10, per autoscaling above) instead of a fixed single instance.
-taskRunners:
-  mode: external # internal or external
-  external:
-    # Shared token between n8n and its own task-runner sidecar - purely
-    # internal, same-pod/localhost auth, never exposed externally, so it
-    # doesn't need real secret management. Fixed here (rather than left
-    # unset) because the chart has no `lookup`-based persistence for its
-    # auto-generated default: with no fixed value, it re-randomizes on every
-    # render, which would churn the Secret (and roll pods) on every ArgoCD
-    # sync for no reason.
-    mainNodeAuthToken: "n8n-task-runner-shared-secret"
-    workerNodeAuthToken: "n8n-task-runner-shared-secret"
-
-# -- The service monitor configuration. Please refer to the following link for more information: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md
-serviceMonitor:
-  # -- When set true then use a ServiceMonitor to configure scraping
-  enabled: true
+# Secrets `n8n-encryption-key` and `n8n-runner-auth`, from 1Password homecloud-k8s/n8n-secrets.
+externalSecrets:
+  encryption-key:
+    data:
+      N8N_ENCRYPTION_KEY: fpwjapmya4pjywvazjmehxh57e/n8n-encryption-key
+  runner-auth:
+    data:
+      auth-token: fpwjapmya4pjywvazjmehxh57e/n8n-runner-auth

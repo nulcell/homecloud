@@ -51,7 +51,7 @@ Not for Postgres PVCs (below).
 
 ## Postgres (CNPG barman-cloud plugin)
 
-WAL archiving plus a daily base backup (30-day retention) to `s3://nulcell-homecloud-backup/cnpg/<cluster>`, enabled on `gatus-postgres` (02:00), `mealie-postgres` (02:15), `n8n-postgres` (02:30) and `authentik-postgres` (02:45). Each app has a `postgres-backup.yaml` (ObjectStore + ScheduledBackup) and the plugin block on its Cluster (`values.yaml` for chart-rendered ones). Their PVCs keep the Longhorn `backup` label as a safety net until you have run the point-in-time restore below once; then drop the label.
+WAL archiving plus a daily base backup (30-day retention) to `s3://nulcell-homecloud-backup/cnpg/<cluster>`, enabled on `gatus-postgres` (02:00), `mealie-postgres` (02:15), `n8n-postgres` (02:30) and `authentik-postgres` (02:45). Each app has a `postgres-backup.yaml` (ObjectStore + ScheduledBackup) and the plugin block on its Cluster (`values.yaml` for all but authentik, whose Cluster is `postgres-cluster.yaml`). Their PVCs keep the Longhorn `backup` label as a safety net until you have run the point-in-time restore below once; then drop the label.
 
 To enable another cluster:
 
