@@ -6,7 +6,7 @@ targetNamespaces: ""
 # -- excludeNamespaces is a comma separated list of namespaces (or glob patterns)
 # to be excluded from scanning. Only applicable in the all namespaces install
 # mode, i.e. when the targetNamespaces values is a blank string.
-excludeNamespaces: "kubescape,kube-system,kube-public,kube-node-lease,trivy"
+excludeNamespaces: "kube-system,kube-public,kube-node-lease,trivy"
 
 serviceMonitor:
   enabled: true
@@ -23,24 +23,19 @@ operator:
   infraAssessmentScannerEnabled: true
   clusterComplianceEnabled: true
   scanJobsConcurrentLimit: 5
-  builtInTrivyServer: false
+  # One Trivy server pod keeps the vulnerability DB; scan jobs are clients of it. Also sets trivy.mode
+  # (ClientServer) and the server URL, so neither is set below.
+  builtInTrivyServer: true
 
 image:
   pullSecrets:
     - name: dockerhub-credentials
 
 trivy:
-  # ClientServer mode deploys a single Trivy server pod that maintains the vulnerability DB.
-  # Scan job containers connect to it as clients - no local DB init, eliminating the
-  # "cache may be in use by another process" lock contention when multiple containers
-  # within the same scan job pod race to initialize the DB simultaneously.
-  mode: ClientServer
-  serverURL: "https://trivy-service.trivy:4954"
   storageClassName: longhorn
   storageSize: 5Gi
   # DockerHub credentials for pulling the trivy scanner image in scan job pods.
   imagePullSecret: "dockerhub-credentials"
-  valuesFromSecret: "trivy-dockerhub-auth"
 
 trivyOperator:
   # Per-CVE-ID metrics cause high Prometheus cardinality - intentionally off.
