@@ -47,7 +47,7 @@ Not for Postgres PVCs (below).
 
 ## Postgres (CNPG barman-cloud plugin)
 
-WAL archiving plus a daily base backup (30-day retention) to `s3://nulcell-homecloud-backup/cnpg/<cluster>`, enabled on `gatus-postgres` (02:00), `mealie-postgres` (02:15), `n8n-postgres` (02:30) and `authentik-postgres` (02:45). Each app has a `postgres-backup.yaml` (ObjectStore + ScheduledBackup) and the plugin block on its Cluster (`values.yaml` for all but authentik, whose Cluster is `postgres-cluster.yaml`). Their PVCs keep the Longhorn `backup` label as a safety net until you have run the point-in-time restore below once; then drop the label.
+Postgres is backed up only by barman, never by Longhorn: their PVCs are not in the `backup` group, because a volume snapshot of a running database is only crash-consistent and cannot restore to a point in time. WAL archiving plus a daily base backup (30-day retention) go to `s3://nulcell-homecloud-backup/cnpg/<cluster>`, enabled on `gatus-postgres` (02:00), `mealie-postgres` (02:15), `n8n-postgres` (02:30) and `authentik-postgres` (02:45). Each app has a `postgres-backup.yaml` (ObjectStore + ScheduledBackup) and the plugin block on its Cluster (`values.yaml` for all but authentik, whose Cluster is `postgres-cluster.yaml`).
 
 To enable another cluster:
 
@@ -59,7 +59,7 @@ Check: `kubectl cnpg status -n <ns> <cluster>` (recovery window filled, WAL arch
 
 ### Restore / point in time
 
-Deleting a cluster whose manifest still says `initdb` is not a restore: it creates an empty database with a new system ID, and barman refuses to archive it into the old non-empty path (`Expected empty archive`, WAL archiving never starts). Either add the recovery block below, or, to start over, empty `s3://nulcell-homecloud-backup/cnpg/<cluster>/`. A restore also needs a completed base backup: check `Recovery window` in `kubectl cnpg status`.
+Deleting a cluster whose manifest still says `initdb` is not a restore: it creates an empty database with a new system ID, and barman refuses to archive it into the old non-empty path (`Expected empty archive`, WAL archiving never starts). Restore by recovering into a new cluster instead.
 
 Recovery always creates a new cluster generation: the recovered cluster archives under a new `serverName`, because barman refuses to write into a non-empty path. With the ArgoCD app paused, edit the Cluster (for gatus, `datastores.postgres.cluster` in `values.yaml`):
 
@@ -86,7 +86,22 @@ plugins:
 
 Then delete the Cluster and its PVC, resync. CNPG runs the recovery job and starts the new primary. Afterwards the `bootstrap.recovery` block can stay (it is only read at creation).
 
-Drill on gatus first (lowest stakes): restore to a point in time into a new generation and check the data.
+#### Point-in-time drill (throwaway database)
+
+`gitops/experimental/pitr-test/` is a 1Gi CNPG cluster `pitr-test-postgres` with barman backups and its own copy of the S3 keys; `restore.yaml` beside it recovers a second cluster from its archive. Nothing real is touched.
+
+1. Move it into the synced tree: `git mv gitops/experimental/pitr-test gitops/apps/pitr-test`, push, wait for `app-pitr-test` to be Healthy.
+2. Take a base backup and wait for it: `kubectl cnpg backup -n pitr-test pitr-test-postgres --method plugin --plugin-name barman-cloud.cloudnative-pg.io`; `kubectl cnpg status -n pitr-test pitr-test-postgres` then shows a recovery window.
+3. Insert a row, note the time, insert a second row:
+   ```bash
+   kubectl cnpg psql -n pitr-test pitr-test-postgres -- -d app -c "create table t(n int, at timestamptz default now()); insert into t(n) values (1);"
+   date -u +"%Y-%m-%d %H:%M:%S+00"          # this is targetTime
+   kubectl cnpg psql -n pitr-test pitr-test-postgres -- -d app -c "insert into t(n) values (2);"
+   ```
+   Wait about a minute (or `select pg_switch_wal();`) so the WAL holding both rows is archived.
+4. In `restore.yaml` set `targetTime` to the time from step 3, add `restore.yaml` to `kustomization.yaml` `resources`, push.
+5. Pass when `pitr-test-restored` becomes healthy and `kubectl cnpg psql -n pitr-test pitr-test-restored -- -d app -c "select n from t"` returns only `1`.
+6. Clean up: `git mv` the directory back to `experimental/` (and drop `restore.yaml` from `resources`), push, `kubectl delete ns pitr-test`, and delete `cnpg/pitr-test-postgres/` in S3.
 
 ## Restore checklist after a full rebuild
 

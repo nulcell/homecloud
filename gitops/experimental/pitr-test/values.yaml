@@ -1,0 +1,37 @@
+# Throwaway Postgres for rehearsing point-in-time recovery; nothing depends on it.
+# Steps: cluster/docs/backup-restore.md. Lives in experimental/; move to gitops/apps to run the drill.
+
+defaults:
+  externalSecret:
+    store: {kind: ClusterSecretStore, name: onepassword}
+
+datastores:
+  postgres:
+    engine: postgres
+    type: cnpg
+    database: app
+    owner: app
+    image: {repository: ghcr.io/cloudnative-pg/postgresql, tag: "18.6"}
+    storage: {size: 1Gi}
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}
+      limits: {memory: 256Mi}
+    # The barman sidecar uploads to S3; datastore policies are default-deny.
+    networkPolicy:
+      egress:
+        - {fqdn: s3.eu-central-1.amazonaws.com, port: 443}
+        - {fqdn: "*.s3.eu-central-1.amazonaws.com", port: 443}
+        - {fqdn: s3.amazonaws.com, port: 443}
+        - {fqdn: "*.s3.amazonaws.com", port: 443}
+    cluster:
+      plugins:
+        - name: barman-cloud.cloudnative-pg.io
+          isWALArchiver: true
+          parameters: {barmanObjectName: pitr-test-postgres}
+
+# Own copy of the S3 keys (Secret `pitr-test-backup-s3`), so this app needs no change to the shared backup-s3.
+externalSecrets:
+  backup-s3:
+    data:
+      AWS_ACCESS_KEY_ID: ajs275d32cembcy7b5ubvuwjx4/AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: ajs275d32cembcy7b5ubvuwjx4/AWS_SECRET_ACCESS_KEY

@@ -1,0 +1,14 @@
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: pitr-test-postgres
+spec:
+  retentionPolicy: 7d
+  instanceSidecarConfiguration:
+    env:
+      - {name: AWS_DEFAULT_REGION, value: eu-central-1}
+  configuration:
+    destinationPath: s3://nulcell-homecloud-backup/cnpg/pitr-test-postgres
+    s3Credentials:
+      accessKeyId: {name: pitr-test-backup-s3, key: AWS_ACCESS_KEY_ID}
+      secretAccessKey: {name: pitr-test-backup-s3, key: AWS_SECRET_ACCESS_KEY}

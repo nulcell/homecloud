@@ -1,0 +1,25 @@
+# The recovered cluster for the drill: add to kustomization.yaml `resources`, set targetTime (UTC, between
+# the rows you inserted), push. Remove it again afterwards.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pitr-test-restored
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6
+  storage: {size: 1Gi}
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 256Mi}
+  bootstrap:
+    recovery:
+      source: origin
+      recoveryTarget:
+        targetTime: "2026-01-01 00:00:00+00" # REPLACE
+  externalClusters:
+    - name: origin
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: pitr-test-postgres
+          serverName: pitr-test-postgres

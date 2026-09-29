@@ -268,10 +268,6 @@ datastores:
         - {fqdn: s3.amazonaws.com, port: 443}
         - {fqdn: "*.s3.amazonaws.com", port: 443}
     cluster:
-      inheritedMetadata:
-        labels:
-          recurring-job.longhorn.io/source: enabled
-          recurring-job-group.longhorn.io/backup: enabled
       plugins:
         - name: barman-cloud.cloudnative-pg.io
           isWALArchiver: true
