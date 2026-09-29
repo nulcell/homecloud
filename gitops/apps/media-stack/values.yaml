@@ -101,7 +101,7 @@ workloads:
       updateStrategy: {type: RollingUpdate}
     containers:
       seerr:
-        image: {repository: ghcr.io/seerr-team/seerr, tag: v3.4.1}
+        image: {repository: ghcr.io/seerr-team/seerr, tag: v3.5.0}
         ports: {web: 5055}
         probes: {startup: {}, liveness: {}, readiness: {}}
         resources:
@@ -225,7 +225,7 @@ workloads:
           requests: {cpu: 400m, memory: 256Mi}
           limits: {memory: 1Gi}
       qbittorrent:
-        image: {repository: lscr.io/linuxserver/qbittorrent, tag: 5.2.3}
+        image: {repository: lscr.io/linuxserver/qbittorrent, tag: 5.2.4}
         env:
           WEBUI_PORT: "8080"
         # The VPN is the dependency worth restarting on; the WebUI is too slow
