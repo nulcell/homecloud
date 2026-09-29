@@ -34,7 +34,18 @@ mise run restore <namespace>/<pvc>   # e.g. mealie/mealie-data
 
 ArgoCD is not paused. The script creates a Longhorn volume `fromBackup` (newest backup of that PVC's volume) and a PV pre-bound to the PVC's name, waits for the restore to finish, then deletes the PVC and the pods that mount it. Their replacements stay `Pending` until ArgoCD recreates the PVC from git; Kubernetes binds it to the pre-bound PV instead of provisioning an empty volume. The old volume is deleted (`reclaimPolicy: Delete`); backups stay in S3.
 
-Not for Postgres PVCs (below). Nondestructive drill first: restore into a scratch PVC from the Longhorn UI and diff it.
+Not for Postgres PVCs (below).
+
+#### Restore drill (throwaway app, nothing real is touched)
+
+`gitops/experimental/restore-test/` is a 1Gi PVC plus a pod that writes `original` to `/data/marker`. `manifests/restore-test-app.yaml` deploys it through ArgoCD with the same sync policy as your apps, so the drill exercises the real delete-and-recreate path. It must be on `main` first.
+
+1. `kubectl apply -f manifests/restore-test-app.yaml`, wait until the app is Healthy, then `kubectl -n restore-test exec deploy/writer -- cat /data/marker` prints `original`.
+2. Back it up now: Longhorn UI > Volume `restore-test/data` > Create Backup, and wait for it to complete (or wait for 03:00). `kubectl -n longhorn-system get backupvolumes` then lists the volume.
+3. Change it: `kubectl -n restore-test exec deploy/writer -- sh -c 'echo changed > /data/marker'`.
+4. `mise run restore restore-test/data`.
+5. Pass when: the marker reads `original` again; the PVC is Bound to a `restore-<timestamp>` volume; `restore-test` is Synced/Healthy in ArgoCD without any manual step; `kubectl get pv | grep restore-test` shows one PV.
+6. Clean up: `kubectl delete -f manifests/restore-test-app.yaml` (the finalizer removes the namespace and PVC), then delete the `restore-test` volume under Backup in the Longhorn UI to drop its S3 objects.
 
 Longhorn cannot restore "latest backup" on PVC creation by itself (`fromBackup` needs one pinned URL and backups are keyed by the old `pvc-<uuid>`), hence the script.
 
