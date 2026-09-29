@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# Node and storage lifecycle, driven from live cluster state. Run through `mise run <task>`
-# (needs SCHEMATIC_ID, TALOS_VERSION, KUBERNETES_VERSION).
-# usage: cluster.sh preflight | rollout <upgrade|config> [node] | upgrade-k8s
-#        cluster.sh restore <argocd-app> <namespace>/<pvc> | shutdown | start
+# Cluster shutdown/start and PVC restore, driven from live cluster state. Run through `mise run <task>`.
+# usage: cluster.sh restore <argocd-app> <namespace>/<pvc> | shutdown | start
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
@@ -25,57 +23,6 @@ talos() { local ip=$1; shift; talosctl -e "$ip" -n "$ip" "$@"; }
 argo_scale() { # replicas
   "${ARGO[@]}" scale statefulset argocd-application-controller --replicas="$1"
   "${ARGO[@]}" scale deployment argocd-applicationset-controller --replicas="$1"
-}
-
-# A drain needs another healthy replica, so every attached volume must have 2 and be healthy.
-preflight() {
-  local nodes vols bad fail=0
-  nodes=$(kubectl get nodes -o json)
-  bad=$(jq -r '.items[] | select(any(.status.conditions[]; .type == "Ready" and .status != "True")) | .metadata.name' <<<"$nodes")
-  if [ -z "$bad" ]; then echo "✓ nodes Ready: $(jq -r '[.items[].metadata.name] | join(", ")' <<<"$nodes")"
-  else echo "✗ nodes not Ready: $bad" >&2; fail=1; fi
-
-  vols=$("${LH[@]}" get volumes.longhorn.io -o json)
-  bad=$(jq -r '.items[] | select(.status.state == "attached" and (.spec.numberOfReplicas < 2 or .status.robustness != "healthy"))
-    | "  \(.status.kubernetesStatus.namespace // "-")/\(.status.kubernetesStatus.pvcName // .metadata.name): \(.spec.numberOfReplicas) replica(s), \(.status.robustness)"' <<<"$vols")
-  if [ -z "$bad" ]; then echo "✓ attached volumes have >= 2 replicas and are healthy: $(jq '[.items[] | select(.status.state == "attached")] | length' <<<"$vols") checked"
-  else echo "✗ attached volumes need 2 healthy replicas:" >&2; echo "$bad" >&2; fail=1; fi
-  return $fail
-}
-
-rollout() {
-  local action=${1:?usage: rollout <upgrade|config> [node]} only=${2:-} name ip role
-  local image="factory.talos.dev/metal-installer/$SCHEMATIC_ID:$TALOS_VERSION"
-  preflight
-  # One node at a time keeps etcd quorum with 3 control planes.
-  while read -r name ip role; do
-    [ -z "$only" ] || [ "$only" = "$name" ] || [ "$only" = "$ip" ] || continue
-    echo "==> $action $name ($ip, $role)"
-    if [ "$action" = upgrade ]; then
-      # talosctl cordons and drains the node itself; Longhorn keeps volumes up on the other replica.
-      talos "$ip" upgrade --image "$image" --drain-timeout 45m --timeout 90m
-    else
-      # install.image comes from .mise.toml so the patch files never need a version bump.
-      local p=(--patch "@cluster/talos/patches/$role.yaml"
-               --patch "[{\"op\":\"replace\",\"path\":\"/machine/install/image\",\"value\":\"$image\"}]")
-      talos "$ip" patch machineconfig "${p[@]}" --dry-run
-      talos "$ip" patch machineconfig "${p[@]}" --mode no-reboot || {
-        talos "$ip" patch machineconfig "${p[@]}" --mode staged
-        echo "$name: needs a reboot; config is staged and applies with the next talos:upgrade"
-      }
-    fi
-    retry kubectl wait --for=condition=Ready "node/$name" --timeout=60s
-    retry kubectl uncordon "$name"
-    retry preflight # volumes rebuilt before the next node
-  done < <(nodes)
-}
-
-upgrade_k8s() {
-  local ip; ip=$(nodes | awk '$3 == "controlplane" { print $2; exit }')
-  preflight
-  talos "$ip" upgrade-k8s --to "$KUBERNETES_VERSION" --dry-run
-  confirm "Upgrade Kubernetes to $KUBERNETES_VERSION?" || exit 1
-  talos "$ip" upgrade-k8s --to "$KUBERNETES_VERSION"
 }
 
 unmounted() { # ns pvc
@@ -192,15 +139,12 @@ start() {
 
   echo "==> unfreeze ArgoCD (restores replica counts and HPAs from git)"
   argo_scale 1
-  retry preflight
+  retry kubectl wait --for=condition=Ready node --all --timeout=60s
   "${ARGO[@]}" get applications.argoproj.io -o json | jq -r '.items[] | select(.status.health.status != "Healthy") | "not healthy yet: \(.metadata.name)"'
 }
 
-cmd=${1:?usage: cluster.sh <preflight|rollout|upgrade-k8s|restore|shutdown|start>}; shift
+cmd=${1:?usage: cluster.sh <restore|shutdown|start>}; shift
 case $cmd in
-  preflight) preflight ;;
-  rollout) rollout "$@" ;;
-  upgrade-k8s) upgrade_k8s ;;
   restore) restore "$@" ;;
   shutdown) shutdown ;;
   start) start ;;

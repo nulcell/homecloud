@@ -28,7 +28,7 @@ A new volume gets 2 replicas. Existing volumes are raised once:
 
 ```bash
 kubectl -n longhorn-system patch volumes.longhorn.io <vol> --type merge -p '{"spec":{"numberOfReplicas":2}}'
-mise run preflight   # lists volumes still without 2 healthy replicas
+kubectl -n longhorn-system get volumes.longhorn.io -o custom-columns=VOL:.status.kubernetesStatus.pvcName,REPLICAS:.spec.numberOfReplicas,HEALTH:.status.robustness
 ```
 
 ### Restore a PVC

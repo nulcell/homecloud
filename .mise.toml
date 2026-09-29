@@ -57,22 +57,21 @@ description = "Install Cilium + ArgoCD and hand off to GitOps"
 run = "helmfile -f cluster/bootstrap/helmfile.yaml sync" # sync: no helm-diff plugin needed
 
 [tasks."talos:upgrade"]
-description = "Upgrade every node (or one) to $TALOS_VERSION: workers first, drained, health-gated"
-usage = 'arg "[node]"'
-run = 'scripts/cluster.sh rollout upgrade $usage_node'
+description = "Upgrade Talos on one node (IP) to $TALOS_VERSION; run per node, workers first. Longhorn (2 replicas) blocks the drain until it is safe"
+usage = 'arg "<node>"'
+run = 'talosctl upgrade -n "$usage_node" --image "factory.talos.dev/metal-installer/$SCHEMATIC_ID:$TALOS_VERSION" --drain-timeout 45m --timeout 90m'
 
 [tasks."talos:config"]
-description = "Apply cluster/talos/patches to every node (or one); a change needing a reboot is staged for the next talos:upgrade"
-usage = 'arg "[node]"'
-run = 'scripts/cluster.sh rollout config $usage_node'
+description = "Apply cluster/talos/patches to one node (fails if it needs a reboot: rerun with --mode staged, then talos:upgrade)"
+usage = '''
+arg "<node>" help="node IP"
+arg "<role>" help="controlplane|worker"
+'''
+run = '''talosctl patch machineconfig -n "$usage_node" --mode no-reboot --patch "@cluster/talos/patches/$usage_role.yaml" --patch "[{\"op\":\"replace\",\"path\":\"/machine/install/image\",\"value\":\"factory.talos.dev/metal-installer/$SCHEMATIC_ID:$TALOS_VERSION\"}]"'''
 
 [tasks."talos:upgrade-k8s"]
-description = "Upgrade Kubernetes to $KUBERNETES_VERSION (shows the plan first)"
-run = "scripts/cluster.sh upgrade-k8s"
-
-[tasks.preflight]
-description = "Check nodes are Ready and attached Longhorn volumes have 2 healthy replicas (read-only)"
-run = "scripts/cluster.sh preflight"
+description = "Upgrade Kubernetes to $KUBERNETES_VERSION (add --dry-run to preview)"
+run = 'talosctl upgrade-k8s -n "$CONTROLPLANE_IP" --to "$KUBERNETES_VERSION"'
 
 [tasks.restore]
 description = "Restore a PVC from its newest Longhorn backup"
