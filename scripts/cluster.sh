@@ -87,8 +87,8 @@ rollout() {
     echo "==> $action $name ($ip, $role)"
     case $action in
       upgrade)
-        kubectl drain "$name" --ignore-daemonsets --delete-emptydir-data --timeout=15m
-        talos "$ip" upgrade --image "$image" --drain=false
+        # talosctl cordons and drains the node itself before rebooting.
+        talos "$ip" upgrade --image "$image" --drain-timeout 15m
         ;;
       config)
         # install.image comes from .mise.toml so the patch files never need a version bump.
