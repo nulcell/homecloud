@@ -40,14 +40,14 @@ Not for Postgres PVCs (below).
 
 #### Restore drill (throwaway app, nothing real is touched)
 
-`gitops/apps/restore-test/` is a 1Gi PVC plus a pod that writes `original` to `/data/marker`. The `apps` ApplicationSet deploys it as `app-restore-test` with your normal sync policy, so the drill exercises the real delete-and-recreate path. Keep it in `gitops/apps/` only while testing; afterwards `git mv` it to `gitops/experimental/`.
+`gitops/experimental/restore-test/` is a 1Gi PVC plus a pod that writes `original` to `/data/marker`. The `apps` ApplicationSet deploys it as `app-restore-test` with your normal sync policy, so the drill exercises the real delete-and-recreate path. It lives in `experimental/` (not synced). To run the drill, `git mv gitops/experimental/restore-test gitops/apps/restore-test` and push; move it back afterwards.
 
-1. Push it; once `app-restore-test` is Healthy, `kubectl -n restore-test exec deploy/writer -- cat /data/marker` prints `original`.
+1. Once `app-restore-test` is Healthy, `kubectl -n restore-test exec deploy/writer -- cat /data/marker` prints `original`.
 2. Back it up: Longhorn UI > Volume `restore-test/data` > Create Backup, and wait for it to complete (or wait for 03:00). `kubectl -n longhorn-system get backupvolumes` then lists the volume.
 3. Change it: `kubectl -n restore-test exec deploy/writer -- sh -c 'echo changed > /data/marker'`.
-4. `mise run restore restore-test/data`.
+4. `mise run restore restore-test/data`, then pick a backup from the list (Enter = newest).
 5. Pass when: the marker reads `original` again; the PVC is Bound to a `restore-<timestamp>` volume; `app-restore-test` is Synced/Healthy without any manual step; `kubectl get pv | grep restore-test` shows one PV.
-6. Clean up: `git mv gitops/apps/restore-test gitops/experimental/restore-test` and push. The apps template has no deletion finalizer, so the resources stay: run `kubectl delete ns restore-test`, then delete the `restore-test` volume under Backup in the Longhorn UI to drop its S3 objects.
+6. Clean up: move it back to `gitops/experimental/` and push. The apps template has no deletion finalizer, so the resources stay: run `kubectl delete ns restore-test`, then delete the `restore-test` volume under Backup in the Longhorn UI to drop its S3 objects.
 
 ## Postgres (CNPG barman-cloud plugin)
 

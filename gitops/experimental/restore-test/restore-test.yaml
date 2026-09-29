@@ -1,5 +1,5 @@
 # Throwaway app for rehearsing `mise run restore restore-test/data` through ArgoCD;
-# steps in cluster/docs/backup-restore.md. Temporarily under gitops/apps so the apps ApplicationSet deploys it.
+# steps in cluster/docs/backup-restore.md. Move to gitops/apps to run the drill, back to experimental after.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
