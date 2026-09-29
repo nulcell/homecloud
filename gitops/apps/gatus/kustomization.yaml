@@ -25,6 +25,8 @@ patches:
           toFQDNs:
             - matchName: s3.eu-central-1.amazonaws.com
             - matchPattern: "*.s3.eu-central-1.amazonaws.com"
+            - matchName: s3.amazonaws.com
+            - matchPattern: "*.s3.amazonaws.com"
           toPorts:
             - ports: [{port: "443", protocol: TCP}]
 

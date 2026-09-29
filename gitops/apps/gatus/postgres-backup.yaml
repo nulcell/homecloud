@@ -6,7 +6,7 @@ spec:
   retentionPolicy: 30d
   instanceSidecarConfiguration:
     env:
-      - {name: AWS_REGION, value: eu-central-1}
+      - {name: AWS_DEFAULT_REGION, value: eu-central-1} # boto3 ignores AWS_REGION; without it requests go to the global endpoint
   configuration:
     destinationPath: s3://nulcell-homecloud-backup/cnpg/gatus-postgres
     s3Credentials:
