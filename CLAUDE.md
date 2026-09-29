@@ -18,7 +18,7 @@ Self-hosted private cloud on bare metal. Two nodes today (1 control plane with s
 - **OS**: Talos Linux. Machine-config patches in [`cluster/talos/patches/`](cluster/talos/patches/); image schematic baked at Talos Image Factory with `iscsi-tools`, `util-linux-tools`, microcode, optional `amdgpu`.
 - **Cluster**: Kubernetes via Talos. Cilium + ArgoCD bootstrapped by helmfile ([`cluster/bootstrap/helmfile.yaml`](cluster/bootstrap/helmfile.yaml), `mise run bootstrap`); everything else via GitOps.
 - **CNI / LB / Gateway**: Cilium (kube-proxy replacement, Gateway API, L2 announcements). No MetalLB.
-- **Storage**: Longhorn (replicated block).
+- **Storage**: Longhorn (replicated block, replica 2 so a node drain never blocks). Backups to S3 (`nulcell-homecloud-backup`, `eu-central-1`) are opt-in per PVC via the `backup` recurring-job group; Postgres also archives WAL through the CNPG barman-cloud plugin (gatus first). Runbook: [`cluster/docs/backup-restore.md`](cluster/docs/backup-restore.md).
 - **Virtualization**: KubeVirt (VMs as Kubernetes resources).
 - **GitOps**: ArgoCD reads this repo. Five ApplicationSets fan out one Application per directory under [`gitops/infrastructure/*`](gitops/infrastructure/) (wave `0`), [`gitops/operators/*`](gitops/operators/) (wave `5`), [`gitops/security/*`](gitops/security/) (wave `10`), [`gitops/services/*`](gitops/services/) (wave `15`), and [`gitops/apps/*`](gitops/apps/) (wave `100`).
 - **Certs**: cert-manager + Cloudflare DNS-01, one `*.nulcell.com` / `*.internal.nulcell.com` wildcard shared by both Gateways.

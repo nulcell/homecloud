@@ -34,7 +34,7 @@ Versions live next to the manifests - `gitops/*/*/kustomization.yaml` for chart 
 
 | Layer                                              | Deployed                                                                                                                                                           |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`infrastructure/`](gitops/infrastructure/) wave 0 | cert-manager, external-dns, external-secrets, gateway, headlamp, infra-app-httproutes, keda, kube-prometheus-stack, loki, longhorn, metrics-server, registry-credentials, reloader |
+| [`infrastructure/`](gitops/infrastructure/) wave 0 | cert-manager, external-dns, external-secrets, gateway, headlamp, infra-app-httproutes, keda, kube-prometheus-stack, loki, longhorn, metrics-server, reloader, secrets |
 | [`operators/`](gitops/operators/) wave 5           | cnpg, falco, kubevirt, mariadb, tailscale                                                                                                                          |
 | [`security/`](gitops/security/) wave 10            | falco                                                                                                                                                              |
 | [`services/`](gitops/services/) wave 15            | kubevirt (KubeVirt + CDI CRs)                                                                                                                                      |

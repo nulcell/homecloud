@@ -33,7 +33,7 @@ gitops/
 │   └── apps-appset.yaml
 ├── infrastructure/   # cert-manager, external-dns, external-secrets, gateway, headlamp,
 │                     # infra-app-httproutes, kube-prometheus-stack, loki, longhorn,
-│                     # metrics-server, registry-credentials
+│                     # metrics-server, secrets
 ├── operators/        # cnpg, falco, kubevirt, mariadb, tailscale
 ├── security/         # falco
 ├── services/         # kubevirt (KubeVirt + CDI CRs)
