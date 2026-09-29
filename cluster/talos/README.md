@@ -107,7 +107,7 @@ mise run preflight                # read-only: nodes Ready, attached volumes hav
 mise run talos:upgrade [node]     # node name or IP limits it to one node
 mise run talos:upgrade-k8s        # prints the plan, asks to confirm
 
-# Config changes (patches below) use the same flow; a reboot (with drain) only happens when required.
+# Config changes (patches below) apply live; one that needs a reboot is staged and applied by the next talos:upgrade.
 mise run talos:config [node]
 
 # Graceful full shutdown / start (physical move): see gitops/root/safe-scaledown.md

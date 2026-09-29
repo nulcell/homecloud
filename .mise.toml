@@ -62,7 +62,7 @@ usage = 'arg "[node]"'
 run = 'scripts/cluster.sh rollout upgrade $usage_node'
 
 [tasks."talos:config"]
-description = "Apply cluster/talos/patches to every node (or one); reboots only when required"
+description = "Apply cluster/talos/patches to every node (or one); a change needing a reboot is staged for the next talos:upgrade"
 usage = 'arg "[node]"'
 run = 'scripts/cluster.sh rollout config $usage_node'
 
