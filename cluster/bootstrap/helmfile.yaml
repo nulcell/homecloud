@@ -34,7 +34,7 @@ releases:
   - name: argocd
     namespace: argocd
     chart: argo/argo-cd
-    version: 10.9.4
+    version: 10.9.6
     values: [argocd-values.yaml]
     wait: true
     needs: [kube-system/cilium]
