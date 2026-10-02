@@ -27,7 +27,7 @@ workloads:
       actualbudget:
         image:
           repository: docker.io/actualbudget/actual-server
-          tag: 26.9.0
+          tag: 26.10.0
         env:
           ACTUAL_PORT: "5006"
           ACTUAL_DATA_DIR: /data
