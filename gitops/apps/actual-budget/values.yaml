@@ -74,7 +74,7 @@ workloads:
       http-api:
         image:
           repository: docker.io/jhonderson/actual-http-api
-          tag: 26.9.0
+          tag: 26.10.0
         env:
           ACTUAL_SERVER_URL: http://actualbudget:5006/
           # Anything but "production" makes the image try to load a .env file.
