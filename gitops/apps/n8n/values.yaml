@@ -89,7 +89,7 @@ workloads:
           readOnlyRootFilesystem: false
     containers:
       n8n:
-        image: {repository: docker.io/n8nio/n8n, tag: 2.42.2}
+        image: {repository: docker.io/n8nio/n8n, tag: 2.42.3}
         envFrom:
           - configMap: env
           - secret: encryption-key
@@ -153,7 +153,7 @@ workloads:
       npm-install: *npm-install
     containers:
       worker:
-        image: {repository: docker.io/n8nio/n8n, tag: 2.42.2}
+        image: {repository: docker.io/n8nio/n8n, tag: 2.42.3}
         command: [n8n]
         args: [worker, --concurrency=10]
         envFrom:
@@ -183,7 +183,7 @@ workloads:
           readOnlyRootFilesystem: false
       # Executes Code nodes for this worker; shares its packages and talks to its broker on localhost.
       runners:
-        image: {repository: docker.io/n8nio/runners, tag: 2.42.2}
+        image: {repository: docker.io/n8nio/runners, tag: 2.42.3}
         command: [/usr/local/bin/task-runner-launcher]
         args: [javascript, python]
         envFrom:
