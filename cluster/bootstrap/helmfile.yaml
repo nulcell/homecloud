@@ -25,7 +25,7 @@ releases:
           - apply
           - --server-side
           - -f
-          - https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.2/standard-install.yaml
+          - https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.3/standard-install.yaml
       - events: [postsync]
         showlogs: true
         command: kubectl
