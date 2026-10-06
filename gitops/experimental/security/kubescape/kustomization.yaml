@@ -5,7 +5,7 @@ namespace: kubescape
 helmCharts:
   - name: kubescape-operator
     repo: https://kubescape.github.io/helm-charts/
-    version: 1.40.4
+    version: 1.40.5
     releaseName: kubescape
     namespace: kubescape
     valuesFile: values.yaml
