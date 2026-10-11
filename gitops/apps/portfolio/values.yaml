@@ -16,7 +16,7 @@ workloads:
       portfolio:
         image:
           repository: docker.io/nullcell/portfolio
-          tag: "1.0.12"
+          tag: "1.0.15"
         ports:
           http: 8080
         probes:
