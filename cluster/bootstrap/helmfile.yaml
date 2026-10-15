@@ -13,7 +13,7 @@ releases:
   - name: cilium
     namespace: kube-system
     chart: cilium/cilium
-    version: 1.20.2
+    version: 1.20.3
     values: [cilium-values.yaml]
     wait: true
     hooks:
@@ -34,7 +34,7 @@ releases:
   - name: argocd
     namespace: argocd
     chart: argo/argo-cd
-    version: 10.10.3
+    version: 10.10.5
     values: [argocd-values.yaml]
     wait: true
     needs: [kube-system/cilium]
