@@ -11,7 +11,7 @@ defaults:
         namespace: gateway
         sectionName: https
   externalSecret:
-    store: {kind: ClusterSecretStore, name: onepassword}
+    store: { kind: ClusterSecretStore, name: onepassword }
   # linuxserver.io images start as root and drop to PUID/PGID themselves, so
   # they need these capabilities and a writable root filesystem.
   workload:
@@ -33,16 +33,16 @@ defaults:
     # Longhorn RWX volumes can stall for tens of seconds, so probes are lenient.
     probes:
       startup:
-        tcpSocket: {port: web}
+        tcpSocket: { port: web }
         periodSeconds: 10
         failureThreshold: 30
       liveness:
-        tcpSocket: {port: web}
+        tcpSocket: { port: web }
         periodSeconds: 30
         timeoutSeconds: 10
         failureThreshold: 3
       readiness:
-        httpGet: {path: /ping, port: web}
+        httpGet: { path: /ping, port: web }
         periodSeconds: 30
         timeoutSeconds: 15
         failureThreshold: 12
@@ -52,25 +52,26 @@ workloads:
     name: jellyfin
     type: statefulset
     spec:
-      updateStrategy: {type: RollingUpdate}
+      updateStrategy: { type: RollingUpdate }
     containers:
       jellyfin:
-        image: {repository: lscr.io/linuxserver/jellyfin, tag: 12.1ubu2604-ls49}
+        image: { repository: lscr.io/linuxserver/jellyfin, tag: 12.1ubu2604-ls49 }
         env:
           JELLYFIN_PublishedServerUrl: https://jellyfin.nulcell.com
         ports:
           web: 8096
-          discovery: {port: 7359, protocol: UDP}
-          dlna: {port: 1900, protocol: UDP}
+          discovery: { port: 7359, protocol: UDP }
+          dlna: { port: 1900, protocol: UDP }
         probes:
           readiness:
-            httpGet: {path: /health, port: web}
+            tcpSocket: { port: web } # setting this because jellyfin can be temporarily unavailable but shouldn't leave the service
+            # httpGet: {path: /health, port: web}
             periodSeconds: 30
             timeoutSeconds: 15
             failureThreshold: 12
         resources:
-          requests: {cpu: 2000m, memory: 2Gi}
-          limits: {memory: 8Gi}
+          requests: { cpu: 2000m, memory: 2Gi }
+          limits: { memory: 8Gi }
         # TEMPORARY - proves VAAPI by bypassing the Kubernetes device cgroup.
         # Drop once a device plugin (e.g. squat/generic-device-plugin) exposes
         # /dev/dri for non-privileged GPU access.
@@ -81,85 +82,85 @@ workloads:
       jellyfin:
         ports:
           web: 8096
-          discovery: {port: 7359, protocol: UDP}
-          dlna: {port: 1900, protocol: UDP}
+          discovery: { port: 7359, protocol: UDP }
+          dlna: { port: 1900, protocol: UDP }
     # Shared by every web app below: any peer in the namespace, the gateway on the
     # web port(s), and homarr - unverified whether its widgets use the internal
     # Service URLs; tighten once confirmed unused.
     # Egress is open: these apps reach arbitrary metadata/subtitle providers.
     networkPolicy: &webPolicy
       ingress:
-        - {namespace: media}
+        - { namespace: media }
         - gateway
-        - {namespace: homarr, port: web}
+        - { namespace: homarr, port: web }
       egress: [world]
 
   seerr:
     name: seerr
     type: statefulset
     spec:
-      updateStrategy: {type: RollingUpdate}
+      updateStrategy: { type: RollingUpdate }
     containers:
       seerr:
-        image: {repository: ghcr.io/seerr-team/seerr, tag: v3.5.0}
-        ports: {web: 5055}
-        probes: {startup: {}, liveness: {}, readiness: {}}
+        image: { repository: ghcr.io/seerr-team/seerr, tag: v3.5.0 }
+        ports: { web: 5055 }
+        probes: { startup: {}, liveness: {}, readiness: {} }
         resources:
-          requests: {cpu: 400m, memory: 256Mi}
-          limits: {memory: 512Mi}
+          requests: { cpu: 400m, memory: 256Mi }
+          limits: { memory: 512Mi }
     services:
       seerr:
-        ports: {web: 5055}
+        ports: { web: 5055 }
     networkPolicy: *webPolicy
 
   sonarr:
     name: sonarr
     spec:
-      strategy: {type: Recreate}
+      strategy: { type: Recreate }
     containers:
       sonarr:
-        image: {repository: lscr.io/linuxserver/sonarr, tag: 4.0.20}
-        ports: {web: 8989}
+        image: { repository: lscr.io/linuxserver/sonarr, tag: 4.0.20 }
+        ports: { web: 8989 }
         resources:
-          requests: {cpu: 400m, memory: 256Mi}
-          limits: {memory: 1Gi}
+          requests: { cpu: 400m, memory: 256Mi }
+          limits: { memory: 1Gi }
     services:
       sonarr:
-        ports: {web: 8989}
+        ports: { web: 8989 }
     networkPolicy: *webPolicy
 
   radarr:
     name: radarr
     spec:
-      strategy: {type: Recreate}
+      strategy: { type: Recreate }
     containers:
       radarr:
-        image: {repository: lscr.io/linuxserver/radarr, tag: 6.4.4}
-        ports: {web: 7878}
+        image: { repository: lscr.io/linuxserver/radarr, tag: 6.4.4 }
+        ports: { web: 7878 }
         resources:
-          requests: {cpu: 400m, memory: 256Mi}
-          limits: {memory: 1Gi}
+          requests: { cpu: 400m, memory: 256Mi }
+          limits: { memory: 1Gi }
     services:
       radarr:
-        ports: {web: 7878}
+        ports: { web: 7878 }
     networkPolicy: *webPolicy
 
   bazarr:
     name: bazarr
     spec:
-      strategy: {type: Recreate}
+      strategy: { type: Recreate }
     containers:
       bazarr:
-        image: {repository: lscr.io/linuxserver/bazarr, tag: 1.6.2}
-        ports: {web: 6767}
+        image: { repository: lscr.io/linuxserver/bazarr, tag: 1.6.2 }
+        ports: { web: 6767 }
         # Serves no /ping.
-        probes: {startup: {}, liveness: {}, readiness: {}}
+        probes: { startup: {}, liveness: {}, readiness: {} }
         resources:
-          requests: {cpu: 400m, memory: 128Mi}
-          limits: {memory: 512Mi}
+          requests: { cpu: 400m, memory: 128Mi }
+          limits: { memory: 512Mi }
     services:
       bazarr:
-        ports: {web: 6767}
+        ports: { web: 6767 }
     networkPolicy: *webPolicy
 
   # Prowlarr and qBittorrent share Gluetun's network namespace, so all their
@@ -167,10 +168,10 @@ workloads:
   servarr:
     name: servarr
     spec:
-      strategy: {type: Recreate}
+      strategy: { type: Recreate }
     initContainers:
       gluetun:
-        image: {repository: docker.io/qmcgaw/gluetun, tag: v3.41.3}
+        image: { repository: docker.io/qmcgaw/gluetun, tag: v3.41.3 }
         restartPolicy: Always
         env:
           PUID: null
@@ -185,7 +186,7 @@ workloads:
           DNS_UPSTREAM_RESOLVERS: cloudflare,google
           WIREGUARD_PRIVATE_KEY:
             valueFrom:
-              secretKeyRef: {name: media-stack-vpn, key: wireguard-private-key}
+              secretKeyRef: { name: media-stack-vpn, key: wireguard-private-key }
           # Resolve via CoreDNS (the service CIDR is inside the killswitch's
           # 10.0.0.0/8 allowance) instead of gluetun's DoT-through-the-tunnel,
           # which misbehaves against NordVPN. Health targets an IP, so VPN
@@ -199,12 +200,12 @@ workloads:
           qbit-bt: 6881
         probes:
           startup:
-            exec: {command: [sh, -c, ping -c 1 -W 2 1.1.1.1]}
+            exec: { command: [sh, -c, ping -c 1 -W 2 1.1.1.1] }
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 60
           liveness:
-            exec: {command: [sh, -c, ping -c 1 -W 2 1.1.1.1]}
+            exec: { command: [sh, -c, ping -c 1 -W 2 1.1.1.1] }
             periodSeconds: 20
             timeoutSeconds: 10
             failureThreshold: 5
@@ -215,17 +216,18 @@ workloads:
             add: [NET_ADMIN, CHOWN, FOWNER, DAC_OVERRIDE]
     containers:
       prowlarr:
-        image: {repository: lscr.io/linuxserver/prowlarr, tag: 2.6.5}
+        image: { repository: lscr.io/linuxserver/prowlarr, tag: 2.6.5 }
         # No container ports here - Gluetun owns them.
         probes:
-          startup: {tcpSocket: {port: 9696}, periodSeconds: 10, failureThreshold: 30}
-          liveness: {tcpSocket: {port: 9696}, periodSeconds: 30, timeoutSeconds: 10, failureThreshold: 3}
-          readiness: {httpGet: {path: /ping, port: 9696}, periodSeconds: 30, timeoutSeconds: 15, failureThreshold: 12}
+          startup: { tcpSocket: { port: 9696 }, periodSeconds: 10, failureThreshold: 30 }
+          liveness: { tcpSocket: { port: 9696 }, periodSeconds: 30, timeoutSeconds: 10, failureThreshold: 3 }
+          readiness:
+            { httpGet: { path: /ping, port: 9696 }, periodSeconds: 30, timeoutSeconds: 15, failureThreshold: 12 }
         resources:
-          requests: {cpu: 400m, memory: 256Mi}
-          limits: {memory: 1Gi}
+          requests: { cpu: 400m, memory: 256Mi }
+          limits: { memory: 1Gi }
       qbittorrent:
-        image: {repository: lscr.io/linuxserver/qbittorrent, tag: 5.2.4}
+        image: { repository: lscr.io/linuxserver/qbittorrent, tag: 5.2.4 }
         env:
           WEBUI_PORT: "8080"
         # The VPN is the dependency worth restarting on; the WebUI is too slow
@@ -233,31 +235,31 @@ workloads:
         probes:
           startup: {}
           liveness:
-            exec: {command: [sh, -c, ping -c 1 -W 2 1.1.1.1]}
+            exec: { command: [sh, -c, ping -c 1 -W 2 1.1.1.1] }
             initialDelaySeconds: 20
             periodSeconds: 60
             timeoutSeconds: 10
             failureThreshold: 3
           readiness: {}
         resources:
-          requests: {cpu: 500m, memory: 512Mi}
-          limits: {memory: 2Gi}
+          requests: { cpu: 500m, memory: 512Mi }
+          limits: { memory: 2Gi }
     services:
       prowlarr:
         name: prowlarr
         ports:
-          web: {port: 9696, targetPort: 9696}
+          web: { port: 9696, targetPort: 9696 }
       qbittorrent:
         name: qbittorrent
         ports:
-          web: {port: 8080, targetPort: 8080}
-          bt: {port: 6881, targetPort: 6881}
+          web: { port: 8080, targetPort: 8080 }
+          bt: { port: 6881, targetPort: 6881 }
     networkPolicy:
       ingress:
-        - {namespace: media}
+        - { namespace: media }
         - gateway
-        - {namespace: homarr, port: 9696}
-        - {namespace: homarr, port: 8080}
+        - { namespace: homarr, port: 9696 }
+        - { namespace: homarr, port: 8080 }
       egress: [world]
 
 # RWX, shared by every app; each app's config lives in its own subPath.
@@ -270,26 +272,26 @@ persistence:
       recurring-job.longhorn.io/source: enabled
       recurring-job-group.longhorn.io/backup: enabled
     advancedMounts:
-      jellyfin: {jellyfin: [{path: /config, subPath: jellyfin}]}
-      seerr: {seerr: [{path: /app/config, subPath: seerr}]}
-      sonarr: {sonarr: [{path: /config, subPath: sonarr}]}
-      radarr: {radarr: [{path: /config, subPath: radarr}]}
-      bazarr: {bazarr: [{path: /config, subPath: bazarr}]}
+      jellyfin: { jellyfin: [{ path: /config, subPath: jellyfin }] }
+      seerr: { seerr: [{ path: /app/config, subPath: seerr }] }
+      sonarr: { sonarr: [{ path: /config, subPath: sonarr }] }
+      radarr: { radarr: [{ path: /config, subPath: radarr }] }
+      bazarr: { bazarr: [{ path: /config, subPath: bazarr }] }
       servarr:
-        gluetun: [{path: /gluetun, subPath: gluetun}]
-        prowlarr: [{path: /config, subPath: prowlarr}]
-        qbittorrent: [{path: /config, subPath: qbittorrent}]
+        gluetun: [{ path: /gluetun, subPath: gluetun }]
+        prowlarr: [{ path: /config, subPath: prowlarr }]
+        qbittorrent: [{ path: /config, subPath: qbittorrent }]
   # Media library + downloads on one volume, so imports are hardlinks/moves.
   data:
     size: 500Gi
     storageClass: longhorn
     accessMode: ReadWriteMany
     advancedMounts:
-      jellyfin: {jellyfin: [{path: /data}]}
-      sonarr: {sonarr: [{path: /data}]}
-      radarr: {radarr: [{path: /data}]}
-      bazarr: {bazarr: [{path: /data}]}
-      servarr: {qbittorrent: [{path: /data}]}
+      jellyfin: { jellyfin: [{ path: /data }] }
+      sonarr: { sonarr: [{ path: /data }] }
+      radarr: { radarr: [{ path: /data }] }
+      bazarr: { bazarr: [{ path: /data }] }
+      servarr: { qbittorrent: [{ path: /data }] }
   # Node-local transcode/cache scratch, off the RWX volume.
   scratch:
     type: emptyDir
@@ -297,51 +299,93 @@ persistence:
     advancedMounts:
       jellyfin:
         jellyfin:
-          - {path: /config/data/transcodes, subPath: transcodes}
-          - {path: /config/cache, subPath: cache}
+          - { path: /config/data/transcodes, subPath: transcodes }
+          - { path: /config/cache, subPath: cache }
   dri:
     type: hostPath
     path: /dev/dri
     hostPathType: Directory
     advancedMounts:
-      jellyfin: {jellyfin: [{path: /dev/dri}]}
+      jellyfin: { jellyfin: [{ path: /dev/dri }] }
   dev-tun:
     type: hostPath
     path: /dev/net/tun
     hostPathType: CharDevice
     advancedMounts:
-      servarr: {gluetun: [{path: /dev/net/tun}]}
+      servarr: { gluetun: [{ path: /dev/net/tun }] }
 
 # Published via external-dns on the external (LAN/Tailscale) gateway.
 routes:
   jellyfin:
     name: jellyfin
     hostnames: [jellyfin.nulcell.com]
-    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: jellyfin, service: jellyfin, port: web}]}]
+    rules:
+      [
+        {
+          matches: [{ path: { type: PathPrefix, value: / } }],
+          backends: [{ workload: jellyfin, service: jellyfin, port: web }],
+        },
+      ]
   seerr:
     name: seerr
     hostnames: [seerr.nulcell.com]
-    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: seerr, service: seerr, port: web}]}]
+    rules:
+      [
+        {
+          matches: [{ path: { type: PathPrefix, value: / } }],
+          backends: [{ workload: seerr, service: seerr, port: web }],
+        },
+      ]
   sonarr:
     name: sonarr
     hostnames: [sonarr.nulcell.com]
-    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: sonarr, service: sonarr, port: web}]}]
+    rules:
+      [
+        {
+          matches: [{ path: { type: PathPrefix, value: / } }],
+          backends: [{ workload: sonarr, service: sonarr, port: web }],
+        },
+      ]
   radarr:
     name: radarr
     hostnames: [radarr.nulcell.com]
-    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: radarr, service: radarr, port: web}]}]
+    rules:
+      [
+        {
+          matches: [{ path: { type: PathPrefix, value: / } }],
+          backends: [{ workload: radarr, service: radarr, port: web }],
+        },
+      ]
   bazarr:
     name: bazarr
     hostnames: [bazarr.nulcell.com]
-    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: bazarr, service: bazarr, port: web}]}]
+    rules:
+      [
+        {
+          matches: [{ path: { type: PathPrefix, value: / } }],
+          backends: [{ workload: bazarr, service: bazarr, port: web }],
+        },
+      ]
   prowlarr:
     name: prowlarr
     hostnames: [prowlarr.nulcell.com]
-    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: servarr, service: prowlarr, port: web}]}]
+    rules:
+      [
+        {
+          matches: [{ path: { type: PathPrefix, value: / } }],
+          backends: [{ workload: servarr, service: prowlarr, port: web }],
+        },
+      ]
   qbittorrent:
     name: qbittorrent
     hostnames: [qbittorrent.nulcell.com]
-    rules: [{matches: [{path: {type: PathPrefix, value: /}}], backends: [{workload: servarr, service: qbittorrent, port: web}]}]
+    rules:
+      [
+        {
+          matches: [{ path: { type: PathPrefix, value: / } }],
+          backends: [{ workload: servarr, service: qbittorrent, port: web }],
+        },
+      ]
 
 externalSecrets:
   vpn:
