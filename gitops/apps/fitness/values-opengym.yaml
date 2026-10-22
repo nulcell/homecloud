@@ -1,0 +1,98 @@
+workloads:
+  opengym:
+    replicas: 1
+    # The API writes JSON files to an RWO volume; two pods must never overlap.
+    spec:
+      strategy:
+        type: Recreate
+    containers:
+      api:
+        image:
+          repository: ghcr.io/duartesantos8/opengym-api
+          tag: 1.4.1
+        # Upstream image runs as root, so no runAsNonRoot here.
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+        ports:
+          http: 3000
+        env:
+          PORT: "3000"
+          DATA_DIR: /data
+          RP_ID: gym.nulcell.com
+          ORIGIN: https://gym.nulcell.com
+          # Invite-only; the first profile became admin. Create it before enabling INVITE_ONLY.
+          INVITE_ONLY: "1"
+          ALLOW_GUEST: "0"
+          FIRST_USER_ADMIN: "1"
+          # Safe only because ingress below admits cloudflared alone, which sets CF-Connecting-IP.
+          TRUST_PROXY: "1"
+        probes:
+          liveness:
+            httpGet: {path: /api/health, port: http}
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readiness:
+            httpGet: {path: /api/health, port: http}
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+        resources:
+          requests: {cpu: 50m, memory: 128Mi}
+          limits: {cpu: 500m, memory: 512Mi}
+      web:
+        image:
+          repository: ghcr.io/duartesantos8/opengym-web
+          tag: 1.4.1
+        # nginx's entrypoint renders its config into /etc/nginx/conf.d at start.
+        securityContext:
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 101
+          runAsGroup: 101
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+        ports:
+          web: 8080
+        env:
+          NGINX_PORT: "8080"
+          BACKEND: 127.0.0.1
+          PORT: "3000"
+          CF_CONNECTING_IP: $http_cf_connecting_ip
+        probes:
+          liveness:
+            httpGet: {path: /, port: web}
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readiness:
+            httpGet: {path: /, port: web}
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 200m, memory: 128Mi}
+    services:
+      opengym:
+        ports:
+          web: 8080
+    networkPolicy:
+      ingress:
+        # No HTTPRoute: cloudflared forwards straight to the Service.
+        - {namespace: cloudflared, port: web}
+      egress:
+        - world
+
+persistence:
+  data:
+    size: 2Gi
+    storageClass: longhorn
+    accessMode: ReadWriteOnce
+    labels:
+      recurring-job.longhorn.io/source: enabled
+      recurring-job-group.longhorn.io/backup: enabled
+    advancedMounts:
+      opengym:
+        api: [{path: /data}]

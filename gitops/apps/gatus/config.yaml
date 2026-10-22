@@ -35,16 +35,8 @@ ui:
   default-sort-by: group
   default-filter-by: none
   dark-mode: true
-  # Header links to the services (Internal ones and Jellyfin only resolve on LAN/Tailscale).
+  # Header links to user-facing services only (Jellyfin resolves only on LAN/Tailscale).
   buttons:
-    - name: ArgoCD
-      link: https://argocd.nulcell.com
-    - name: Grafana
-      link: https://grafana.nulcell.com
-    - name: Headlamp
-      link: https://headlamp.nulcell.com
-    - name: Longhorn
-      link: https://longhorn.nulcell.com
     - name: Portfolio
       link: https://nulcell.com
     - name: Meridian Demo
@@ -57,6 +49,8 @@ ui:
       link: https://workflow.nulcell.com
     - name: Mealie
       link: https://recipes.nulcell.com
+    - name: Fitness
+      link: https://gym.nulcell.com
     - name: Jellyfin
       link: https://jellyfin.nulcell.com
 
@@ -210,6 +204,17 @@ endpoints:
       timeout: 10s
     conditions:
       - "[STATUS] < 300"
+
+  - name: Fitness
+    group: Apps
+    url: https://gym.nulcell.com/api/health
+    method: GET
+    interval: 60s
+    client:
+      timeout: 10s
+    conditions:
+      - "[STATUS] < 300"
+      - "[CERTIFICATE_EXPIRATION] > 168h"
 
   # ── Media ───────────────────────────────────────────────────────────────────
   - name: Jellyfin

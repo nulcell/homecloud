@@ -38,6 +38,8 @@ configMaps:
           # No route on the gateway: straight to the Service.
           - hostname: recipes.nulcell.com
             service: http://mealie.mealie.svc.cluster.local:9000
+          - hostname: gym.nulcell.com
+            service: http://opengym.fitness.svc.cluster.local:8080
           - hostname: meridian-demo.nulcell.com
             service: https://cilium-gateway-internal.gateway.svc.cluster.local
             originRequest: {httpHostHeader: meridian.internal.nulcell.com, noTLSVerify: true}
@@ -108,6 +110,7 @@ workloads:
       register-apex: {<<: *register, env: {DOMAIN: nulcell.com}}
       register-www: {<<: *register, env: {DOMAIN: www.nulcell.com}}
       register-recipes: {<<: *register, env: {DOMAIN: recipes.nulcell.com}}
+      register-gym: {<<: *register, env: {DOMAIN: gym.nulcell.com}}
       register-meridian: {<<: *register, env: {DOMAIN: meridian-demo.nulcell.com}}
     containers:
       done:
@@ -137,6 +140,7 @@ persistence:
         register-apex: *cert
         register-www: *cert
         register-recipes: *cert
+        register-gym: *cert
         register-meridian: *cert
   credentials-json:
     type: secret

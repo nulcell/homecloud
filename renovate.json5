@@ -106,7 +106,7 @@
       //       tag: 10.11.11
       customType: "regex",
       description: "Docker image tags in app-level values.yaml overrides that lack an adjacent repository:",
-      managerFilePatterns: ["/^gitops\\/apps\\/.+\\/values\\.yaml$/"],
+      managerFilePatterns: ["/^gitops\\/apps\\/.+\\/values(-.+)?\\.yaml$/"],
       matchStrings: [
         "#\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+) depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>[a-z-]+))?[\\s\\S]*?tag:\\s*[\"']?(?<currentValue>[\\w][\\w.-]*)[\"']?",
       ],
