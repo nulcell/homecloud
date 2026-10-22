@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cluster shutdown/start and PVC restore, driven from live cluster state. Run through `mise run <task>`.
-# usage: cluster.sh restore <namespace>/<pvc> [number] | shutdown | start
+# usage: cluster.sh restore <namespace>/<pvc> [number] [source-namespace/pvc] | shutdown | start
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
@@ -26,23 +26,23 @@ restored() { "${LH[@]}" get volumes.longhorn.io "$1" -o json | jq -e --arg b "$2
 # Replaces a git-owned PVC with its newest backup. The restored PV is created first and pre-bound to the
 # PVC's name, so the PVC ArgoCD recreates after the delete binds to it instead of a new empty volume.
 restore() {
-  local ref=${1:?usage: restore <namespace>/<pvc> [number]} ns pvc pvcjson vol backups last url new
-  ns=${ref%/*} pvc=${ref#*/}
+  local ref=${1:?usage: restore <namespace>/<pvc> [number] [source-namespace/pvc]} ns pvc pvcjson vol backups last url new src sns spvc
+  ns=${ref%/*} pvc=${ref#*/} src=${3:-$ref} sns=${src%/*} spvc=${src#*/}
   pvcjson=$(kubectl -n "$ns" get pvc "$pvc" -o json)
   vol=$(jq -r .spec.volumeName <<<"$pvcjson")
   # Match backups by the PVC they were taken from (their KubernetesStatus label): a restored PVC gets a new
   # volume, so its older backups are filed under the previous volume name.
-  backups=$("${LH[@]}" get backups.longhorn.io -o json | jq -c --arg ns "$ns" --arg pvc "$pvc" '[.items[] | select(.status.state == "Completed")
+  backups=$("${LH[@]}" get backups.longhorn.io -o json | jq -c --arg ns "$sns" --arg pvc "$spvc" '[.items[] | select(.status.state == "Completed")
     | select((.spec.labels.KubernetesStatus // "{}" | fromjson) | .namespace == $ns and .pvcName == $pvc)] | sort_by(.status.snapshotCreatedAt) | reverse')
-  [ "$backups" != "[]" ] || { echo "no completed backup of PVC $ref" >&2; exit 1; }
-  echo "backups of $ref, newest first:"
+  [ "$backups" != "[]" ] || { echo "no completed backup of PVC $src" >&2; exit 1; }
+  echo "backups of $src, newest first:"
   jq -r 'to_entries[] | "  \(.key + 1)) \(.value.metadata.name)  \(.value.status.snapshotCreatedAt)  volume \(.value.status.volumeName)"' <<<"$backups"
   pick=${2:-}
   [ -n "$pick" ] || read -rp "Restore which backup [1]: " pick
   sel=$(jq -c --arg n "${pick:-1}" 'if ($n | test("^[1-9][0-9]*$")) then .[($n | tonumber) - 1] else empty end // empty' <<<"$backups")
   [ -n "$sel" ] || { echo "'$pick' is not a number in the list above" >&2; exit 1; }
   last=$(jq -r .metadata.name <<<"$sel") url=$(jq -r .status.url <<<"$sel")
-  confirm "Replace PVC $ref with backup $last? Its current data is discarded." || exit 1
+  confirm "Replace PVC $ref with backup $last (of $src)? Its current data is discarded." || exit 1
 
   new="restore-$(date +%s)"
   kubectl apply -f - <<EOF
