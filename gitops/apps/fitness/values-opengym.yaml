@@ -57,7 +57,7 @@ workloads:
           web: 8080
         env:
           NGINX_PORT: "8080"
-          BACKEND: 127.0.0.1:3000
+          BACKEND: 127.0.0.1
           PORT: "3000"
           CF_CONNECTING_IP: $http_cf_connecting_ip
         probes:
