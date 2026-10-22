@@ -70,8 +70,9 @@ description = "Replace a PVC with a Longhorn backup; lists them and asks which (
 usage = '''
 arg "<pvc>" help="namespace/pvc"
 arg "[number]" help="skip the prompt: position in the printed list (1 = newest)"
+flag "--from <pvc>" help="namespace/pvc whose backups to use (default: the PVC itself), e.g. after moving an app"
 '''
-run = 'scripts/cluster.sh restore "$usage_pvc" $usage_number'
+run = 'scripts/cluster.sh restore "$usage_pvc" "${usage_number:-}" "${usage_from:-}"'
 
 [tasks."cluster:shutdown"]
 description = "Hibernate databases, detach all volumes, power off the nodes"
