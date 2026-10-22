@@ -45,7 +45,9 @@ workloads:
         image:
           repository: ghcr.io/duartesantos8/opengym-web
           tag: 1.4.1
+        # nginx's entrypoint renders its config into /etc/nginx/conf.d at start.
         securityContext:
+          readOnlyRootFilesystem: false
           runAsNonRoot: true
           runAsUser: 101
           runAsGroup: 101
