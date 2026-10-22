@@ -21,8 +21,7 @@ workloads:
           DATA_DIR: /data
           RP_ID: gym.nulcell.com
           ORIGIN: https://gym.nulcell.com
-          # Invite-only; the first profile becomes admin.
-          INVITE_ONLY: "1"
+          # The first profile becomes admin. Re-add INVITE_ONLY: "1" once it exists.
           ALLOW_GUEST: "0"
           FIRST_USER_ADMIN: "1"
           # Safe only because ingress below admits cloudflared alone, which sets CF-Connecting-IP.
