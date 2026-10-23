@@ -55,7 +55,7 @@ workloads:
       updateStrategy: { type: RollingUpdate }
     containers:
       jellyfin:
-        image: {repository: lscr.io/linuxserver/jellyfin, tag: 12.2ubu2604-ls54}
+        image: {repository: lscr.io/linuxserver/jellyfin, tag: 12.3ubu2604-ls56}
         env:
           JELLYFIN_PublishedServerUrl: https://jellyfin.nulcell.com
         ports:
