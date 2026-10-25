@@ -78,9 +78,6 @@ backend:
 gateway:
   enabled: false
 
-minio:
-  enabled: false
-
 ingester:
   replicas: 0
 querier:
@@ -94,8 +91,6 @@ distributor:
 compactor:
   replicas: 0
 indexGateway:
-  replicas: 0
-bloomCompactor:
   replicas: 0
 bloomGateway:
   replicas: 0
