@@ -88,7 +88,7 @@
       matchManagers: ["helm-values", "custom.regex"],
       matchDatasources: ["docker"],
       matchUpdateTypes: ["patch"],
-      automerge: true,
+      automerge: false,
     },
   ],
   platformAutomerge: false,
