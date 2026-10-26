@@ -11,7 +11,7 @@ workloads:
         image:
           # repository: dhi.io/uptime-kuma
           repository: ghcr.io/louislam/uptime-kuma
-          tag: "2.5.7"
+          tag: "2.5.8"
         securityContext:
           readOnlyRootFilesystem: false
           # ICMP monitors need raw sockets:
