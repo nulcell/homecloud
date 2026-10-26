@@ -73,7 +73,7 @@
     {
       matchDepNames: ["app-template"],
       matchUpdateTypes: ["minor", "patch"],
-      automerge: true,
+      automerge: false,
     },
     {
       matchManagers: ["github-actions"],
