@@ -216,7 +216,7 @@ workloads:
             add: [NET_ADMIN, CHOWN, FOWNER, DAC_OVERRIDE]
     containers:
       prowlarr:
-        image: { repository: lscr.io/linuxserver/prowlarr, tag: 2.6.5 }
+        image: { repository: lscr.io/linuxserver/prowlarr, tag: 2.7.0 }
         # No container ports here - Gluetun owns them.
         probes:
           startup: { tcpSocket: { port: 9696 }, periodSeconds: 10, failureThreshold: 30 }
