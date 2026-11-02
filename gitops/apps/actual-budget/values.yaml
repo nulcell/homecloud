@@ -27,7 +27,7 @@ workloads:
       actualbudget:
         image:
           repository: docker.io/actualbudget/actual-server
-          tag: 26.10.0
+          tag: 26.11.0
         env:
           ACTUAL_PORT: "5006"
           ACTUAL_DATA_DIR: /data
@@ -74,7 +74,7 @@ workloads:
       http-api:
         image:
           repository: docker.io/jhonderson/actual-http-api
-          tag: 26.10.1
+          tag: 26.11.0
         env:
           ACTUAL_SERVER_URL: http://actualbudget:5006/
           # Anything but "production" makes the image try to load a .env file.
