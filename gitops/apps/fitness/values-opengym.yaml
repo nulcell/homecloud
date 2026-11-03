@@ -9,7 +9,7 @@ workloads:
       api:
         image:
           repository: ghcr.io/duartesantos8/opengym-api
-          tag: 1.4.1
+          tag: 1.4.4
         # Upstream image runs as root, so no runAsNonRoot here.
         securityContext:
           allowPrivilegeEscalation: false
@@ -44,7 +44,7 @@ workloads:
       web:
         image:
           repository: ghcr.io/duartesantos8/opengym-web
-          tag: 1.4.1
+          tag: 1.4.4
         # nginx's entrypoint renders its config into /etc/nginx/conf.d at start.
         securityContext:
           readOnlyRootFilesystem: false
