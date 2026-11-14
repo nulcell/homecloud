@@ -71,7 +71,7 @@ workloads:
             failureThreshold: 12
         resources:
           requests: { cpu: 2000m, memory: 2Gi }
-          limits: {} # { memory: 8Gi }
+          limits: { memory: 8Gi }
         # TEMPORARY - proves VAAPI by bypassing the Kubernetes device cgroup.
         # Drop once a device plugin (e.g. squat/generic-device-plugin) exposes
         # /dev/dri for non-privileged GPU access.
