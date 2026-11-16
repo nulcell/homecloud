@@ -135,7 +135,7 @@ workloads:
       strategy: { type: Recreate }
     containers:
       radarr:
-        image: { repository: lscr.io/linuxserver/radarr, tag: 6.4.4 }
+        image: { repository: lscr.io/linuxserver/radarr, tag: 7.0.3 }
         ports: { web: 7878 }
         resources:
           requests: { cpu: 400m, memory: 256Mi }
