@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install tools
-        uses: jdx/mise-action@v5.2.8
+        uses: jdx/mise-action@v5.2.9
         with:
           install_args: helm kustomize kubeconform
 
