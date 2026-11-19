@@ -76,11 +76,11 @@ spec:
               name: redis
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 100m
+              memory: 256Mi
             limits:
-              cpu: 200m
-              memory: 512Mi
+              cpu: 500m
+              memory: 1024Mi
           readinessProbe:
             tcpSocket:
               port: 6379
