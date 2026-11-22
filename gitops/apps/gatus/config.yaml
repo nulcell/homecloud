@@ -39,8 +39,8 @@ ui:
   buttons:
     - name: Portfolio
       link: https://nulcell.com
-    - name: Meridian Demo
-      link: https://meridian-demo.nulcell.com
+    # - name: Meridian Demo
+    #   link: https://meridian-demo.nulcell.com
     - name: Authentik
       link: https://auth.nulcell.com
     - name: Actual Budget
@@ -155,15 +155,15 @@ endpoints:
       # Public site: also watch the cert.
       - "[CERTIFICATE_EXPIRATION] > 168h"
 
-  - name: Meridian Demo
-    group: Apps
-    url: https://meridian-demo.nulcell.com/api/v1/info
-    method: GET
-    interval: 60s
-    client:
-      timeout: 10s
-    conditions:
-      - "[STATUS] < 300"
+  # - name: Meridian Demo
+  #   group: Apps
+  #   url: https://meridian-demo.nulcell.com/api/v1/info
+  #   method: GET
+  #   interval: 60s
+  #   client:
+  #     timeout: 10s
+  #   conditions:
+  #     - "[STATUS] < 300"
 
   - name: Authentik
     group: Apps
