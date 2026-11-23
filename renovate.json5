@@ -1,126 +1,138 @@
 {
-  $schema: "https://docs.renovatebot.com/renovate-schema.json",
-
-  // Self-hosted-only options (platform, repositories, onboarding,
-  // requireConfig) live in .github/renovate-global.json5, which is what
-  // the workflow passes to the action as `configurationFile`. Renovate
-  // separately auto-discovers *this* file as the repo-level config, so
-  // self-hosted-only fields must stay out of it or they raise config warnings.
-  extends: ["config:recommended"],
-
-  dependencyDashboard: true,
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+  ],
+  dependencyDashboard: {
+    enabled: true,
+  },
   dependencyDashboardApproval: false,
-  timezone: "Europe/Amsterdam",
-  // No `schedule` here on purpose: the cron in .github/workflows/renovate.yml
-  // already controls cadence. A `schedule` here would additionally gate
-  // *whether* Renovate may open branches/PRs during that run, and unless the
-  // two windows stay in exact sync every branch comes back "not-scheduled".
+  timezone: 'Europe/Amsterdam',
   prConcurrentLimit: 0,
   prHourlyLimit: 0,
-  prCreation: "immediate",
-  labels: ["renovate"],
-  semanticCommits: "enabled",
-
+  prCreation: 'immediate',
+  labels: [
+    'renovate',
+  ],
+  semanticCommits: 'enabled',
   packageRules: [
     {
-      matchUpdateTypes: ["major", "minor"],
-      semanticCommitType: "feat",
+      matchUpdateTypes: [
+        'major',
+        'minor',
+      ],
+      semanticCommitType: 'feat',
     },
     {
-      matchUpdateTypes: ["patch", "digest"],
-      semanticCommitType: "fix",
-    },
-    // One PR per gitops dir: an app's chart and images move together, and
-    // unrelated components (cert-manager vs longhorn) never share a PR.
-    // Majors still split out (separateMajorMinor defaults on).
-    {
-      matchFileNames: ["gitops/**"],
-      groupName: "dependencies",
-      additionalBranchPrefix: "{{parentDir}}-",
-      semanticCommitScope: "{{parentDir}}",
-    },
-    // Cilium, ArgoCD and the Gateway API CRDs are installed together.
-    {
-      matchFileNames: ["cluster/bootstrap/**"],
-      groupName: "bootstrap",
-      semanticCommitScope: "bootstrap",
+      matchUpdateTypes: [
+        'patch',
+        'digest',
+      ],
+      semanticCommitType: 'fix',
     },
     {
-      matchManagers: ["github-actions"],
-      groupName: "github actions",
-      semanticCommitScope: "ci",
+      matchFileNames: [
+        'gitops/**',
+      ],
+      groupName: 'dependencies',
+      additionalBranchPrefix: '{{parentDir}}-',
+      semanticCommitScope: '{{parentDir}}',
     },
-    // Some linuxserver.io images carry stale 2021–2022 tags that are *not*
-    // application versions - base-image and OS releases that leaked into the
-    // tag namespace. They sort above the real version, so Renovate reads them
-    // as major bumps.
     {
-      matchDatasources: ["docker"],
-      matchPackageNames: ["lscr.io/linuxserver/qbittorrent"],
-      // Headroom for real majors 6–9; excludes 14.3.9 and 20.04.1. Revisit if
-      // qBittorrent ever approaches 10.
-      allowedVersions: "<10",
+      matchFileNames: [
+        'cluster/bootstrap/**',
+      ],
+      groupName: 'bootstrap',
+      semanticCommitScope: 'bootstrap',
     },
-    // .mise.toml pins dev-tool CLI versions that are updated manually.
     {
-      matchManagers: ["mise"],
-      matchFileNames: [".mise.toml"],
+      matchManagers: [
+        'github-actions',
+      ],
+      groupName: 'github actions',
+      semanticCommitScope: 'ci',
+    },
+    {
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        'lscr.io/linuxserver/qbittorrent',
+      ],
+      allowedVersions: '<10',
+    },
+    {
+      matchManagers: [
+        'mise',
+      ],
+      matchFileNames: [
+        '.mise.toml',
+      ],
       enabled: false,
     },
-    // Automerge trial: low-risk updates only. Renovate itself merges once the
-    // Validate check is green (platformAutomerge off, so GitHub can't merge
-    // before checks run when none are required). Delete these to disable.
     {
-      matchDepNames: ["app-template"],
-      matchUpdateTypes: ["minor", "patch"],
+      matchDepNames: [
+        'app-template',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
       automerge: false,
     },
     {
-      matchManagers: ["github-actions"],
-      matchUpdateTypes: ["minor", "patch"],
+      matchManagers: [
+        'github-actions',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
       automerge: true,
     },
     {
-      matchUpdateTypes: ["digest"],
+      matchUpdateTypes: [
+        'digest',
+      ],
       automerge: true,
     },
     {
-      matchManagers: ["helm-values", "custom.regex"],
-      matchDatasources: ["docker"],
-      matchUpdateTypes: ["patch"],
+      matchManagers: [
+        'helm-values',
+        'custom.regex',
+      ],
+      matchDatasources: [
+        'docker',
+      ],
+      matchUpdateTypes: [
+        'patch',
+      ],
       automerge: false,
     },
   ],
   platformAutomerge: false,
-
   customManagers: [
     {
-      // Some app-level overrides set only `tag:` without a sibling
-      // `repository:` in the same file - the repository default lives in the
-      // upstream chart instead, so the built-in helm-values manager can't
-      // resolve a package name on its own. Annotate those blocks with a hint comment, e.g.:
-      //
-      //   jellyfin:
-      //     # renovate: datasource=docker depName=lscr.io/linuxserver/jellyfin
-      //     image:
-      //       tag: 10.11.11
-      customType: "regex",
-      description: "Docker image tags in app-level values.yaml overrides that lack an adjacent repository:",
-      managerFilePatterns: ["/^gitops\\/apps\\/.+\\/values(-.+)?\\.yaml$/"],
+      customType: 'regex',
+      description: 'Docker image tags in app-level values.yaml overrides that lack an adjacent repository:',
+      managerFilePatterns: [
+        '/^gitops\\/apps\\/.+\\/values(-.+)?\\.yaml$/',
+      ],
       matchStrings: [
-        "#\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+) depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>[a-z-]+))?[\\s\\S]*?tag:\\s*[\"']?(?<currentValue>[\\w][\\w.-]*)[\"']?",
+        '#\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+) depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>[a-z-]+))?[\\s\\S]*?tag:\\s*["\']?(?<currentValue>[\\w][\\w.-]*)["\']?',
       ],
     },
     {
-      // Remote manifests pinned by release URL (KubeVirt, CDI, Gateway API).
-      // Only list items match, so commented-out URLs are left alone.
-      customType: "regex",
-      description: "GitHub release download URLs",
-      managerFilePatterns: ["/^gitops\\/.+\\/kustomization\\.yaml$/", "/^cluster\\/bootstrap\\/helmfile\\.yaml$/"],
-      matchStrings: [
-        "\\n\\s*-\\s*https://github\\.com/(?<depName>[^/\\s]+/[^/\\s]+)/releases/download/(?<currentValue>v[\\w.-]+)/",
+      customType: 'regex',
+      description: 'GitHub release download URLs',
+      managerFilePatterns: [
+        '/^gitops\\/.+\\/kustomization\\.yaml$/',
+        '/^cluster\\/bootstrap\\/helmfile\\.yaml$/',
       ],
-      datasourceTemplate: "github-releases",
+      matchStrings: [
+        '\\n\\s*-\\s*https://github\\.com/(?<depName>[^/\\s]+/[^/\\s]+)/releases/download/(?<currentValue>v[\\w.-]+)/',
+      ],
+      datasourceTemplate: 'github-releases',
     },
   ],
 }
