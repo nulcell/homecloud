@@ -227,7 +227,7 @@ workloads:
           requests: { cpu: 400m, memory: 256Mi }
           limits: { memory: 1Gi }
       qbittorrent:
-        image: { repository: lscr.io/linuxserver/qbittorrent, tag: 5.3.0 }
+        image: { repository: lscr.io/linuxserver/qbittorrent, tag: 5.3.1 }
         env:
           WEBUI_PORT: "8080"
         # The VPN is the dependency worth restarting on; the WebUI is too slow
