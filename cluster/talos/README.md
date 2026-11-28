@@ -7,7 +7,7 @@ Machine-config patches for the Talos cluster. First install: [../docs/bootstrap.
 ```
 talos/
 ├── patches/
-│   ├── common.yaml        # every node: DNS, NTP, kubelet, node IP, Longhorn user volume, iSCSI module
+│   ├── common.yaml        # every node: DNS, NTP, kubelet, node IP, Longhorn user volume, iSCSI module, workload isolation
 │   └── controlplane.yaml  # control plane: certSANs, etcd, apiserver, controller-manager/scheduler, VIP, CNI/proxy off
 ├── generated/             # `talosctl gen config` base + talosconfig - gitignored
 ├── secrets/               # secret.yaml, etcd snapshots - gitignored

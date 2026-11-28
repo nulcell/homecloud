@@ -33,10 +33,10 @@ apiVersion: v1alpha1
 kind: KernelModuleConfig
 name: iscsi_tcp # Longhorn
 ---
-# Off on upgraded clusters; keep it off until Longhorn is tested inside the sandbox.
+# CRI, kubelet and pods run in their own PID + mount namespace, away from machined. Takes effect on reboot.
 apiVersion: v1alpha1
 kind: SecurityProfileConfig
-$patch: delete
+workloadIsolation: true
 ---
 # New clusters mount EPHEMERAL nosuid/nodev; keep the existing mount options.
 apiVersion: v1alpha1
