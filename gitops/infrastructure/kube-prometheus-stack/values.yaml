@@ -2,14 +2,15 @@
 fullnameOverride: kps
 
 # Talos binds controller-manager/scheduler to 0.0.0.0 and etcd metrics to :2381 (cluster/talos/patches/controlplane.yaml).
-# Proxy is disabled (Cilium replaces it). etcd is not a pod, so its endpoint is listed.
+# Proxy is disabled (Cilium replaces it). etcd is not a pod and ArgoCD never applies Endpoints (default
+# resource exclusion), so etcd is a static scrape job (additionalScrapeConfigs); kubeEtcd stays on for rules + dashboard.
 kubeProxy:
   enabled: false
 kubeEtcd:
-  endpoints: [10.10.25.25]
   service:
-    port: 2381
-    targetPort: 2381
+    enabled: false
+  serviceMonitor:
+    enabled: false
 
 prometheus:
   prometheusSpec:
@@ -27,6 +28,10 @@ prometheus:
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
+    additionalScrapeConfigs:
+      - job_name: kube-etcd # name the chart's etcd rules and dashboard expect
+        static_configs:
+          - targets: [10.10.25.25:2381] # API VIP, always on the control plane
 
 alertmanager:
   alertmanagerSpec:
