@@ -7,6 +7,7 @@ spec:
   instances: 1 # Single instance for development; increase to 3 for production
   imageName: ghcr.io/cloudnative-pg/postgresql:18.4
   primaryUpdateStrategy: unsupervised
+  enablePDB: false # single instance: the PDB only blocks node drains
   storage:
     size: 10Gi
   bootstrap:

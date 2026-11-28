@@ -142,6 +142,6 @@ resources:
     memory: 256Mi
 
 podDisruptionBudget:
-  enabled: true
+  enabled: false # one replica: minAvailable 1 only blocks node drains
   minAvailable: 1
   maxUnavailable: null
