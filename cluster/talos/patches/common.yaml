@@ -1,0 +1,45 @@
+# Applied to every node, on top of `talosctl gen config` (Talos 1.14 multi-document output).
+# The installer image comes from `mise run talos:render` (SCHEMATIC_ID + TALOS_VERSION in .mise.toml).
+apiVersion: v1alpha1
+kind: ResolverConfig
+nameservers:
+  - address: 10.10.31.254 # home DNS
+  - address: 1.1.1.1
+---
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+ntp:
+  servers:
+    - pool.ntp.org
+---
+apiVersion: v1alpha1
+kind: KubeletConfig
+extraArgs:
+  rotate-server-certificates: "true"
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+nodeIP:
+  validSubnets:
+    - 10.10.16.0/20
+---
+# Longhorn data. /var/mnt/* is propagated into the kubelet; KubeletConfig has no extraMounts.
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: longhorn
+volumeType: directory
+---
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: iscsi_tcp # Longhorn
+---
+# Off on upgraded clusters; keep it off until Longhorn is tested inside the sandbox.
+apiVersion: v1alpha1
+kind: SecurityProfileConfig
+$patch: delete
+---
+# New clusters mount EPHEMERAL nosuid/nodev; keep the existing mount options.
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+$patch: delete

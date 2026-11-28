@@ -39,22 +39,16 @@ Record the **schematic ID** - required for upgrades. Boot the ISO; Talos waits i
 
 ## 2. Generate cluster config
 
-The full command with every flag this cluster uses is in [`../talos/README.md`](../talos/README.md). Short form:
+Set `SCHEMATIC_ID`, `TALOS_VERSION` and `KUBERNETES_VERSION` in `.mise.toml`. The secrets bundle lives in 1Password (`mise run talos:secrets` pulls it); for a brand-new cluster create one first and store it there:
 
 ```bash
-talosctl gen config homecloud https://k8s.nulcell.com:6443 \
-  --output-dir cluster/talos/generated --with-examples=false --with-docs=false
+talosctl gen secrets --output-file cluster/talos/secrets/secret.yaml   # new cluster only - then upload to 1Password
+mise run talos:render       # generated/ base + controlplane-final.yaml / worker-final.yaml, validated
+talosctl gen config homecloud https://k8s.nulcell.com:6443 --with-secrets cluster/talos/secrets/secret.yaml \
+  --output-types talosconfig --output-dir cluster/talos/generated
 ```
 
-Outputs `controlplane.yaml`, `worker.yaml`, `talosconfig`, `secrets.yaml`. Secrets and configs are gitignored - keep them safe.
-
-Patch each role with its file from [`patches/`](../talos/patches/) (CNI=none, kube-proxy disabled, VIP, etcd advertised subnets, kubelet server cert rotation, aggregator routing, Longhorn bind mount, hugepages, iSCSI/NVMe/VFIO kernel modules).
-
-```bash
-talosctl machineconfig patch cluster/talos/generated/controlplane.yaml \
-  --patch @cluster/talos/patches/controlplane.yaml \
-  --output cluster/talos/controlplane-final.yaml
-```
+The patches ([`../talos/patches/`](../talos/patches/)) set CNI none, kube-proxy off, the API VIP, etcd advertised subnets and metrics, kubelet server cert rotation, aggregator routing, the Longhorn user volume and the iSCSI module. Everything rendered is gitignored.
 
 ## 3. Apply config + bootstrap etcd
 

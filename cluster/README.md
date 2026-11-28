@@ -43,7 +43,7 @@ cluster/
 │   ├── upgrade.md
 │   └── terraform.md
 ├── talos/
-│   ├── patches/        # controlplane.yaml, worker.yaml
+│   ├── patches/        # common.yaml (every node), controlplane.yaml
 │   ├── generated/      # talosctl gen config output — gitignored
 │   └── secrets/        # secrets bundle + talosconfig — gitignored
 └── bootstrap/
