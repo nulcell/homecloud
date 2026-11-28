@@ -107,6 +107,8 @@ talosctl dashboard
 kubectl get nodes -o wide         # node IPs
 mise run talos:upgrade <node-ip>
 mise run talos:upgrade-k8s        # add --dry-run to preview
+# Single control plane: each apiserver restart takes the API down, so controller-manager/scheduler can
+# crashloop past talosctl's wait and it times out. Restart the stuck pod and rerun - it skips finished steps.
 
 # Config changes (patches below): apply the role's patch; add --mode staged if it needs a reboot,
 # then run talos:upgrade to apply it.
