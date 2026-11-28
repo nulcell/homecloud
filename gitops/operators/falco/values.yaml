@@ -102,9 +102,10 @@ volumes: []
 volumeMounts: []
 
 # -- Additional CLI arguments passed to the operator binary
-extraArgs: []
-  # - --metrics-bind-address=:8443
-  # - --metrics-secure=false
+# Requirement checks run before plugins are installed on a freshly booted node and never re-run, blocking the
+# upstream rulesfiles so the custom overrides load alone and fail. Advisory mode installs regardless.
+extraArgs:
+  - --enforce-requirements=false
 
 # -- Extra environment variables
 extraEnv: []
