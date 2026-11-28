@@ -43,9 +43,9 @@ spec:
 
     # Disabled globally - triggers on too many normal operations across workloads.
     - rule: "Unexpected UDP Traffic"
+      enabled: false
       override:
-        condition: append
-      condition: and (never_true)
+        enabled: replace
 
     # Longhorn
     - rule: "Launch Suspicious Network Tool in Container"
@@ -70,12 +70,6 @@ spec:
         condition: append
       condition: >-
         and not (k8s.ns.name = "longhorn-system" and container.name = "longhorn-manager" and proc.name = "dpkg")
-    - rule: "Unexpected UDP Traffic"
-      override:
-        condition: append
-      condition: >-
-        and not (k8s.ns.name = "longhorn-system" and container.name = "instance-manager" and proc.name = "nc" and
-        proc.cmdline in ("nc -zv localhost 8503"))
 
     - rule: "Change thread namespace"
       override:
@@ -169,12 +163,6 @@ spec:
         condition: append
       condition: >-
         and not (container.name = "postgres" and proc.exepath = "/bin/dash" and proc.pname = "postgres")
-
-    - rule: "Unexpected UDP Traffic"
-      override:
-        condition: append
-      condition: >-
-        and not (k8s.ns.name = "homarr" and container.name = "homarr" and proc.name = "libuv-worker")
 
     # Every ArgoCD component runs the same binary and talks to the API server by design.
     - rule: "Contact K8S API Server From Container"

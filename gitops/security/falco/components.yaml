@@ -26,6 +26,8 @@ spec:
               value: error
             - name: WEBUI_URL
               value: http://falcosidekick-ui:2802
+            - name: WEBUI_MINIMUMPRIORITY
+              value: warning
 ---
 apiVersion: instance.falcosecurity.dev/v1alpha1
 kind: Component
