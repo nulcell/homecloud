@@ -40,6 +40,7 @@ cluster/
 │   ├── argocd.md
 │   ├── backup-restore.md
 │   ├── shutdown.md
+│   ├── upgrade.md
 │   └── terraform.md
 ├── talos/
 │   ├── patches/        # controlplane.yaml, worker.yaml
@@ -60,6 +61,7 @@ cluster/
 - [argocd.md](docs/argocd.md) - app-of-apps layout, secret wiring, operating notes.
 - [backup-restore.md](docs/backup-restore.md) - Longhorn and Postgres backups to S3, restore drills.
 - [shutdown.md](docs/shutdown.md) - graceful full shutdown and start.
+- [upgrade.md](docs/upgrade.md) - Talos and Kubernetes upgrades: rules, pre-flight, steps, notes from past upgrades.
 - [terraform.md](docs/terraform.md) - planned Terraform + Terragrunt replacement for Talos config and bootstrap.
 - [talos/README.md](talos/README.md) - `talosctl` commands, upgrades.
 

@@ -31,7 +31,7 @@ Self-hosted private cloud on bare metal. Two nodes today (1 control plane with s
 - **Tasks**: `mise tasks` - `render`, `validate`, `bootstrap`, `talos:upgrade <node-ip>`, `talos:upgrade-k8s`, `restore <ns>/<pvc>`, `cluster:shutdown`, `cluster:start`, `argo:sync`. `restore`, `cluster:shutdown` and `cluster:start` are subcommands of [`scripts/cluster.sh`](scripts/cluster.sh). Talos versions/schematic live in `.mise.toml` `[env]`.
 - **Domain**: `nulcell.com`.
 
-Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap: [`cluster/docs/bootstrap.md`](cluster/docs/bootstrap.md). ArgoCD + secrets: [`cluster/docs/argocd.md`](cluster/docs/argocd.md). Backups and restores: [`cluster/docs/backup-restore.md`](cluster/docs/backup-restore.md). Shutdown: [`cluster/docs/shutdown.md`](cluster/docs/shutdown.md). Talos commands: [`cluster/talos/README.md`](cluster/talos/README.md). What runs in each layer: the [README](README.md#whats-running).
+Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap: [`cluster/docs/bootstrap.md`](cluster/docs/bootstrap.md). ArgoCD + secrets: [`cluster/docs/argocd.md`](cluster/docs/argocd.md). Backups and restores: [`cluster/docs/backup-restore.md`](cluster/docs/backup-restore.md). Shutdown: [`cluster/docs/shutdown.md`](cluster/docs/shutdown.md). Upgrades: [`cluster/docs/upgrade.md`](cluster/docs/upgrade.md). Talos commands: [`cluster/talos/README.md`](cluster/talos/README.md). What runs in each layer: the [README](README.md#whats-running).
 
 ## Directory map
 
@@ -39,7 +39,7 @@ Deep reference: [`cluster/README.md`](cluster/README.md). Bootstrap: [`cluster/d
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`cluster/bootstrap/`](cluster/bootstrap/)         | `helmfile.yaml` (Gateway API CRDs, Cilium, ArgoCD, root app), their values, `namespaces.yaml`, SOPS-encrypted 1Password credential.                                             |
 | [`cluster/talos/`](cluster/talos/)                 | Machine-config patches. `generated/` and `secrets/` are gitignored.                                                                                                             |
-| [`cluster/docs/`](cluster/docs/)                   | `bootstrap.md`, `argocd.md`, `backup-restore.md`, `shutdown.md`, `terraform.md` (planned Terraform + Terragrunt).                                                               |
+| [`cluster/docs/`](cluster/docs/)                   | `bootstrap.md`, `argocd.md`, `backup-restore.md`, `shutdown.md`, `upgrade.md`, `terraform.md` (planned Terraform + Terragrunt).                                                               |
 | [`gitops/root/`](gitops/root/)                     | Root Application + five ApplicationSets (`infrastructure`, `operators`, `security`, `services`, `apps`) ordered by sync wave.                                                   |
 | [`gitops/infrastructure/`](gitops/infrastructure/) | Base platform - every other layer can assume these are up (`secrets` holds the cross-namespace ClusterExternalSecrets: registry pull creds, S3 backup creds).                   |
 | [`gitops/operators/`](gitops/operators/)           | Operators installing the CRDs the upper layers consume.                                                                                                                         |

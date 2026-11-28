@@ -26,7 +26,7 @@ Kernel customizations:
 customization:
   extraKernelArgs:
     - -lockdown
-    - --lockdown=integrity
+    - lockdown=integrity # `-arg` removes a default, plain `arg` adds
   systemExtensions:
     officialExtensions:
       - siderolabs/amd-ucode
@@ -100,7 +100,7 @@ mise run bootstrap
 talosctl get links
 talosctl health --nodes ${NODE_IP}
 talosctl dashboard
-# Upgrades: bump SCHEMATIC_ID / TALOS_VERSION / KUBERNETES_VERSION (and the kubectl pin) in .mise.toml first.
+# Upgrades: full procedure in ../docs/upgrade.md. Bump SCHEMATIC_ID / TALOS_VERSION / KUBERNETES_VERSION (and the kubectl pin) in .mise.toml first.
 # One node at a time, workers first. talosctl cordons and drains; Longhorn (2 replicas) blocks the
 # drain if the node holds a volume's last healthy replica, so wait for volumes to be healthy
 # (Longhorn UI) before the next node.
