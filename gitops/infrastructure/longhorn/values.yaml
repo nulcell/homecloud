@@ -1,6 +1,6 @@
 defaultSettings:
   defaultReplicaCount: 2 # one per node; raise to 3 with 3+ nodes
-  defaultDataPath: /var/lib/longhorn
+  defaultDataPath: /var/mnt/longhorn # Talos UserVolumeConfig `longhorn`; only applies to new nodes
   storageOverProvisioningPercentage: 100
   storageMinimalAvailablePercentage: 15
   deletingConfirmationFlag: true # disable to prevent accidental deletions after testing
