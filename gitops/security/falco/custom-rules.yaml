@@ -7,6 +7,9 @@ metadata:
 spec:
   priority: 90
   inlineRules:
+    # falco-operator blocks rulesfiles that declare no requirements.
+    - required_engine_version: 0.57.0
+
     # ── Syscall rules ──────────────────────────────────────────────────────────
 
     - rule: "BPF Program Not Profiled"
