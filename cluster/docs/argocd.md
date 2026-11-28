@@ -34,7 +34,7 @@ gitops/
 ├── infrastructure/   # base platform
 ├── operators/        # operators and their CRDs
 ├── security/         # runtime detection and posture scanning
-├── services/         # platform services on the operators (KubeVirt + CDI CRs)
+├── services/         # platform services on the operators (empty since KubeVirt moved to experimental/)
 ├── apps/             # workloads
 └── experimental/     # staging area — no ApplicationSet reads this, nothing here runs
 ```
@@ -55,7 +55,7 @@ All generated Applications run `automated: {prune: true, selfHeal: true}` with `
 Two notable overrides:
 
 - `apps-appset.yaml` sets `compare-options: ServerSideDiff=true`, so CRD schema defaults the API server injects (e.g. relabelings `action: replace`) don't read as permanent drift.
-- `operators-appset.yaml` ignores `/spec/versions` on `cdis.cdi.kubevirt.io` and sets `RespectIgnoreDifferences=true`. cdi-operator strips `v1alpha1` from that CRD; without this ArgoCD puts it back every reconcile, and each flip leaks etcd connections in the apiserver.
+- `operators-appset.yaml` ignores `/spec/versions` on `cdis.cdi.kubevirt.io` and sets `RespectIgnoreDifferences=true`. cdi-operator strips `v1alpha1` from that CRD; without this ArgoCD puts it back every reconcile, and each flip leaks etcd connections in the apiserver. Inert while KubeVirt sits in `experimental/`.
 
 ## Rendering
 

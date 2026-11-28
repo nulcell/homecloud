@@ -8,20 +8,20 @@ Bring-up artifacts for the Talos Kubernetes cluster: machine configs and the imp
 
 ## Topology phases
 
-- **Phase 1 (current)** - 1 control plane with `allowSchedulingOnControlPlanes: true`, 1 worker, Longhorn replica 2, etcd quorum 1.
+- **Phase 1 (current)** - 1 control plane that also runs workloads (its `NoSchedule` taint is removed in `cluster/talos/patches/controlplane.yaml`), 1 worker, Longhorn replica 2, etcd quorum 1.
 - **Phase 2** - 3-node HA control plane. Jump straight from 1 → 3 (2-node etcd is worse than 1-node). Raise Longhorn default replicas to 3.
-- **Phase 3** _(optional)_ - dedicated workers; flip `allowSchedulingOnControlPlanes` to false.
+- **Phase 3** _(optional)_ - dedicated workers; restore the control-plane taint.
 
 ## Bootstrap order
 
 Imperative seed, then ArgoCD:
 
 1. Build a custom Talos image at [Image Factory](https://factory.talos.dev/) with `iscsi-tools`, `util-linux-tools`, matching microcode, and optional `amdgpu`. Detail in [docs/bootstrap.md §1](docs/bootstrap.md#1-build-a-custom-talos-image).
-2. Boot → generate config → patch → `talosctl apply-config` → `talosctl bootstrap`.
+2. Boot → `mise run talos:render` → `talosctl apply-config` → `talosctl bootstrap`.
 3. Apply Gateway API CRDs → install Cilium → seed the 1Password credential for External Secrets → install ArgoCD.
 4. `mise run bootstrap` ([`bootstrap/helmfile.yaml`](bootstrap/helmfile.yaml)) finishes by applying [`/gitops/root/root-app.yaml`](../gitops/root/root-app.yaml). ArgoCD then reconciles the five ApplicationSets in [`/gitops/root/`](../gitops/root/).
 
-Cilium and ArgoCD stay on Helm - their values in [`bootstrap/`](bootstrap/) are the source of truth for those two. Everything else (cert-manager, Longhorn, metrics-server, KubeVirt, monitoring, gateways, workloads) is GitOps from day one.
+Cilium and ArgoCD stay on Helm - their values in [`bootstrap/`](bootstrap/) are the source of truth for those two. Everything else (cert-manager, Longhorn, metrics-server, monitoring, gateways, workloads) is GitOps from day one.
 
 ## Key decisions
 
@@ -44,8 +44,8 @@ cluster/
 │   └── terraform.md
 ├── talos/
 │   ├── patches/        # common.yaml (every node), controlplane.yaml
-│   ├── generated/      # talosctl gen config output — gitignored
-│   └── secrets/        # secrets bundle + talosconfig — gitignored
+│   ├── generated/      # talosctl gen config base + talosconfig — gitignored
+│   └── secrets/        # secret.yaml bundle (from 1Password), etcd snapshots — gitignored
 └── bootstrap/
     ├── helmfile.yaml   # `mise run bootstrap`; ends by applying the root Application
     ├── namespaces.yaml
@@ -63,7 +63,7 @@ cluster/
 - [shutdown.md](docs/shutdown.md) - graceful full shutdown and start.
 - [upgrade.md](docs/upgrade.md) - Talos and Kubernetes upgrades: rules, pre-flight, steps, notes from past upgrades.
 - [terraform.md](docs/terraform.md) - planned Terraform + Terragrunt replacement for Talos config and bootstrap.
-- [talos/README.md](talos/README.md) - `talosctl` commands, upgrades.
+- [talos/README.md](talos/README.md) - machine-config layout, render/apply workflow, where each file lives.
 
 ## Not here yet
 

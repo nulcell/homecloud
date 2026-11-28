@@ -8,6 +8,8 @@ LH=(kubectl -n longhorn-system)
 
 # Retries for ~15m: the API is briefly down while the only control plane reboots.
 retry() { local i; for i in $(seq 90); do "$@" >/dev/null 2>&1 && return 0; sleep 10; done; return 1; }
+# KubeVirt may not be installed (it lives in gitops/experimental/).
+vms() { kubectl get vm -A -o json 2>/dev/null || echo '{"items":[]}'; }
 confirm() { local a; read -rp "$1 [y/N] " a; [ "$a" = y ]; }
 
 # "name ip role", workers first.
@@ -89,7 +91,7 @@ shutdown() {
   [ "$i" = "$ctx" ] || exit 1
 
   echo "==> halt VMs (previous runStrategy is kept in an annotation)"
-  kubectl get vm -A -o json | jq -r '.items[] | select(.spec.runStrategy != "Halted") | "\(.metadata.namespace) \(.metadata.name) \(.spec.runStrategy)"' \
+  vms | jq -r '.items[] | select(.spec.runStrategy != "Halted") | "\(.metadata.namespace) \(.metadata.name) \(.spec.runStrategy)"' \
     | while read -r ns name c; do
         kubectl -n "$ns" annotate vm "$name" "homecloud/run-strategy=$c" --overwrite
         kubectl -n "$ns" patch vm "$name" --type merge -p '{"spec":{"runStrategy":"Halted"}}'
@@ -127,7 +129,7 @@ start() {
     | while read -r ns name; do kubectl -n "$ns" annotate cluster "$name" cnpg.io/hibernation=off --overwrite; done
 
   echo "==> restore VMs"
-  kubectl get vm -A -o json | jq -r '.items[] | select(.metadata.annotations["homecloud/run-strategy"] != null) | "\(.metadata.namespace) \(.metadata.name) \(.metadata.annotations["homecloud/run-strategy"])"' \
+  vms | jq -r '.items[] | select(.metadata.annotations["homecloud/run-strategy"] != null) | "\(.metadata.namespace) \(.metadata.name) \(.metadata.annotations["homecloud/run-strategy"])"' \
     | while read -r ns name v; do
         kubectl -n "$ns" patch vm "$name" --type merge -p "{\"spec\":{\"runStrategy\":\"$v\"}}"
         kubectl -n "$ns" annotate vm "$name" homecloud/run-strategy-

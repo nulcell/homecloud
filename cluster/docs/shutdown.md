@@ -8,7 +8,7 @@ mise run cluster:start
 
 `cluster:shutdown` (in [`scripts/cluster.sh`](../../scripts/cluster.sh)), in order:
 
-1. Halts KubeVirt VMs, remembering each `runStrategy` in an annotation.
+1. Halts KubeVirt VMs, remembering each `runStrategy` in an annotation (skipped when KubeVirt isn't installed).
 2. Hibernates every CNPG cluster.
 3. Cordons every node and deletes the pods in namespaces holding Longhorn volumes. Controllers recreate them as `Pending`, so volumes detach while replica counts stay as in git. ArgoCD, HPAs, KEDA and operators need no handling.
 4. Waits for every Longhorn volume to be `detached`; aborts (nothing powered off) if any is not.

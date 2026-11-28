@@ -22,7 +22,7 @@ Network plan - pick before you start, write down somewhere:
 | Service CIDR       | `10.96.0.0/12`            |                                                               |
 | Cilium L2 LB pool  | `10.10.20.0-10.10.20.254` | Range on your LAN for LoadBalancer IPs.                       |
 
-Hardware: BIOS virtualization on (KubeVirt needs it); Secure Boot either off, or on with a `metal-installer-secureboot` image (what this cluster uses); IPMI/out-of-band access strongly recommended.
+Hardware: Secure Boot off (this cluster uses the plain `metal-installer` image; Secure Boot needs `metal-installer-secureboot`); BIOS virtualization on if KubeVirt comes back; IPMI/out-of-band access strongly recommended.
 
 ## 1. Build a custom Talos image
 
@@ -35,7 +35,7 @@ At [factory.talos.dev](https://factory.talos.dev/), pick `Bare-metal`, latest st
 - `siderolabs/{amd,intel}-ucode` matching your CPU
 - `siderolabs/amdgpu` if you need GPU passthrough
 
-Record the **schematic ID** - required for upgrades. Boot the ISO; Talos waits in maintenance mode for a config.
+Record the **schematic ID** - required for upgrades; the full schematic is in [`../talos/README.md`](../talos/README.md#image-schematic). Boot the ISO; Talos waits in maintenance mode for a config.
 
 ## 2. Generate cluster config
 
