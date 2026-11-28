@@ -1,19 +1,15 @@
 # Trimmed for a single-node homelab. Adjust storage sizes and retention to taste.
 fullnameOverride: kps
 
-# Talos exposes kube-controller-manager / scheduler / proxy differently -
-# we disable proxy entirely (Cilium replaces it) and let the others stay on host.
+# Talos binds controller-manager/scheduler to 0.0.0.0 and etcd metrics to :2381 (cluster/talos/patches/controlplane.yaml).
+# Proxy is disabled (Cilium replaces it). etcd is not a pod, so its endpoint is listed.
 kubeProxy:
   enabled: false
-kubeControllerManager:
-  endpoints: []
-kubeScheduler:
-  endpoints: []
 kubeEtcd:
-  enabled: true
+  endpoints: [10.10.25.25]
   service:
-    enabled: true
     port: 2381
+    targetPort: 2381
 
 prometheus:
   prometheusSpec:
